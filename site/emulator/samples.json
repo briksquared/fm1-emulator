@@ -1,0 +1,30 @@
+{
+  "groups": [
+    { "name": "Drums", "items": [
+      { "n": "Kick", "f": "samples/kick.wav" },
+      { "n": "Snare", "f": "samples/snare.wav" },
+      { "n": "Hi-hat", "f": "samples/hihat.wav" },
+      { "n": "Open hat", "f": "samples/open-hat.wav" },
+      { "n": "Clap", "f": "samples/clap.wav" },
+      { "n": "Rimshot", "f": "samples/rimshot.wav" },
+      { "n": "Tom", "f": "samples/tom.wav" },
+      { "n": "Crash", "f": "samples/crash.wav" },
+      { "n": "Cowbell", "f": "samples/cowbell.wav" },
+      { "n": "Conga", "f": "samples/conga.wav" },
+      { "n": "Claves", "f": "samples/claves.wav" },
+      { "n": "Tambourine", "f": "samples/tambourine.wav" },
+      { "n": "Finger snap", "f": "samples/snap.wav" }
+    ] },
+    { "name": "Vinyl", "items": [
+      { "n": "Vinyl scratch", "f": "samples/vinyl-scratch.wav" },
+      { "n": "Vinyl rewind", "f": "samples/vinyl-rewind.wav" }
+    ] },
+    { "name": "Instruments", "items": [
+      { "n": "Bass (pizz)", "f": "samples/bass.wav" },
+      { "n": "Piano", "f": "samples/piano.wav" },
+      { "n": "Vibes", "f": "samples/vibes.wav" },
+      { "n": "Horn stab", "f": "samples/horn.wav" },
+      { "n": "Flute", "f": "samples/flute.wav" }
+    ] }
+  ]
+}

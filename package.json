@@ -1,0 +1,60 @@
+{
+  "name": "fm1-emulator",
+  "version": "1.0.7",
+  "description": "An offline desktop emulator for the M-VAVE FM-1 — run FM-1 firmware with no hardware.",
+  "author": "briksquared",
+  "license": "MIT",
+  "homepage": "https://github.com/briksquared/fm1-emulator",
+  "repository": { "type": "git", "url": "https://github.com/briksquared/fm1-emulator.git" },
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.briksquared.fm1emulator",
+    "productName": "FM-1 Emulator",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "package.json", "icon.png", "icon.ico", "LICENSE", "NOTICE.md", "THIRD-PARTY.md", "DISCLAIMER.md"],
+    "extraResources": [{ "from": "site", "to": "site" }],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "icon.ico",
+      "extraResources": [{ "from": "vendor/M-Flasher", "to": "M-Flasher" }]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "FM-1-Emulator-Setup-${version}.${ext}"
+    },
+    "portable": { "artifactName": "FM-1-Emulator-${version}-portable.${ext}" },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ],
+      "category": "public.app-category.music",
+      "icon": "build/icon.png"
+    },
+    "dmg": { "artifactName": "FM-1-Emulator-${version}-${arch}.${ext}" },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Audio",
+      "icon": "build/icon.png",
+      "maintainer": "briksquared",
+      "artifactName": "FM-1-Emulator-${version}-${arch}.${ext}"
+    },
+    "compression": "normal"
+  }
+}

@@ -26,8 +26,20 @@ Get the latest build for your system from the [**Releases**](https://github.com/
 | **macOS** | `*-arm64.dmg` (Apple Silicon) · `*-x64.dmg` (Intel) |
 | **Linux** | `*.AppImage` or `*.deb` |
 
-The builds are not code-signed, so your OS shows a one-time warning on first launch.
-See **[Installation & first run](docs/Installation.md)** for the exact step on each platform.
+## First launch
+
+The builds aren't code-signed, so your OS shows a **one-time warning** the first time. It's safe —
+here's how to get past it:
+
+- **macOS** — right-click (or Control-click) the app → **Open** → **Open**. (A double-click only shows
+  a *Cancel* button; right-clicking gives you the **Open** button.) If it says **"damaged"**, run in
+  Terminal: `xattr -dr com.apple.quarantine "/Applications/FM-1 Emulator.app"` then
+  `codesign --force --deep --sign - "/Applications/FM-1 Emulator.app"`.
+- **Windows** — if SmartScreen appears, click **More info → Run anyway**.
+- **Linux** — the `.deb` is easiest. For the AppImage, if it won't start: `sudo apt install libfuse2`
+  (Ubuntu 24.04: `libfuse2t64`), and on Ubuntu 24.04 run with `--no-sandbox` if you hit a sandbox error.
+
+Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 
 ## Features
 

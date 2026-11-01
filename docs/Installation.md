@@ -24,6 +24,13 @@ the app. This is normal for independent software — nothing is wrong with the d
   xattr -dr com.apple.quarantine "/Applications/FM-1 Emulator.app"
   ```
 
+  On **Apple Silicon**, if it still won't open after that, re-sign it locally (arm64 requires a
+  signature — this applies an ad-hoc one):
+
+  ```bash
+  codesign --force --deep --sign - "/Applications/FM-1 Emulator.app"
+  ```
+
 ## Linux
 
 - **AppImage:** make it executable, then run it:

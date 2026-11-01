@@ -33,8 +33,9 @@ jobs:
         run: ${{ matrix.cmd }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Unsigned builds: do not attempt macOS notarization.
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          # No Apple Developer ID: build is ad-hoc signed (mac.identity "-"), not
+          # notarized. Ad-hoc signing is required so the arm64 app launches at all;
+          # leave auto-discovery on so electron-builder honors the "-" identity.
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:

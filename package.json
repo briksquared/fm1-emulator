@@ -1,6 +1,6 @@
 {
   "name": "fm1-emulator",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "An offline desktop emulator for the M-VAVE FM-1 — run FM-1 firmware with no hardware.",
   "author": "briksquared",
   "license": "MIT",
@@ -39,18 +39,14 @@
       "artifactName": "FM-1-Emulator-Setup-${version}.${ext}"
     },
     "portable": { "artifactName": "FM-1-Emulator-${version}-portable.${ext}" },
+    "afterPack": "build/after-pack.js",
     "mac": {
       "target": [
         { "target": "dmg", "arch": ["x64", "arm64"] },
         { "target": "zip", "arch": ["x64", "arm64"] }
       ],
       "category": "public.app-category.music",
-      "icon": "build/icon.png",
-      "identity": "-",
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "icon": "build/icon.png"
     },
     "dmg": { "artifactName": "FM-1-Emulator-${version}-${arch}.${ext}" },
     "linux": {

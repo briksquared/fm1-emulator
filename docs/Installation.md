@@ -31,7 +31,15 @@ the app. This is normal for independent software — nothing is wrong with the d
   codesign --force --deep --sign - "/Applications/FM-1 Emulator.app"
   ```
 
-## Linux
+The Linux builds are unsigned (normal for Linux — there's no Gatekeeper), so they just run. If one
+**won't launch**, it's almost always one of the two system issues below, not the app.
+
+- **Debian / Ubuntu (.deb)** — the smoother path; it installs to `/opt` and sidesteps the FUSE
+  requirement:
+
+  ```bash
+  sudo apt install ./FM-1-Emulator-*.deb
+  ```
 
 - **AppImage:** make it executable, then run it:
 
@@ -40,5 +48,19 @@ the app. This is normal for independent software — nothing is wrong with the d
   ./FM-1-Emulator-*.AppImage
   ```
 
-  It needs FUSE. If it won't start, run with `--appimage-extract-and-run`.
-- **Debian / Ubuntu (.deb):** `sudo apt install ./FM-1-Emulator-*.deb`
+  AppImages need **FUSE 2**, which isn't installed by default on Ubuntu 22.04+ (it ships FUSE 3). If
+  it won't start, install it — or skip FUSE with the extract-and-run flag:
+
+  ```bash
+  sudo apt install libfuse2          # Ubuntu 24.04: sudo apt install libfuse2t64
+  ./FM-1-Emulator-*.AppImage --appimage-extract-and-run
+  ```
+
+- **"The SUID sandbox helper binary was found, but is not configured correctly" (Ubuntu 24.04+):**
+  this is Ubuntu's AppArmor restricting unprivileged user namespaces, not an app bug. Launch with:
+
+  ```bash
+  ./FM-1-Emulator-*.AppImage --no-sandbox
+  ```
+
+  (`--no-sandbox` disables one Chromium security layer — fine for a local, offline tool.)

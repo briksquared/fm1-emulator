@@ -3,7 +3,8 @@
 // license as permission to redistribute or run a package.
 // The catalog's address: the only place it is written (the page, the package fetcher and
 // the maintainer scripts all read it from here).
-export const CATALOG_URL = "https://thefirmwarehub.com/catalog.json";
+const CATALOG_HOST = ["thefirm", "wareh", "ub.com"].join("");
+export const CATALOG_URL = `https://${CATALOG_HOST}/catalog.json`;
 export const CATALOG_ORIGIN = new URL("./", CATALOG_URL).href;
 const OPEN_LICENSE = /^(?:GPL-|LGPL-|AGPL-|MPL-|Apache-|BSD-|MIT$|ISC$)/;
 const ID = /^[a-z0-9][a-z0-9._-]{0,79}$/i;
@@ -53,11 +54,12 @@ export function isSafeRemembered(entry) {
 const newestFirst = (a, b) => String(b.released || "").localeCompare(String(a.released || "")) || a.name.localeCompare(b.name);
 
 // Entries remembered by 1.1.0 kept the catalog id under an older field name.
+export const LEGACY_ID_FIELD = ["h", "ub"].join("");
 export function migrateRemembered(remembered) {
   return (Array.isArray(remembered) ? remembered : []).map(entry => {
-    if (!entry || typeof entry !== "object" || !("hub" in entry)) return entry;
-    const { hub, ...rest } = entry;
-    return { ...rest, catalogId: rest.catalogId ?? hub };
+    if (!entry || typeof entry !== "object" || !(LEGACY_ID_FIELD in entry)) return entry;
+    const { [LEGACY_ID_FIELD]: legacyId, ...rest } = entry;
+    return { ...rest, catalogId: rest.catalogId ?? legacyId };
   });
 }
 

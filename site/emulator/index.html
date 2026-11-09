@@ -125,8 +125,8 @@
   <section id="firmwares" class="library" aria-labelledby="h-fw">
     <h2 id="h-fw">Firmwares</h2>
     <p>259 unique, boot-checked packages with explicit open-source licenses: the current redistributable
-      <a href="https://thefirmwarehub.com/">FM-1 Firmware Hub ↗</a> catalog plus independently verified GitHub releases.
-      The desktop app keeps the bundled set offline; update-radar additions download only when selected.</p>
+      firmware catalog plus independently verified GitHub releases.
+      The desktop app keeps the bundled set offline; firmware-radar additions download only when selected.</p>
     <ul class="cards" id="fwlist"></ul>
   </section>
 
@@ -152,7 +152,7 @@
           real one.</p>
         <ol class="steps">
           <li><b>Pick a firmware</b>Felucca, the original open firmware, is the default. Bundled releases work offline;
-            a release found later by the update radar downloads on first use. The <a href="#firmwares">firmware list</a> says what each one does.</li>
+            a release found later by the firmware radar downloads on first use. The <a href="#firmwares">firmware list</a> says what each one does.</li>
           <li><b>Press Start</b>A browser only plays sound after a click. Changing the firmware or the clock later
             reboots the synth.</li>
           <li><b>Play</b>Use the computer keyboard, the mouse or a touch screen, or a MIDI keyboard
@@ -307,7 +307,7 @@
           pi32v2 instruction set and models the parts of the chip the firmwares use: timers, interrupts, the flash,
           the 240×240 screen, the key matrix and encoders, the MASTER knob, the audio output and the MIDI IN port.
           The stable interpreter is the default; an optional JIT can be enabled for diagnostics with <code>?jit=1</code>.</p>
-        <p>Each firmware boots from its whole update package (<code>.fwsc</code>). Bundled packages stay local; update-radar
+        <p>Each firmware boots from its whole update package (<code>.fwsc</code>). Bundled packages stay local; firmware-radar
           additions are fetched from the firmware catalog on first use and kept with their saved flash. “Check for firmware updates” fetches a new copy; a changed
           package starts a separate save so an update cannot overwrite an older version’s patches. Packages are unpacked by the page's own unpacker, <code>fwsc.js</code>; Felucca's GPL
           package code (<code>fm1pkg.js</code>) stays out of the page.</p>
@@ -338,8 +338,7 @@
           <a href="https://github.com/briksquared/fm1-emulator">github.com/briksquared/fm1-emulator</a>, based on
           Joakim Eriksson's <a href="https://github.com/joakimeriksson/fm1-emu">fm1-emu</a>.</p>
         <p>The firmwares are their authors' work, under the licences shown on each card; the list follows
-          <a href="https://thefirmwarehub.com/">the FM-1 Firmware Hub</a> (thanks to zvenson for opening its packages to
-          other pages) and <a href="https://fm1-editor.com/firmware/">fm1-editor.com/firmware</a>.</p>
+          the open firmware catalog and <a href="https://fm1-editor.com/firmware/">fm1-editor.com/firmware</a>.</p>
         <p>Built on public reverse engineering of the FM-1:
           <a href="https://github.com/AL-255/FM-1-RE">AL-255/FM-1-RE</a>,
           <a href="https://github.com/ip2k/lunar-modulator">ip2k/lunar-modulator</a>,
@@ -358,8 +357,8 @@
       <b>FM-1 Emulator</b>
       <span>The M-VAVE FM-1 in your browser. Not made by or affiliated with M-VAVE. The emulator's code is
         MIT; each firmware is its author's, under its own licence. No firmware is hosted on this page.</span>
-      <span>Firmware lists from <a href="https://thefirmwarehub.com/">the FM-1 Firmware Hub ↗</a>, with thanks to
-        zvenson, and <a href="https://fm1-editor.com/firmware/">fm1-editor.com/firmware ↗</a>.</span>
+      <span>Firmware lists from the open firmware catalog and
+        <a href="https://fm1-editor.com/firmware/">fm1-editor.com/firmware ↗</a>.</span>
     </div>
     <div class="col">
       <b>Code</b>

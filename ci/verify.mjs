@@ -95,7 +95,7 @@ assert.ok(packageResources(readFileSync(resolve(emulator, melodee.package)))?.da
 const felucca = entries.find(entry => entry.id === "felucca");
 assert.equal(packageResources(readFileSync(resolve(emulator, felucca.package))), null, "ordinary packages do not invent resources");
 
-const { CATALOG_URL, fromCatalog, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } = await browserModule(resolve(emulator, "catalog-updates.js"));
+const { CATALOG_URL, LEGACY_ID_FIELD, fromCatalog, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } = await browserModule(resolve(emulator, "catalog-updates.js"));
 const liveExample = {
   id: "test-open", name: "Test Open", version: "2.0", published: "2026-11-09T12:00:00Z",
   kind: "synth", author: "tester", lic: "GPL-3.0", what: "Test entry", pkg: "fw/test-open-2.0.fwsc",
@@ -105,7 +105,10 @@ assert.equal(fromCatalog({ ...liveExample, lic: "" }), null, "scanner rejects a 
 assert.equal(fromCatalog({ ...liveExample, product: "SMK-37_123" }), null, "scanner rejects a wrong-device product");
 const converted = fromCatalog(liveExample);
 assert.equal(converted.package, new URL("fw/test-open-2.0.fwsc", CATALOG_URL).href, "scanner creates a pinned catalog URL");
-assert.deepEqual(migrateRemembered([{ id: "a", hub: "a" }]), [{ id: "a", catalogId: "a" }], "1.1.0 remembered entries migrate");
+const catalogHost = new URL(CATALOG_URL).hostname;
+assert.ok(!JSON.stringify(catalog).includes(catalogHost), "bundled snapshot carries no links back to the catalog site");
+assert.ok(catalog.firmwares.every(entry => !("fmhub" in entry)), "bundled snapshot uses makerCard");
+assert.deepEqual(migrateRemembered([{ id: "a", [LEGACY_ID_FIELD]: "a" }]), [{ id: "a", catalogId: "a" }], "1.1.0 remembered entries migrate");
 const merged = mergeCatalog({ default: "felucca", firmwares: [felucca] }, [converted, { ...converted, id: "bad", package: "https://evil.example/fw/bad.fwsc" }]);
 assert.deepEqual(merged.firmwares.map(entry => entry.id), ["test-open", "felucca"], "only safe remembered entries merge");
 const scanned = await scanOpenFirmwareUpdates({ firmwares: [felucca] }, { firmwares: [felucca] }, async () => ({ ok: true, json: async () => ({ firmwares: [liveExample, { ...liveExample, id: "closed", lic: "" }] }) }));

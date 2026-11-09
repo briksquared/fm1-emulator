@@ -82,7 +82,10 @@ let W = 0, H = 0, board = -1;
 const fitPanel = () => document.documentElement.style.setProperty("--above",
   `${Math.round(canvas.parentElement.getBoundingClientRect().top + scrollY)}px`);
 {
-  const ro = new ResizeObserver(fitPanel);
+  // (next frame: --above resizes the panel, which can resize what is observed; doing it inside
+  // the callback is a ResizeObserver loop)
+  let queued = false;
+  const ro = new ResizeObserver(() => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; fitPanel(); }); } });
   ro.observe(document.querySelector("header"));
   ro.observe(document.querySelector(".bar"));
 }
@@ -897,7 +900,11 @@ async function setLatency(l) {
     // the old context is already closed: bring the sound back on the buffer that worked
     let restored = false;
     try {
-      if (!node) await startAudio();
+      // (startAudio may have built a context at the new buffer before boot failed: start over)
+      stopAudioGraph();
+      running = null;
+      if (ac) { await ac.close().catch(() => {}); ac = null; }
+      await startAudio();
       restored = await boot();
       if (restored) await ac.resume();
     } catch { restored = false; }

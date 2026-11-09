@@ -462,7 +462,35 @@
     window.addEventListener("load", fit);
     requestAnimationFrame(() => requestAnimationFrame(fit));
     document.addEventListener("fullscreenchange", fit);
-    // redraw when devices change height (panels update, recordings, etc.)
-    if (window.ResizeObserver) { const ro = new ResizeObserver(() => draw()); ro.observe(bay); for (const { mod } of built) ro.observe(mod); }
+    // The cables are drawn in deck coordinates, so anything that moves a jack inside the deck
+    // (a device panel opening, the title row wrapping, the machine resizing, a module shown or
+    // hidden) redraws them; anything above the deck changing height (the header wrapping, the
+    // toolbar) changes the room the machine has, so it fits again. Both wait for the next frame,
+    // once per frame, so a burst of changes is one redraw and never a ResizeObserver loop.
+    let drawQueued = false, fitQueued = false;
+    const queueDraw = () => { if (drawQueued) return; drawQueued = true; requestAnimationFrame(() => { drawQueued = false; draw(); }); };
+    const queueFit = () => { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fit(); }); };
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(queueDraw);
+      ro.observe(deck); ro.observe(bay);
+      for (const el of deck.children) if (el !== svg) ro.observe(el);
+      for (const { mod } of built) ro.observe(mod);
+      const above = new ResizeObserver(queueFit);
+      const hdr = document.querySelector("header.site"); if (hdr) above.observe(hdr);
+      // (the toolbar is built by transport.js, possibly after this)
+      let tries = 0;
+      const waitBar = setInterval(() => {
+        const bar = document.getElementById("fm1-transport");
+        if (bar) above.observe(bar);
+        if (bar || ++tries > 50) clearInterval(waitBar);
+      }, 200);
+    }
+    if (window.MutationObserver) {
+      // (the deck's own children and their visibility; the cables' own SVG is left out)
+      new MutationObserver((list) => { if (list.some((m) => m.target !== svg && !svg.contains(m.target))) queueDraw(); })
+        .observe(deck, { childList: true, attributes: true, attributeFilter: ["hidden", "class"] });
+      for (const el of deck.children) if (el !== svg)
+        new MutationObserver(queueDraw).observe(el, { attributes: true, attributeFilter: ["hidden", "class"] });
+    }
   });
 })();

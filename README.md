@@ -16,6 +16,19 @@ choose a firmware, press **Start**, and play with your keyboard, mouse, or a MID
 
 ---
 
+## Screenshots
+
+| | |
+| --- | --- |
+| <img src="docs/screenshots/01-electro-orange.png" alt="Felucca running in the Electro Orange theme" width="400"> | <img src="docs/screenshots/02-miami-stickers.png" alt="Miami theme with stickers on the case" width="400"> |
+| **Electro Orange** — Felucca running, with the firmware radar and Firmware uplink panels | **Miami** — stickers placed in the panel's open spots |
+| <img src="docs/screenshots/03-white-blue-stickers.png" alt="FM-1 White / Blue colourway with stickers" width="400"> | <img src="docs/screenshots/04-gold-stickers-palette.png" alt="Gold on Black theme with the sticker palette open" width="400"> |
+| **FM-1 White / Blue** — one of the real hardware colourways, with stickers | **Gold on Black** — the sticker palette open over the machine |
+| <img src="docs/screenshots/05-emerald-firmware-browser.png" alt="The firmware browser with all 259 firmwares" width="400"> | <img src="docs/screenshots/06-navy-flash-recovery.png" alt="FM-1 Navy theme with the recovery options open" width="400"> |
+| **Emerald** — browsing all 259 bundled firmwares | **FM-1 Navy** — Firmware uplink with the recovery options open |
+| <img src="docs/screenshots/07-vaporwave-keys.png" alt="Vaporwave theme with the Keys module open" width="400"> | |
+| **Vaporwave** — the Keys module (scales, chords, arpeggiator) | |
+
 ## Download
 
 Get the latest build for your system from the [**Releases**](https://github.com/briksquared/fm1-emulator/releases/latest) page.

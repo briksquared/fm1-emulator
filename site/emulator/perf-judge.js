@@ -22,3 +22,14 @@ export function judgeSecond(st, s) {
   st.bad = over || late ? st.bad + 1 : 0;
   return { warn: st.bad >= BAD_SECONDS, over, late };
 }
+
+// Once the notice is up it stays while the dropouts go on; this many good seconds in a row clear
+// it (a stalled second neither counts nor resets: it says nothing either way).
+export const GOOD_SECONDS_TO_CLEAR = 20;
+export function recovered(st, j) {
+  if (j.stalled) return false;
+  st.good = j.late || j.over ? 0 : (st.good || 0) + 1;
+  if (st.good < GOOD_SECONDS_TO_CLEAR) return false;
+  st.good = 0;
+  return true;
+}

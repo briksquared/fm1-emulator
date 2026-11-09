@@ -7,7 +7,7 @@
   "use strict";
   const AUTO_HIDE_MS = 45000;
   const items = new Map();        // key -> { title, text, level, actions, onDismiss, at }
-  let chip = null, pop = null, timer = 0;
+  let chip = null, pop = null, timer = 0, diagnostics = null;
 
   function css() {
     if (document.getElementById("fm1-issues-style")) return;
@@ -81,9 +81,12 @@
       h.appendChild(x);
       const p = document.createElement("p"); p.textContent = v.text;
       sec.append(h, p);
-      if (v.actions?.length) {
+      const acts = [...(v.actions || [])];
+      // (opt-in: copies a plain-text summary to the clipboard; nothing is sent anywhere)
+      if (diagnostics) acts.push({ label: "Copy diagnostics", closes: false, run: (el) => copyDiagnostics(el) });
+      if (acts.length) {
         const a = document.createElement("div"); a.className = "acts";
-        for (const act of v.actions) {
+        for (const act of acts) {
           const el = act.href ? document.createElement("a") : document.createElement("button");
           if (act.href) { el.href = act.href; el.target = "_blank"; el.rel = "noopener"; } else el.type = "button";
           if (act.primary) el.className = "primary";
@@ -105,14 +108,31 @@
   }
   function open() { pop.classList.add("on"); fill(); clearTimeout(timer); }
   function close() { pop?.classList.remove("on"); arm(); }
-  function arm() { clearTimeout(timer); if (items.size) timer = setTimeout(() => { if (!pop.classList.contains("on")) { items.clear(); render(); } }, AUTO_HIDE_MS); }
+  // A notice for something still going on (persist: dropouts, a failed boot) stays until its cause
+  // clears it; the others go after a while.
+  function arm() {
+    clearTimeout(timer);
+    if ([...items.values()].some((v) => !v.persist)) timer = setTimeout(() => {
+      if (pop.classList.contains("on")) return;
+      for (const [k, v] of items) if (!v.persist) items.delete(k);
+      render();
+    }, AUTO_HIDE_MS);
+  }
+  async function copyDiagnostics(el) {
+    let text = "";
+    try { text = diagnostics([...items.values()].map(({ title, text, level, at }) => ({ title, text, level, at }))); }
+    catch (e) { text = `diagnostics failed: ${e?.message || e}`; }
+    try { await navigator.clipboard.writeText(text); el.textContent = "Copied"; }
+    catch { prompt("Copy these diagnostics:", text); }
+    setTimeout(() => { el.textContent = "Copy diagnostics"; }, 2000);
+  }
   function dismiss(key) { const v = items.get(key); clear(key); try { v?.onDismiss?.(); } catch {} }
 
   function show(key, opts) {
-    items.set(key, { title: opts.title || "Notice", text: opts.text || "", level: opts.level || "warn", actions: opts.actions || [], onDismiss: opts.onDismiss, at: Date.now() });
+    items.set(key, { title: opts.title || "Notice", text: opts.text || "", level: opts.level || "warn", actions: opts.actions || [], onDismiss: opts.onDismiss, persist: !!opts.persist, at: Date.now() });
     render(); arm();
   }
   function clear(key) { if (items.delete(key)) render(); if (!items.size) close(); }
 
-  window.FM1Issues = { show, clear, list: () => [...items.keys()] };
+  window.FM1Issues = { show, clear, list: () => [...items.keys()], setDiagnostics: (fn) => { diagnostics = typeof fn === "function" ? fn : null; } };
 })();

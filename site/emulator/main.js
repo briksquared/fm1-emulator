@@ -6,7 +6,7 @@
 import { fetchPackage } from "./fwsc.js";
 import { SaveStore, packageHash, changedSectors, packSectors, exportSave, importSave } from "./persistence.js";
 import { productOf } from "./fm1pkg.js";
-import { judgeSecond } from "./perf-judge.js?v=1";
+import { judgeSecond, recovered } from "./perf-judge.js?v=2";
 import { CATALOG_ORIGIN, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } from "./catalog-updates.js?v=3";
 
 const CLOCKS = [60, 80, 100, 120, 160, 200, 240];
@@ -446,7 +446,8 @@ requestAnimationFrame(draw);
 const SKIN_ORDER = ["room","body_top","body_bot","tray","silk","btn_top","btn_bot","btn_ink","key_top","key_bot","key_line","key_lit","knob_skirt_a","knob_skirt_b","knob_cap_a","knob_cap_b","knob_glow","amber","green","bezel_a","bezel_b"];
 const SKIN_DEFAULT = {room:"#000000",body_top:"#141414",body_bot:"#070707",tray:"#0d0d0d",silk:"#c9c6bd",btn_top:"#1e1e1e",btn_bot:"#141414",btn_ink:"#9c9a94",key_top:"#fa5400",key_bot:"#b23c00",key_line:"#ff8a3a",key_lit:"#ffd0a0",knob_skirt_a:"#2e3034",knob_skirt_b:"#50535a",knob_cap_a:"#3a3d43",knob_cap_b:"#6d7178",knob_glow:"#fa5400",amber:"#fa5400",green:"#62d36e",bezel_a:"#0e0e10",bezel_b:"#0b0b0c"};
 function fm1ApplySkin(sk) {
-  const arr = SKIN_ORDER.map(k => (parseInt((sk[k] || SKIN_DEFAULT[k]).slice(1), 16) >>> 0));
+  // (anything but #rrggbb, from storage or a shared look, falls back to the stock colour)
+  const arr = SKIN_ORDER.map(k => (parseInt((/^#[0-9a-f]{6}$/i.test(sk?.[k]) ? sk[k] : SKIN_DEFAULT[k]).slice(1), 16) >>> 0));
   const p = ui.fm1_alloc(arr.length * 4);
   new Uint32Array(ui.memory.buffer, p, arr.length).set(arr);
   ui.fm1_skin(p, arr.length);
@@ -469,6 +470,7 @@ window.FM1 = { applySkin: fm1ApplySkin, SKIN_ORDER, SKIN_DEFAULT, panelCanvas: c
   fwText: (id) => fwSearchText[id] || "",                                      // searchable text (name + description) for a firmware
   isSampler: (id) => !!(CAPS[id] && CAPS[id].audioIn),                         // takes USB audio in (a sampler)
   runningFirmware: () => running ? { id: running.entry.slice(DEV.key.length), name: running.record.name, hash: running.record.hash } : null,
+  latency: () => latency,                                                      // the buffer in use (self-tests)
   heldKeys: () => [...down.keys()].filter((i) => down[i]),                    // matrix keys held (self-tests)
   running: () => !!running };
 try { fm1ApplySkin({ ...SKIN_DEFAULT, ...JSON.parse(localStorage.getItem("fm1.skin") || "{}") }); } catch {}
@@ -678,7 +680,22 @@ function midiMessage(e) {
 }
 // hardware MIDI can run through an input processor (the Keys module's scale/chord/arp) before it
 // reaches the synth; the processor returns true when it has handled and re-injected the message.
+// notes and sustain held from hardware, so they can be let go if the device is unplugged mid-note
+// (its note-offs never come)
+const hwHeld = new Set(), hwSustain = new Set();
+function trackHeld(d) {
+  const st = d[0] & 0xf0, ch = d[0] & 0x0f;
+  if (st === 0x90 && d[2] > 0) hwHeld.add((ch << 8) | d[1]);
+  else if (st === 0x80 || st === 0x90) hwHeld.delete((ch << 8) | d[1]);
+  else if (st === 0xb0 && d[1] === 64) { if (d[2] >= 64) hwSustain.add(ch); else hwSustain.delete(ch); }
+}
+function releaseHardware() {
+  for (const k of [...hwHeld]) hwMessage({ data: new Uint8Array([0x80 | (k >> 8), k & 0x7f, 0]) });
+  for (const ch of [...hwSustain]) hwMessage({ data: new Uint8Array([0xb0 | ch, 64, 0]) });
+  hwHeld.clear(); hwSustain.clear();
+}
 function hwMessage(e) {
+  if (e?.data?.length >= 3) trackHeld(e.data);
   if (inputProcessor) {
     try { if (inputProcessor(Array.from(e.data))) return; }
     catch (err) { if (!hwMessage.warned) { hwMessage.warned = true; console.error("MIDI input processor failed; passing input through", err); } }
@@ -686,10 +703,15 @@ function hwMessage(e) {
   midiMessage(e);
 }
 // listen to the wanted inputs only; the list follows devices coming and going
+let attached = new Set();
 function midiConnect() {
   if (!midi) return;
-  let want = midiSel.value;
-  const names = [...midi.inputs.values()].map((i) => i.name);
+  // the saved choice wins: when the chosen device is unplugged its entry leaves the list (and the
+  // list falls back to "off"); it used to stay off when the device came back
+  const saved = stored("fm1.midi");
+  let want = saved !== null && saved !== "" ? saved : midiSel.value;
+  const inputs = [...midi.inputs.values()].filter((i) => i.state !== "disconnected");
+  const names = inputs.map((i) => i.name);
   for (const o of [...midiSel.options]) if (o.value !== "" && o.value !== "*" && !names.includes(o.value)) o.remove();
   for (const n of names) if (![...midiSel.options].some((o) => o.value === n)) midiSel.add(new Option(n, n));
   // plug-and-play: if the player has never chosen an input, auto-grab a connected FM-1 / M-VAVE / SMK so
@@ -699,8 +721,15 @@ function midiConnect() {
     if (fm) { want = fm; status.textContent = `Playing from ${fm} — your FM-1 is driving the emulator.`; }
   }
   if ([...midiSel.options].some((o) => o.value === want)) midiSel.value = want;
-  for (const input of midi.inputs.values())
-    input.onmidimessage = want === "*" || want === input.name ? hwMessage : null;
+  const now = new Set();
+  for (const input of midi.inputs.values()) {
+    const on = input.state !== "disconnected" && (want === "*" || want === input.name);
+    input.onmidimessage = on ? hwMessage : null;
+    if (on) now.add(input.id || input.name);
+  }
+  // an input that was playing is gone: let go of what it held
+  if ([...attached].some((id) => !now.has(id))) releaseHardware();
+  attached = now;
 }
 async function midiOpen() {
   if (midi || !navigator.requestMIDIAccess) return midiConnect();
@@ -745,7 +774,7 @@ const perf = {
   reset() {
     this.busy = 0; this.span = 0; this.emulated = 0; this.idle = 0; this.idleShare = 0; this.worst = 0;
     this.secs = 0; this.bad = 0; this.drops = 0; this.loads = []; this.speeds = []; this.drift = 0;
-    this.stamp = null; this.jit = null; this.lastSecond = 0; this.dryAt = null; this.shown = false;
+    this.stamp = null; this.jit = null; this.lastSecond = 0; this.dryAt = null; this.shown = false; this.good = 0;
     // a dismissed warning stays dismissed for this firmware, clock and buffer, across reboots
     if (this.dismissedFor !== this.key()) this.dismissed = false;
     issue.clear("perf");
@@ -788,8 +817,12 @@ const perf = {
       state: ac?.state, hidden: document.hidden, gap, drift, halted: m.halted, load: this.load(),
       worker: !!worker, dry: worker && stream ? stream.underruns : null,
     });
+    if (Array.isArray(window.FM1PerfTrace)) window.FM1PerfTrace.push({ secs: this.secs, dry: worker && stream ? stream.underruns : null, drift, gap: Math.round(gap), state: ac?.state, load: this.load(), ...j });   // (opt-in, for tests)
     if (j.late) this.drops++;
     if (j.warn && !this.shown && !this.dismissed) this.warn(j.over);
+    // the notice stays while the dropouts go on, and clears after 20 good seconds in a row (it can
+    // come back if they start again)
+    if (this.shown && recovered(this, j)) { this.shown = false; issue.clear("perf"); }
   },
   // A lower clock that brings the load down to ~80%, if one does. The cost of emulating a
   // second is a fixed part (about a quarter at the clocks offered: the peripherals, the audio, the
@@ -814,7 +847,7 @@ const perf = {
     fix.hidden = false;
     if (over && pick) {
       text.textContent = `This device can't run ${fw.name} at ${mhz} MHz in real time (it needs ${Math.round(100 * load)}% ` +
-        `of the audio thread), so the sound breaks up. It needs less at a lower clock.` + devtools;
+        `of real time to emulate), so the sound breaks up. It needs less at a lower clock.` + devtools;
       fix.textContent = `Use ${pick} MHz`;
       fix.onclick = () => { setClock(pick); };
     } else if (over) {
@@ -823,7 +856,7 @@ const perf = {
         ? " A lower clock would not help: the emulator skips the time this firmware idles, so it costs about the same at any clock."
         : " A lower clock would help only a little.";
       text.textContent = `This device can't run ${fw.name} at ${mhz} MHz in real time (it needs ` +
-        `${Math.round(100 * load)}% of the audio thread), so the sound breaks up.` + why + devtools +
+        `${Math.round(100 * load)}% of real time to emulate), so the sound breaks up.` + why + devtools +
         ` A faster device or the desktop version will play it.`;
       fix.hidden = true;
     } else if (latency === "interactive") {
@@ -843,9 +876,8 @@ const perf = {
     this.shown = true;
     const actions = [];
     if (!fix.hidden) actions.push({ label: fix.textContent, primary: true, run: fix.onclick });
-    actions.push({ label: "Copy a report", closes: false, run: copyReport });
     actions.push({ label: "Report on GitHub ↗", href: "https://github.com/briksquared/fm1-emulator/issues/new" });
-    issue.show("perf", { title: over ? "Emulator can't keep up" : "Audio dropouts", text: text.textContent, level: "warn", actions,
+    issue.show("perf", { title: over ? "Emulator can't keep up" : "Audio dropouts", text: text.textContent, level: "warn", actions, persist: true,
       onDismiss: () => { this.dismissed = true; this.dismissedFor = this.key(); } });
   },
   // for a bug report: what the device is and how it kept up
@@ -869,15 +901,27 @@ const perf = {
     ].join("\n");
   },
 };
-async function copyReport(b) {
-  try {
-    await navigator.clipboard.writeText(perf.report());
-    b.textContent = "Copied";
-  } catch {
-    prompt("Copy this report:", perf.report());     // (no clipboard access: let them copy it)
-  }
-  setTimeout(() => { b.textContent = "Copy a report"; }, 2000);
+// Copy diagnostics (any notice's details): what a bug report needs, as plain text on the clipboard
+// when asked. Versions, platform, engine and audio settings, timing, and the notices; no file
+// paths, no names of files you opened, no firmware data, no MIDI. Nothing is sent anywhere.
+function diagnostics(notices = []) {
+  const scrub = (t) => {
+    let x = String(t ?? "");
+    if (fw?.id === "local" && fw.name) x = x.split(fw.name).join("(your .fwsc)");
+    return x.replace(/(?:file:\/\/|[A-Za-z]:[\\/]|\/(?:Users|home|var|tmp|private|Volumes|mnt|media)\/)[^\s"'),;]*/g, "<path>");
+  };
+  const lines = perf.report().split("\n").slice(1);
+  const ago = (at) => `${Math.max(0, Math.round((Date.now() - at) / 1000))} s ago`;
+  return [
+    `FM-1 Emulator diagnostics, ${new Date().toISOString().replace(/\.\d+Z$/, "Z")}`,
+    `app: ${window.FM1Desktop ? "desktop" : "browser"} · page: ${/^(https?|fm1):$/.test(location.protocol) ? location.origin : "a local copy"} · device: ${DEVICE}`,
+    `running: ${running ? scrub(running.record.name) : "nothing"} · status: ${scrub(status.textContent)}`,
+    ...lines.map(scrub),
+    `notices:${notices.length ? "" : " none"}`,
+    ...notices.map((n) => `- [${n.level}] ${scrub(n.title)}: ${scrub(n.text)} (${ago(n.at)})`),
+  ].join("\n");
 }
+issue.setDiagnostics?.(diagnostics);
 function setClock(c) {
   mhz = c;
   if (![...mhzSel.options].some((o) => Number(o.value) === c)) mhzSel.add(new Option(`${c} MHz`, c));
@@ -886,8 +930,11 @@ function setClock(c) {
   showFirmware();
   boot();
 }
+// A change asked for while one is under way waits and runs next (the newest one wins); it used to
+// be dropped, leaving the list, the stored setting and the running buffer disagreeing.
+let pendingLatency = null;
 async function setLatency(l) {
-  if (bufferChanging) return;
+  if (bufferChanging) { pendingLatency = l; return; }
   bufferChanging = true;
   const previous = latency;
   if (bufSel) bufSel.disabled = true;
@@ -930,6 +977,10 @@ async function setLatency(l) {
   } finally {
     if (bufSel) { bufSel.value = latency; bufSel.disabled = false; }
     bufferChanging = false;
+    if (pendingLatency != null) {
+      const next = pendingLatency; pendingLatency = null;
+      if (String(next) !== String(latency)) setLatency(next);
+    }
   }
 }
 
@@ -1064,8 +1115,21 @@ function boot(options = {}) {
         window.FM1Loader?.fail(error instanceof NeedFile ? "package required" : "boot error");
         showFirmware();
         if (!running) { startBtn.hidden = false; startBtn.disabled = false; }
+        const why = String(error?.message || error).replace(new RegExp(`^${f.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}: `), "")
+          .replace(/^boot: /, "").replace(/^Error: /, ""); // the engine's own prefixes say nothing to a player
         status.textContent = error instanceof NeedFile
-        ? `${f.name}: open your ${DEV.stock} to boot it` : `${f.name}: ${error.message}${running ? `; ${running.record.name} is still running` : ""}`;
+        ? `${f.name}: open your ${DEV.stock} to boot it` : `${f.name}: ${why}${running ? `; ${running.record.name} is still running` : ""}`;
+        if (!(error instanceof NeedFile)) {
+          // the status line is one line and may be cut short: the notice keeps the whole reason
+          issue.show("boot", { title: `Couldn't load ${f.name}`, text: `${why}.${running ? ` ${running.record.name} is still running.` : ""}`, level: "error", persist: true });
+          // the list and the remembered choice follow what is actually running
+          const runId = running ? running.entry.slice(DEV.key.length) : null;
+          if (runId && byId.has(runId) && fwSel.value !== runId) {
+            fwSel.value = runId; fw = byId.get(runId);
+            if (!EMBED) store(DEV.key + "fw", runId);
+            showFirmware();
+          }
+        }
       }
       return false;
     }
@@ -1106,7 +1170,7 @@ async function startAudio() {
       worker = new Worker("engine.js?v=1", { type: "module" });
       worker.onerror = (e) => {
         status.textContent = `the emulator worker failed: ${e.message || "unknown error"}`;
-        issue.show("boot", { title: "Emulator stopped", text: status.textContent + ". Press Start to run it again.", level: "error" });
+        issue.show("boot", { title: "Emulator stopped", text: status.textContent + ". Press Start to run it again.", level: "error", persist: true });
       };
       const channel = new MessageChannel();
       worker.postMessage({ type: "engine-init", sampleRate: ac.sampleRate, audio: channel.port1 }, [channel.port1]);
@@ -1146,7 +1210,7 @@ function onWorklet(e) {
     if (waiter) { clearTimeout(waiter.timer); bootWaiters.delete(m.seq); waiter.reject(new Error(m.message)); }
     if (m.seq === bootSeq) {
       status.textContent = `${fw.name}: ${m.message}`;
-      issue.show("boot", { title: `${fw.name} stopped`, text: `${fw.name}: ${m.message}`, level: "error" });
+      issue.show("boot", { title: `${fw.name} stopped`, text: `${fw.name}: ${m.message}`, level: "error", persist: true });
     }
     return;
   }
@@ -1203,7 +1267,7 @@ function onWorklet(e) {
     // (hover: what the figures mean, the JIT's work in the audio thread, and the audio's health)
     status.title = [`speed: how much faster than real time the emulator runs this firmware on this device ` +
       `(emulated time per time spent emulating; below 1x the sound breaks up)`,
-      `load: the share of the audio thread's time the emulator takes (over 100%: the sound breaks up)`,
+      `load: the time the emulator takes to run a second of audio (over 100%: the sound breaks up)`,
       m.jit ? `JIT: ${m.jit.regions} regions compiled, ${m.jit.failed} failed${m.jit.error ? ` (${m.jit.error})` : ""}` : "",
       `${m.short} short audio quanta (the firmware's audio fell behind its own clock)`].filter(Boolean).join("\n");
     last = { t: now };

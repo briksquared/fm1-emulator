@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 // (loaded from source: the page serves it as a plain script module, without a package type)
 const src = fs.readFileSync(new URL("../site/emulator/perf-judge.js", import.meta.url), "utf8");
-const { judgeSecond, GRACE_SECONDS, BAD_SECONDS } = await import("data:text/javascript," + encodeURIComponent(src));
+const { judgeSecond, recovered, GRACE_SECONDS, BAD_SECONDS, GOOD_SECONDS_TO_CLEAR } = await import("data:text/javascript," + encodeURIComponent(src));
 
 const fresh = () => ({ secs: 0, bad: 0, dryAt: null });
 const ok = { state: "running", hidden: false, gap: 1000, drift: 0.0002, load: 0.4, worker: true, halted: false };
@@ -40,6 +40,22 @@ const tests = {
     assert.equal(run(steady(30, { drift: 0.05 })), 0),
   "the in-thread engine still warns on drift": () =>
     assert.ok(run(steady(GRACE_SECONDS + BAD_SECONDS, { worker: false, drift: 0.05 })) >= 1),
+  "the notice stays while dropouts go on, and clears after a run of good seconds": () => {
+    const st = fresh(); let dry = 0, shown = false, cleared = -1;
+    const secs = [...steady(GRACE_SECONDS + 1), ...steady(60, { newDry: 8 }), ...steady(GOOD_SECONDS_TO_CLEAR - 1), { newDry: 8 }, ...steady(GOOD_SECONDS_TO_CLEAR + 2)];
+    secs.forEach((s, i) => {
+      dry += s.newDry || 0;
+      const j = judgeSecond(st, { ...ok, ...s, dry });
+      if (j.warn && !shown) shown = true;
+      else if (shown && recovered(st, j)) { shown = false; cleared = i; }
+    });
+    // one bad second in the middle of the good run restarts the count
+    assert.equal(cleared, GRACE_SECONDS + 1 + 60 + (GOOD_SECONDS_TO_CLEAR - 1) + GOOD_SECONDS_TO_CLEAR);
+  },
+  "stalled seconds neither clear nor keep the notice": () => {
+    const st = { good: 5 };
+    assert.equal(recovered(st, { stalled: true }), false); assert.equal(st.good, 5);
+  },
   "a halted firmware never warns": () =>
     assert.equal(run(steady(20, { halted: true, newDry: 40 })), 0),
 };

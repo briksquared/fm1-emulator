@@ -185,16 +185,26 @@
     const persistUI = () => TH.save(ui);
     // a shared "look" in the URL (?look=…) previews someone's skin + interface for this visit,
     // without overwriting your own saved look — adopt it by touching any control or pressing Apply.
+    // a look from outside (a shared link, an imported file) keeps only the colour fields the panel
+    // and the interface know, as #rrggbb, so a stray or hostile one can't break either
+    const HEX = /^#[0-9a-f]{6}$/i;
+    const cleanSkin = (o) => { const c = {}; if (o && typeof o === "object" && !Array.isArray(o)) for (const [k, v] of Object.entries(o)) if (k in FM1.SKIN_DEFAULT && HEX.test(v)) c[k] = v; return c; };
+    const cleanUI = (o) => {
+      const c = {}; if (!o || typeof o !== "object" || Array.isArray(o)) return c;
+      if (typeof o.theme === "string" && Object.hasOwn(TH.THEMES, o.theme)) c.theme = o.theme;
+      for (const k of [...TH.FIELDS, "accent"]) if (HEX.test(o[k])) c[k] = o[k];
+      return c;
+    };
     const czParams = new URLSearchParams(location.search);
     try {
       const lk = czParams.get("look");
       if (lk) {
         const o = JSON.parse(decodeURIComponent(escape(atob(lk.replace(/-/g, "+").replace(/_/g, "/")))));
-        if (o && o.s) skin = { ...FM1.SKIN_DEFAULT, ...o.s };
-        if (o && o.u && typeof o.u === "object") ui = { ...o.u };
-        else if (o && o.a) ui = { accent: o.a };
+        if (o && o.s) skin = { ...FM1.SKIN_DEFAULT, ...cleanSkin(o.s) };
+        if (o && o.u && typeof o.u === "object") ui = cleanUI(o.u);
+        else if (o && HEX.test(o.a)) ui = { accent: o.a };
       }
-    } catch {}
+    } catch (e) { console.warn("shared look not read:", e); }
     uipane.insertAdjacentHTML("beforeend", `<div class="sec">Theme</div>
       <p class="cz-note">Colours for the app itself: the page, panels, controls and text. (The synth's own colours live on the Device tab.)</p>`);
     const themes = document.createElement("div"); themes.className = "cz-themes"; uipane.appendChild(themes);
@@ -318,7 +328,7 @@
         const o = JSON.parse(await f.text());
         if (!o || typeof o !== "object" || Array.isArray(o)) throw new Error("not a saved look");
         // keep only colour fields the panel knows, so a stray file can't break the skin
-        const clean = {}; for (const [k, v] of Object.entries(o)) if (k in FM1.SKIN_DEFAULT && /^#[0-9a-f]{6}$/i.test(v)) clean[k] = v;
+        const clean = cleanSkin(o);
         if (!Object.keys(clean).length) throw new Error("no colours in it");
         skin = { ...FM1.SKIN_DEFAULT, ...clean }; apply(); persist(); rebuildInputs(); sel.value = "";
       } catch (e) {

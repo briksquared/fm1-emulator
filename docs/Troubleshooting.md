@@ -31,4 +31,7 @@ sandboxed location.
 
 ## Something else
 Open an [issue](https://github.com/briksquared/fm1-emulator/issues) with your OS and a short
-description of what you saw.
+description of what you saw. If a notice is showing, its **Copy diagnostics** button copies a
+short report you can paste in: app or browser, the browser's user-agent string (OS and version),
+CPU core count, the running firmware, its notices and recent audio stats. It leaves out your
+names, file paths and firmware files; read it before you post.

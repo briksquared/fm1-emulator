@@ -51,6 +51,12 @@ firmware to your FM-1 in a few clicks, and recover if anything goes wrong.**
   all available offline
 - **Search** by name, author, version, license, product identity, or description (try "drum",
   "bass", "ambient"), plus **Samplers** and **Favorites** filters and a full **Browse all** view
+- **Star favorites** from the sidebar or the browser; starred firmwares get their own chip in
+  **Browse all**
+- **Details** for each firmware (press **I**): author, license, source, release date, SHA-256, and
+  whether the running package matches it
+- **Keyboard shortcuts**: press **?** for the list; **[** and **]** step through firmwares, **M**
+  stars the current one. Shortcuts stay out of the way while you type in a field
 - **Open-source firmware radar**: one button scans for newly published open-license FM-1 releases; nothing
   downloads until you pick one
 - **Load your own**: open or drag in any `.fwsc` package, including M-VAVE's stock firmware

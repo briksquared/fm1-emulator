@@ -54,13 +54,14 @@
 
   // the colours in effect: a preset, any custom fields over it, and the accent
   function resolve(ui) {
-    const base = THEMES[ui.theme] || THEMES[DEFAULT_THEME];
+    // (own names only: "constructor" or "__proto__" from a link or storage is not a theme)
+    const base = (ui && typeof ui.theme === "string" && Object.hasOwn(THEMES, ui.theme) && THEMES[ui.theme]) || THEMES[DEFAULT_THEME];
     const t = { ...base };
     for (const k of FIELDS) if (isHex(ui[k])) t[k] = ui[k].toLowerCase();
     if (isHex(ui.accent)) t.accent = ui.accent.toLowerCase();
     return t;
   }
-  const isStock = (ui) => (!ui.theme || ui.theme === DEFAULT_THEME) && !FIELDS.some((k) => k !== "accent" && isHex(ui[k]));
+  const isStock = (ui) => (!ui.theme || ui.theme === DEFAULT_THEME || !Object.hasOwn(THEMES, ui.theme)) && !FIELDS.some((k) => k !== "accent" && isHex(ui[k]));
 
   // readable text: body text at least 7:1 on panels (falls back to near-white/near-black),
   // secondary text 4.5:1, accent-coloured text 4.5:1, text on the accent whichever is stronger

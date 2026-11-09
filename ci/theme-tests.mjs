@@ -42,6 +42,7 @@ check({ bg: "#808080", panel: "#808080", surface: "#808080", text: "#808080", ac
 check({ bg: "#ffffff", panel: "#ffffff", surface: "#ffffff", text: "#ffffff", accent: "#ffffff" }, "all white");
 // junk in storage falls back to the preset
 check({ theme: "Nope", bg: "red", accent: "#12" }, "junk values");
+for (const theme of ["constructor", "__proto__", "toString", "hasOwnProperty"]) check({ theme, text: { a: 1 }, bg: 5 }, `theme named ${theme}`);
 
 // the stock look sets nothing but the accent, so the original colours stay exact
 T.apply({});

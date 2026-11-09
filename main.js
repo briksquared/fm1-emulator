@@ -324,13 +324,14 @@ if (!app.requestSingleInstanceLock()) {
   desktopLog("startup", { softwareRendering, gpuCompositing: app.getGPUFeatureStatus().gpu_compositing });
   // The installer uses Web MIDI SysEx.  Electron otherwise treats this as an
   // ungranted browser permission, so scope it to our local, packaged origin.
+  // (a check passes the bare origin, "fm1://app"; a request the page's URL)
+  const ours = (url) => /^fm1:\/\/app(?:\/|$)/.test(String(url || ""));
   const permitDeviceAccess = (_webContents, permission, callback, details) => {
-    const origin = details?.requestingUrl || "";
-    callback((permission === "midi" || permission === "midiSysex") && origin.startsWith("fm1://app/"));
+    callback((permission === "midi" || permission === "midiSysex") && ours(details?.requestingUrl));
   };
   session.defaultSession.setPermissionRequestHandler(permitDeviceAccess);
   session.defaultSession.setPermissionCheckHandler((_webContents, permission, requestingOrigin) =>
-    (permission === "midi" || permission === "midiSysex") && requestingOrigin.startsWith("fm1://app/"));
+    (permission === "midi" || permission === "midiSysex") && ours(requestingOrigin));
   ipcMain.handle("fm1:open-flasher", async () => {
     const executable = mFlasherPath();
     if (!executable) {

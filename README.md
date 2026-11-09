@@ -82,13 +82,17 @@ firmware to your FM-1 in a few clicks, and recover if anything goes wrong.**
 - Computer keyboard, mouse, or any USB MIDI controller; plug in your real FM-1 and the desktop app
   picks it as the MIDI input so its keys play the emulator (see below)
 - **Smooth audio**: the emulator runs on its own thread, separate from audio output, so playback
-  stays clean on Apple Silicon and other fast machines
+  stays clean on Apple Silicon and other fast machines; a dropout, if one happens, shows as a
+  small notice in the toolbar
 - **Keys** module with scales, chords, and an arpeggiator, a MIDI file player, and a scope
 - **Rec** records what you play to a `.mid` file; the **Tape** deck records the FM-1's output to
   `.wav` and feeds samples into firmwares that take audio in
 - **DX7 banks** for DX7-capable firmwares
 - **Customize** the case with presets of the real FM-1 colourways and many more, your own pictures,
   and hundreds of **stickers**
+- **Interface themes**: dark and light themes for the app itself (Midnight, Graphite, Cobalt,
+  Emerald, Crimson, Vaporwave, Ice, Paper), or pick your own background, panel, control, text, and
+  accent colours; text contrast is kept readable
 
 ### Stays up to date
 - **In-app updates**: the desktop app checks GitHub Releases and tells you when a new version is

@@ -26,8 +26,20 @@
     const fws = cat.firmwares.filter((f) => f.id && f.id !== "local" && f.package);
     injectStyles();
 
+    // the firmwares booted most recently, newest first
+    const RKEY = "fm1.recent";
+    let recent = [];
+    try { const a = JSON.parse(localStorage.getItem(RKEY) || "[]"); if (Array.isArray(a)) recent = a.filter((x) => typeof x === "string"); } catch { /* unreadable: start empty */ }
+    fwSel.addEventListener("change", () => {
+      const id = fwSel.value;
+      if (!id || id === "local" || !fws.some((f) => f.id === id)) return;
+      recent = [id, ...recent.filter((x) => x !== id)].slice(0, 12);
+      try { localStorage.setItem(RKEY, JSON.stringify(recent)); } catch { /* storage full: keep it for this session */ }
+    });
+
     const CATS = [
       { key: "all", label: "All" },
+      { key: "recent", label: "Recent", t: (f) => recent.includes(f.id) },
       { key: "sampler", label: "Samplers", t: (f, c) => c && c.audioIn },
       { key: "banks", label: "DX7 banks", t: (f, c) => c && c.banks },
       { key: "seq", label: "Sequencer", t: (f, c) => c && c.feats && (c.feats.includes("sequencer") || c.feats.includes("looper")) },
@@ -75,6 +87,7 @@
       const chip = document.createElement("button");
       chip.className = "gal-chip" + (cdef.key === "all" ? " on" : "");
       chip.innerHTML = `${esc(cdef.label)} <span class="gal-chip-n">${n}</span>`; chip.dataset.key = cdef.key;
+      if (cdef.key === "recent") chip.hidden = !n;
       chip.onclick = () => { activeCat = cdef.key; chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x === chip)); render(); };
       chipsWrap.appendChild(chip);
     }
@@ -98,6 +111,7 @@
     function render() {
       const cur = fwSel.value;
       const list = fws.filter(matches);
+      if (activeCat === "recent") list.sort((a, b) => recent.indexOf(a.id) - recent.indexOf(b.id));
       countEl.textContent = list.length + " of " + fws.length;
       grid.replaceChildren();
       if (!list.length) { const e = document.createElement("p"); e.className = "gal-empty"; e.textContent = "Nothing matches — try a different word or category."; grid.appendChild(e); return; }
@@ -117,7 +131,13 @@
       grid.appendChild(frag);
     }
 
-    function open() { ov.hidden = false; document.body.style.overflow = "hidden"; render(); setTimeout(() => { q.focus(); grid.querySelector(".gal-card.cur")?.scrollIntoView({ block: "nearest" }); }, 30); }
+    function refreshRecent() {
+      const chip = chipsWrap.querySelector('.gal-chip[data-key="recent"]');
+      const n = fws.filter((f) => recent.includes(f.id)).length;
+      if (chip) { chip.hidden = !n; chip.querySelector(".gal-chip-n").textContent = n; }
+      if (!n && activeCat === "recent") { activeCat = "all"; chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x.dataset.key === "all")); }
+    }
+    function open() { refreshRecent(); ov.hidden = false; document.body.style.overflow = "hidden"; render(); setTimeout(() => { q.focus(); grid.querySelector(".gal-card.cur")?.scrollIntoView({ block: "nearest" }); }, 30); }
     function close() { ov.hidden = true; document.body.style.overflow = ""; }
     btn.onclick = (e) => { e.preventDefault(); open(); };
     ov.querySelector("#gal-x").onclick = close;
@@ -147,7 +167,7 @@
         if (!search) return; clearInterval(t);
         if (document.getElementById("gal-side")) return;
         const b = document.createElement("button");
-        b.id = "gal-side"; b.type = "button"; b.textContent = `⊞ Browse all ${fws.length}`;
+        b.id = "gal-side"; b.type = "button"; b.textContent = `Browse all ${fws.length}`;
         b.onclick = open;
         search.parentNode.insertBefore(b, search.nextSibling);
       }, 150);

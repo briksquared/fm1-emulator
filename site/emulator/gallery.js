@@ -40,6 +40,7 @@
     const CATS = [
       { key: "all", label: "All" },
       { key: "recent", label: "Recent", t: (f) => recent.includes(f.id) },
+      { key: "fav", label: "★ Favorites", t: (f) => favIds().includes(f.id) },
       { key: "sampler", label: "Samplers", t: (f, c) => c && c.audioIn },
       { key: "banks", label: "DX7 banks", t: (f, c) => c && c.banks },
       { key: "seq", label: "Sequencer", t: (f, c) => c && c.feats && (c.feats.includes("sequencer") || c.feats.includes("looper")) },
@@ -47,6 +48,8 @@
       { key: "mpe", label: "MPE", t: (f, c) => c && c.feats && c.feats.includes("mpe") },
       { key: "game", label: "Games & fun", t: (f) => /\b(doom|nes|game|boy|cat|zombie|fart|trump|reggae|dino|coin|karaoke|quest|sky|witch|bongo|arcade|pet)\b/i.test(f.name + " " + (f.about || "")) },
     ];
+    // favorites: the sidebar's star (favorites.js) and these cards share one list
+    const favIds = () => { try { return window.FM1Fav ? window.FM1Fav.ids() : []; } catch { return []; } };
     const capList = (f) => {
       const c = CAPS[f.id] || {}; const out = [];
       if (c.usbMidi) out.push("MIDI");
@@ -87,7 +90,7 @@
       const chip = document.createElement("button");
       chip.className = "gal-chip" + (cdef.key === "all" ? " on" : "");
       chip.innerHTML = `${esc(cdef.label)} <span class="gal-chip-n">${n}</span>`; chip.dataset.key = cdef.key;
-      if (cdef.key === "recent") chip.hidden = !n;
+      if (cdef.key === "recent" || cdef.key === "fav") chip.hidden = !n;
       chip.onclick = () => { activeCat = cdef.key; chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x === chip)); render(); };
       chipsWrap.appendChild(chip);
     }
@@ -112,11 +115,14 @@
       const cur = fwSel.value;
       const list = fws.filter(matches);
       if (activeCat === "recent") list.sort((a, b) => recent.indexOf(a.id) - recent.indexOf(b.id));
+      if (activeCat === "fav") { const order = favIds(); list.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); }
       countEl.textContent = list.length + " of " + fws.length;
       grid.replaceChildren();
       if (!list.length) { const e = document.createElement("p"); e.className = "gal-empty"; e.textContent = "Nothing matches — try a different word or category."; grid.appendChild(e); return; }
       const frag = document.createDocumentFragment();
+      const favs = favIds();
       for (const f of list) {
+        const item = document.createElement("div"); item.className = "gal-item";
         const card = document.createElement("button");
         card.className = "gal-card" + (f.id === cur ? " cur" : "");
         card.onclick = () => load(f.id);
@@ -126,17 +132,33 @@
           `<span class="gal-by">${esc(f.author || "")}</span>` +
           `<span class="gal-about">${esc((f.about || "").slice(0, 110))}</span>` +
           `<span class="gal-caps">${caps}</span>`;
-        frag.appendChild(card);
+        item.appendChild(card);
+        if (window.FM1Fav) {
+          const on = favs.includes(f.id);
+          const star = document.createElement("button");
+          star.type = "button"; star.className = "gal-star" + (on ? " on" : "");
+          star.textContent = on ? "★" : "☆";
+          star.title = on ? "Remove from favorites" : "Add to favorites";
+          star.setAttribute("aria-label", `${star.title}: ${f.name}`);
+          star.setAttribute("aria-pressed", String(on));
+          star.onclick = (e) => { e.stopPropagation(); window.FM1Fav.toggle(f.id); };
+          item.appendChild(star);
+        }
+        frag.appendChild(item);
       }
       grid.appendChild(frag);
     }
 
     function refreshRecent() {
-      const chip = chipsWrap.querySelector('.gal-chip[data-key="recent"]');
-      const n = fws.filter((f) => recent.includes(f.id)).length;
-      if (chip) { chip.hidden = !n; chip.querySelector(".gal-chip-n").textContent = n; }
-      if (!n && activeCat === "recent") { activeCat = "all"; chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x.dataset.key === "all")); }
+      for (const [key, ids] of [["recent", recent], ["fav", favIds()]]) {
+        const chip = chipsWrap.querySelector(`.gal-chip[data-key="${key}"]`);
+        const n = fws.filter((f) => ids.includes(f.id)).length;
+        if (chip) { chip.hidden = !n; chip.querySelector(".gal-chip-n").textContent = n; }
+        if (!n && activeCat === key) { activeCat = "all"; chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x.dataset.key === "all")); }
+      }
     }
+    // a star changed here or in the sidebar: keep the counts and cards in step (the list stays put)
+    window.FM1Fav?.onChange(() => { refreshRecent(); if (!ov.hidden) { const top = grid.scrollTop; render(); grid.scrollTop = top; } });
     function open() { refreshRecent(); ov.hidden = false; document.body.style.overflow = "hidden"; render(); setTimeout(() => { q.focus(); grid.querySelector(".gal-card.cur")?.scrollIntoView({ block: "nearest" }); }, 30); }
     function close() { ov.hidden = true; document.body.style.overflow = ""; }
     btn.onclick = (e) => { e.preventDefault(); open(); };
@@ -155,7 +177,7 @@
       if (e.key === "Escape" && !ov.hidden) { close(); return; }
       // "b" opens the browser when not typing into a field
       const tag = (e.target.tagName || "").toLowerCase();
-      if (ov.hidden && (e.key === "b" || e.key === "B") && !e.ctrlKey && !e.metaKey && !e.altKey && tag !== "input" && tag !== "textarea" && !e.target.isContentEditable) { e.preventDefault(); open(); }
+      if (ov.hidden && !window.FM1Shortcuts?.isOpen?.() && !document.querySelector("#fm1-cz.open") && !e.repeat && (e.key === "b" || e.key === "B") && !e.ctrlKey && !e.metaKey && !e.altKey && tag !== "input" && tag !== "textarea" && !e.target.isContentEditable) { e.preventDefault(); open(); }
     });
     // keep the "cur" highlight honest if the firmware changes elsewhere
     fwSel.addEventListener("change", () => { if (!ov.hidden) render(); });
@@ -208,6 +230,12 @@
       .gal-card{text-align:left;background:var(--ui-surface,#141518);border:1px solid var(--ui-line,#23252b);border-radius:11px;padding:12px 13px;
         cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:border-color .12s,transform .06s;color:inherit}
       .gal-card:hover{border-color:var(--amber);transform:translateY(-1px)}
+      .gal-item{position:relative;display:flex}
+      .gal-item>.gal-card{flex:1;min-width:0;padding-right:34px}
+      .gal-star{position:absolute;top:7px;right:7px;width:26px;height:26px;border-radius:7px;border:1px solid transparent;background:none;
+        color:var(--ui-dim,#8b9099);font-size:15px;line-height:1;cursor:pointer}
+      .gal-star:hover,.gal-star:focus-visible{color:var(--amber-ink,var(--amber));border-color:var(--ui-line,#2a2c31);outline:none}
+      .gal-star.on{color:var(--amber-ink,var(--amber))}
       .gal-card.cur{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
       .gal-name{font:700 14px 'Space Grotesk',-apple-system,sans-serif;color:var(--ui-text,#f2f4f7)}
       .gal-name em{font-style:normal;color:var(--ui-dim,#8c93a0);font-weight:500;font-size:12px}

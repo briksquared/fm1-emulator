@@ -10,7 +10,7 @@ The FM-1 Emulator bundles work by many people. Thank you to all of them.
 
 Every package below has an explicit open-source license and an available source repository. Packages are redistributed unchanged. Exact package paths, full SHA-256 hashes, FM-1 product identities, versions, and source URLs are recorded in [FIRMWARE-SOURCES.json](FIRMWARE-SOURCES.json). License texts are in [LICENSES](LICENSES/).
 
-The 165 Firmware Hub packages use the license and checksum published in the live Hub catalog. The 94 additional GitHub packages were individually repository-license-reviewed and boot-audited on 9 November 2026.
+The 165 catalog packages use the license and checksum published in the live firmware catalog (the list itself: CC BY 4.0, The Firmware Hub, https://thefirmwarehub.com). The 94 additional GitHub packages were individually repository-license-reviewed and boot-audited on 9 November 2026.
 
 | Firmware | Version | Author | License | Corresponding source |
 | --- | --- | --- | --- | --- |

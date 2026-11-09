@@ -9,7 +9,7 @@ Drag any `.fwsc` file onto the window to run it — useful for firmware that isn
 M-VAVE stock firmware, betas, or your own builds). Maximum file size is 8 MB.
 
 ## Where to find more
-Community firmware lives on hubs such as [the FM-1 Firmware Hub](https://thefirmwarehub.com/) and
+Community firmware is listed in community catalogs such as
 [fm1-editor.com](https://fm1-editor.com/firmware/), and on each author's GitHub. Download the
 `.fwsc` and drop it in.
 

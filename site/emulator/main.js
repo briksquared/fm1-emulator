@@ -6,7 +6,7 @@
 import { fetchPackage } from "./fwsc.js";
 import { SaveStore, packageHash, changedSectors, packSectors, exportSave, importSave } from "./persistence.js";
 import { productOf } from "./fm1pkg.js";
-import { mergeCatalog, scanOpenFirmwareUpdates } from "./catalog-updates.js?v=1";
+import { CATALOG_ORIGIN, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } from "./catalog-updates.js?v=2";
 
 const CLOCKS = [60, 80, 100, 120, 160, 200, 240];
 // The device this page is for: the FM-1 (index.html) or the SMK-37 (smk37/index.html, <html
@@ -26,13 +26,18 @@ const bundledCatalog = await (await fetch("firmwares.json?v=62")).json();
 const updateKey = "fm1.open-source-catalog.v1";
 let rememberedCatalog = [];
 try { rememberedCatalog = JSON.parse(stored(updateKey) || "[]"); } catch { /* discard malformed local data */ }
+{ // entries remembered by 1.1.0 name the catalog id differently: rewrite them once
+  const migrated = migrateRemembered(rememberedCatalog);
+  if (JSON.stringify(migrated) !== JSON.stringify(rememberedCatalog)) { rememberedCatalog = migrated; store(updateKey, JSON.stringify(migrated)); }
+}
 const catalog = mergeCatalog(bundledCatalog, rememberedCatalog);
 window.FM1Catalog = catalog;
+window.FM1CatalogSite = CATALOG_ORIGIN;   // (extras.js links to the catalog site)
 const byId = new Map(catalog.firmwares.map((f) => [f.id, f]));
 // searchable text per firmware (name + author + description), so search finds by what it does
 const fwSearchText = Object.fromEntries(catalog.firmwares.map((f) => [f.id, `${f.name} ${f.version || ""} ${f.author || ""} ${f.about || ""}`.toLowerCase()]));
-// the FM-1 Firmware Hub's ids too, where they differ (its cards link here with ?fw=<its id>)
-for (const f of catalog.firmwares) if (f.hub && !byId.has(f.hub)) byId.set(f.hub, f);
+// the firmware catalog's ids too, where they differ (its cards link here with ?fw=<its id>)
+for (const f of catalog.firmwares) if (f.catalogId && !byId.has(f.catalogId)) byId.set(f.catalogId, f);
 // ?embed=1: only the device and its controls, for a window on another site (the inline script in
 // <head> set data-embed before the first paint; style.css hides the rest). It does not change the
 // firmware this browser starts with on the full page.
@@ -119,7 +124,7 @@ const MIDI_NOTES = {
   choralroot: NO_NOTE, hortator: NO_NOTE, "sloop-alg": NO_NOTE, x0x: NO_NOTE,
 };
 const cards = new Map();
-const hubCard = (f) => `https://thefirmwarehub.com/#fw-${f.hub}`;
+const catalogCard = (f) => new URL(`#fw-${f.catalogId}`, CATALOG_ORIGIN).href;
 // the FM-1 page: which entries have an SMK-37 build (that catalog names them)
 const twins = new Map();
 if (DEVICE === "fm1") {
@@ -151,8 +156,8 @@ if (DEVICE === "fm1") {
     if (f.byo) links.append(link(f.download, `download ${DEV.stock}`), link(f.repo, "notes ↗"));
     else {
       links.append(link(f.repo, `source · ${f.license} ↗`));
-      // the Hub's card has the details and installs it on a real FM-1; the author's installer otherwise
-      if (f.hub) links.append(link(hubCard(f), "details & install on the Hub ↗"));
+      // the catalog's card has the details and installs it on a real FM-1; the author's installer otherwise
+      if (f.catalogId) links.append(link(catalogCard(f), "details & install ↗"));
       else if (f.installer) links.append(link(f.installer, "install ↗"));
     }
     // the same firmware on the other device (an SMK-37 build's `fm1`, or an FM-1 entry it names)
@@ -214,7 +219,7 @@ async function verifyPackage(f, bytes) {
   if (f.product && productOf(bytes) !== f.product)
     throw new Error(`${f.name}: downloaded package is for a different device`);
 }
-// A package that had gone came as the one the Hub lists now: show the version that runs.
+// A package that had gone came as the one the catalog lists now: show the version that runs.
 function noteVersion(f, version) {
   if (!version || version === f.version) return;
   f.version = version;
@@ -268,10 +273,10 @@ function showFirmware() {
     a.href = fw.repo;
     a.textContent = `source · ${fw.license} ↗`;
     links.append(a);
-    if (fw.hub) {
+    if (fw.catalogId) {
       const h = document.createElement("a");
-      h.href = hubCard(fw);
-      h.textContent = "on the Hub ↗";
+      h.href = catalogCard(fw);
+      h.textContent = "catalog page ↗";
       links.append(h);
     }
     const what = document.createElement("span");

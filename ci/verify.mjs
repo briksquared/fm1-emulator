@@ -37,7 +37,7 @@ assert.equal(packageJson.version, lock.packages[""].version, "package-lock packa
 assert.equal(entries.length, sources.firmwares.length, "source manifest count");
 assert.ok(entries.length >= 250, "expanded public firmware set");
 assert.ok(entries.some(entry => entry.id === manifest.default), "default firmware exists");
-assert.ok(catalog.firmwares.length >= 160, "current open-license Hub catalog");
+assert.ok(catalog.firmwares.length >= 160, "current open-license catalog snapshot");
 
 const ids = new Set(), hashes = new Set(), files = new Set();
 let previous = "9999";
@@ -95,16 +95,17 @@ assert.ok(packageResources(readFileSync(resolve(emulator, melodee.package)))?.da
 const felucca = entries.find(entry => entry.id === "felucca");
 assert.equal(packageResources(readFileSync(resolve(emulator, felucca.package))), null, "ordinary packages do not invent resources");
 
-const { fromHub, mergeCatalog, scanOpenFirmwareUpdates } = await browserModule(resolve(emulator, "catalog-updates.js"));
+const { CATALOG_URL, fromCatalog, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } = await browserModule(resolve(emulator, "catalog-updates.js"));
 const liveExample = {
   id: "test-open", name: "Test Open", version: "2.0", published: "2026-11-09T12:00:00Z",
   kind: "synth", author: "tester", lic: "GPL-3.0", what: "Test entry", pkg: "fw/test-open-2.0.fwsc",
   sha256: "a".repeat(64), product: "FM-1_123", source: "https://github.com/example/test-open/tree/v2.0",
 };
-assert.equal(fromHub({ ...liveExample, lic: "" }), null, "scanner rejects a missing license");
-assert.equal(fromHub({ ...liveExample, product: "SMK-37_123" }), null, "scanner rejects a wrong-device product");
-const converted = fromHub(liveExample);
-assert.equal(converted.package, "https://thefirmwarehub.com/fw/test-open-2.0.fwsc", "scanner creates a pinned Hub URL");
+assert.equal(fromCatalog({ ...liveExample, lic: "" }), null, "scanner rejects a missing license");
+assert.equal(fromCatalog({ ...liveExample, product: "SMK-37_123" }), null, "scanner rejects a wrong-device product");
+const converted = fromCatalog(liveExample);
+assert.equal(converted.package, new URL("fw/test-open-2.0.fwsc", CATALOG_URL).href, "scanner creates a pinned catalog URL");
+assert.deepEqual(migrateRemembered([{ id: "a", hub: "a" }]), [{ id: "a", catalogId: "a" }], "1.1.0 remembered entries migrate");
 const merged = mergeCatalog({ default: "felucca", firmwares: [felucca] }, [converted, { ...converted, id: "bad", package: "https://evil.example/fw/bad.fwsc" }]);
 assert.deepEqual(merged.firmwares.map(entry => entry.id), ["test-open", "felucca"], "only safe remembered entries merge");
 const scanned = await scanOpenFirmwareUpdates({ firmwares: [felucca] }, { firmwares: [felucca] }, async () => ({ ok: true, json: async () => ({ firmwares: [liveExample, { ...liveExample, id: "closed", lic: "" }] }) }));

@@ -1,4 +1,4 @@
-// Extra features for the FM-1 emulator fork: a firmware search box and a Resources hub linking the
+// Extra features for the FM-1 emulator fork: a firmware search box and a Resources panel linking the
 // whole FM-1 ecosystem. Pure DOM, injected after the page builds.
 (function () {
   "use strict";
@@ -245,7 +245,7 @@
     const L = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text} ↗</a>`;
     const links = `<div class="grp">
       <h4>Install &amp; emulate</h4>
-      ${L("https://thefirmwarehub.com/", "The Firmware Hub (one-click)")}
+      ${L(window.FM1CatalogSite, "Firmware catalog (one-click install)")}
       ${L("https://fm1-editor.com/firmware/", "fm1-editor — every firmware")}
       ${L("https://open.m-vave.com/fm1-workbench", "M-VAVE Workbench (official)")}
       ${L("https://joakimeriksson.github.io/fm1-emu/", "fm1-emu (this fork's base)")}
@@ -256,7 +256,7 @@
       <h4>Rescue a stuck FM-1</h4>
       ${L("https://github.com/Quixotic7/MvaveFM1Unbricker", "MvaveFM1Unbricker (Windows)")}
       ${L("https://github.com/kurogedelic/FM-1-transporter", "FM-1 Transporter (hardware)")}
-      ${L("https://thefirmwarehub.com/#rescue", "USB rescue (Linux)")}
+      ${L(new URL("#rescue", window.FM1CatalogSite).href, "USB rescue (Linux)")}
       <h4>Learn &amp; reverse-engineer</h4>
       ${L("https://github.com/cicloid/awesome-fm-1", "awesome-fm-1 (everything)")}
       ${L("https://github.com/AL-255/FM-1-RE", "FM-1-RE (reverse engineering)")}

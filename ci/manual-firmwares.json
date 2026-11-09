@@ -10,7 +10,7 @@
     "about": "Epic cinematic pad, swarm and air synthesis for the FM-1, with generative movement, stereo space, granular freeze and expressive MIDI control.",
     "package": "../archive/AURORA/aurora-0.9.1.fwsc",
     "repo": "https://github.com/twochannels/AURORA/tree/v0.9.1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "6d2618fc945508db57631ad132300681c5d041bdd31da74dbf5ea3afb813cb8e",
     "product": "FM-1_4747",
     "licenseReviewed": "2026-11-09"
@@ -26,7 +26,7 @@
     "about": "fm1-wheel: a tonewheel organ firmware for the M-VAVE FM-1, after setBfree (OpenCode + DeepSeek V4.1 Flash).",
     "package": "../archive/fm1wheel/fm1-wheel-0.2.1.fwsc",
     "repo": "https://github.com/ograndebe/fm1wheel",
-    "hub": null,
+    "catalogId": null,
     "sha256": "0be680833013d98a1891cc4df3d439d4dce3eba2d9cb8c151f93b1ee7a309b0a",
     "product": "FM-1_12000201",
     "licenseReviewed": "2026-11-09"
@@ -42,7 +42,7 @@
     "about": "OG Synth (FM-1 firmware): source of the MPL-2.0 part. Site, installer, manual: https://ogsynth.cc",
     "package": "../archive/OG-Synth-source/ogs-1.5.1.fwsc",
     "repo": "https://github.com/mikejohnsonbeats/OG-Synth-source",
-    "hub": null,
+    "catalogId": null,
     "sha256": "06bb3f35bf255f37cf101467940cd40ab395c8e8d7e5be94d1291613a1acf509",
     "product": "FM-1_11010501",
     "licenseReviewed": "2026-11-09"
@@ -58,7 +58,7 @@
     "about": "Single-part synthesizer firmware for the M-VAVE FM-1, with Bluetooth MIDI and native 24-bit audio",
     "package": "../archive/saadet/saadet-1.0.4.fwsc",
     "repo": "https://github.com/keremimo/saadet",
-    "hub": null,
+    "catalogId": null,
     "sha256": "6051fde9f23c787302c17ac867f84978c49f5fcd1ad34730f98b050bd0eae90a",
     "product": "FM-1_9010004",
     "licenseReviewed": "2026-11-09"
@@ -74,7 +74,7 @@
     "about": "Ripple: droplets (Lua) and currents (Faust or C) for the M-VAVE FM-1, added over a USB drive without reflashing",
     "package": "../archive/fm1-ripple/ripple-0.6.1.fwsc",
     "repo": "https://github.com/charlesvestal/fm1-ripple",
-    "hub": null,
+    "catalogId": null,
     "sha256": "67de036c7ac9969c19db8c5e1a230c460b750950df6c8ae61bb96fd65ab94c4f",
     "product": "FM-1_13000601",
     "licenseReviewed": "2026-11-09"
@@ -90,7 +90,7 @@
     "about": "LSDJ-style tracker for the M-VAVE FM-1, with an OPL3-style FM engine (not cycle-accurate), circuit bending FX, looper and drum machine. Plays .A2M songs that plays on a real OPL3 with some trackers like AT2 or DOSTRACKER..",
     "package": "../archive/OPLBend-Tracker/oplbend-tracker-0.4.fwsc",
     "repo": "https://github.com/AudrenThibault/OPLBend-Tracker",
-    "hub": null,
+    "catalogId": null,
     "sha256": "864e09b71b17d6099170762121859cc1442a3730f2c49f09af809db61fc6d265",
     "product": "FM-1_804",
     "licenseReviewed": "2026-11-09"
@@ -106,7 +106,7 @@
     "about": "FM-1 internet radio: WiFi, Radio Garden, punch-in FX (source only)",
     "package": "../archive/fm1-radio/radio-1.3.1.fwsc",
     "repo": "https://github.com/charlesvestal/fm1-radio",
-    "hub": null,
+    "catalogId": null,
     "sha256": "edac18cbb889dfd31729afba47b879e34d2e31c093edf6a422c783e6e6742247",
     "product": "FM-1_13010301",
     "licenseReviewed": "2026-11-09"
@@ -122,7 +122,7 @@
     "about": "Community FM-1 firmware (added from our archive).",
     "package": "../archive/JAN3000-M-Wave-Firmware/jan3000-0.2-alpha.fwsc",
     "repo": "https://github.com/JanSchulten/JAN3000-M-Wave-Firmware",
-    "hub": null,
+    "catalogId": null,
     "sha256": "0c45a33872daccf3fd64dc46a2c69f518fccca5dcc5f82c07c6975671b6dbe64",
     "product": "FM-1_953",
     "licenseReviewed": "2026-11-09"
@@ -138,7 +138,7 @@
     "about": "A live groovebox firmware for the M-VAVE FM-1",
     "package": "../archive/boopbox/boopbox-1.5.0.fwsc",
     "repo": "https://github.com/Josh-McFarlin/boopbox",
-    "hub": null,
+    "catalogId": null,
     "sha256": "99bb76f62366ddf3b03b91800023b150324a7995760eb300f46e42214685185c",
     "product": "FM-1_915",
     "licenseReviewed": "2026-11-09"
@@ -154,7 +154,7 @@
     "about": "Mighty Arp is custom firmware for the M-VAVE FM-1: a 4-op FM and subtractive hybrid synth built around a chance arpeggiator.",
     "package": "../archive/FM1-Mighty-Arp/mightyarp-1.1.fwsc",
     "repo": "https://github.com/NickCulbertson/FM1-Mighty-Arp",
-    "hub": null,
+    "catalogId": null,
     "sha256": "9cc7ef5fd69a121d6b749b809682ff7c9f53c532251067b1faf402304356e09c",
     "product": "FM-1_6279010100",
     "licenseReviewed": "2026-11-09"
@@ -170,7 +170,7 @@
     "about": "A singing songwriter firmware for the M-VAVE FM-1: a pixel singer sings your songs in Japanese, writes her own, and dances. Free, GPL-3.0; the singer is Hatsune Miku fan art (PCL).",
     "package": "../archive/MIKU-FM1/miku-fm-0.6.fwsc",
     "repo": "https://github.com/MichaelAPerry/MIKU-FM1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "583470ce1e77328f39498b7b0b058a37258668708992378ebf5fa096cfeaff36",
     "product": "FM-1_39000600",
     "licenseReviewed": "2026-11-09"
@@ -186,7 +186,7 @@
     "about": "MIAOU: a kitty keyboard (Meowsic style) for the M-VAVE FM-1, with arpeggiator and 6-track sequencer",
     "package": "../archive/miaou/miaou-0.1.fwsc",
     "repo": "https://github.com/pjac1810/miaou",
-    "hub": null,
+    "catalogId": null,
     "sha256": "99c8b16fe1b08fa1c470ba4307d55379c3027ccdd22f3f8cc3f3e4d2817d1217",
     "product": "FM-1_191",
     "licenseReviewed": "2026-11-09"
@@ -202,7 +202,7 @@
     "about": "Maestro: Duolingo-style music lessons on the M-VAVE FM-1. No phone needed.",
     "package": "../archive/fm1-maestro/maestro-v0.6.1.fwsc",
     "repo": "https://github.com/node56/fm1-maestro",
-    "hub": null,
+    "catalogId": null,
     "sha256": "8185aad00f883e763223034e989f8aa4597c8e0df7ae64121050011578f7f004",
     "product": "FM-1_990",
     "licenseReviewed": "2026-11-09"
@@ -218,7 +218,7 @@
     "about": "GIO-1, A generative electronic disco firmware for the M-VAVE FM-1",
     "package": "../archive/fm1-gio/gio-0.3.1-alpha.fwsc",
     "repo": "https://github.com/GuinanNo1/fm1-gio",
-    "hub": null,
+    "catalogId": null,
     "sha256": "79d9bb044b92457137d73b0c66946b7ca2525ff0ae91ab65ad6befe5538490f0",
     "product": "FM-1_58000301",
     "licenseReviewed": "2026-11-09"
@@ -234,7 +234,7 @@
     "about": "Generative 16-bit music firmware for M-VAVE FM-1: YM2612 FM, Sega-style PSG, live keys and per-instrument effects.",
     "package": "../archive/Emerald-YM/emerald-ym-1.0.12.fwsc",
     "repo": "https://github.com/CaspiusLabs/Emerald-YM",
-    "hub": null,
+    "catalogId": null,
     "sha256": "0ebf70db09e5cf5536bd9ea2924eb1ddbe244732de22ac8c469efb5439440e86",
     "product": "FM-1_68010012",
     "licenseReviewed": "2026-11-09"
@@ -250,7 +250,7 @@
     "about": "An FM-1 firmware for oriental live musicians, turning the standard M-VAVE FM-1 into an oriental groove box.",
     "package": "../archive/SynthMaven/melodee-4.1.4.fwsc",
     "repo": "https://github.com/KingXeryus/SynthMaven",
-    "hub": null,
+    "catalogId": null,
     "sha256": "e52a2c132c78c93ec5c635447cbd22a6cfc402eb9d51531cd5a74f447b202be8",
     "product": "FM-1_94014",
     "licenseReviewed": "2026-11-09"
@@ -266,7 +266,7 @@
     "about": "Firmware for the M-VAVE FM-1: sounds for the final relaxation of a yoga class. Guided programs on 174, 396, 432 and 528 Hz from theta to delta (isochronic or binaural), breath, singing bowls and an ambient garden. Handpan, kalimba, bowls and Koshi chimes on the keys. German, English, Sanskrit. Built on fm1-base and AMB-1, MPL-2.0.",
     "package": "../archive/fm1-yoga/yoga-1.0-rc2.fwsc",
     "repo": "https://github.com/michamilz/fm1-yoga",
-    "hub": null,
+    "catalogId": null,
     "sha256": "1433d3b0abf830f95010384a5ac6e010525de564cd20b143206634637f7b3f7c",
     "product": "FM-1_432010000",
     "licenseReviewed": "2026-11-09"
@@ -282,7 +282,7 @@
     "about": "SQRL-1 Firmware for the M-VAVE FM-1",
     "package": "../archive/sqrl-1/sqrl-1-1.1.0.fwsc",
     "repo": "https://github.com/hed0rah/sqrl-1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "0c18849602605061598f554e527b2f705bcc81f2052cd2404f6674b4393c9f0d",
     "product": "FM-1_951",
     "licenseReviewed": "2026-11-09"
@@ -298,7 +298,7 @@
     "about": "M-VAVE FM-1 synth firmware: two DSP routings, Steiner-Parker filter, 128 patterns, SONG and ALBUM modes.",
     "package": "../archive/analogBEAST/analogBEAST-2.0-RC1.fwsc",
     "repo": "https://github.com/dzwerg/analogBEAST",
-    "hub": null,
+    "catalogId": null,
     "sha256": "3640d19b19e8bf2fd517ccb1d8552e3bf5b1d1492325723ded87c8dfdbacabbb",
     "product": "FM-1_901",
     "licenseReviewed": "2026-11-09"
@@ -314,7 +314,7 @@
     "about": "Arp Quatdra Synthesizer Firmware for the M-Vave FM1",
     "package": "../archive/quadro-fm1/quadro-1.0.fwsc",
     "repo": "https://github.com/matttallison/quadro-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "9094e48460d3ef5969e82939291af81f99690fb06d67320dbb29ab389f50fa0e",
     "product": "FM-1_96010000",
     "licenseReviewed": "2026-11-09"
@@ -330,7 +330,7 @@
     "about": "Quasar: a firmware for the M-VAVE FM-1 for experimental IDM, after the SOMA Pulsar-23, with an audio engine written from scratch.",
     "package": "../archive/quasar/quasar.fwsc",
     "repo": "https://github.com/nzimas/quasar",
-    "hub": null,
+    "catalogId": null,
     "sha256": "5bbdf64f6b83c85ae412ed88b43434ffa5288b2d299effcd49b026570f418be2",
     "product": "FM-1_703",
     "licenseReviewed": "2026-11-09"
@@ -346,7 +346,7 @@
     "about": "A tracker for you and your LLM — firmware for the M-VAVE FM-1",
     "package": "../archive/moondaw-fm1/moondaw-0.3.fwsc",
     "repo": "https://github.com/jaeggerr/moondaw-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "47b9e58ac3a6b3b4796c9aa3fffecd1b3375cb5c53ceebc119ffc1d34c55cc13",
     "product": "FM-1_9330003",
     "licenseReviewed": "2026-11-09"
@@ -362,7 +362,7 @@
     "about": "LAX-32: module de sons multitimbral LA (style MT-32)pour M-VAVE FM-1",
     "package": "../archive/lax32/lax-32-0.2.fwsc",
     "repo": "https://github.com/pjac1810/lax32",
-    "hub": null,
+    "catalogId": null,
     "sha256": "41018b3ca71e1c11712c0a38bc0c6cee8dcb4e91f6819d23b06c1caf6c66bbc4",
     "product": "FM-1_382",
     "licenseReviewed": "2026-11-09"
@@ -378,7 +378,7 @@
     "about": "Granulatore di campioni per M-VAVE FM-1 / Granular sample player firmware for the M-VAVE FM-1 ",
     "package": "../archive/grana-fm1/grana-1.6.3.fwsc",
     "repo": "https://github.com/mongio/grana-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "b9e7b02c2f7b02a51fb65f75052e40907f11ed574b96ae82bd8320a447d9eb4c",
     "product": "FM-1_956",
     "licenseReviewed": "2026-11-09"
@@ -394,7 +394,7 @@
     "about": "Acultur8 X0X Extended Edition for M-VAVE FM-1: experimental firmware 0.1.5-beta1, matching source, searchable illustrated FAQ and browser lab.",
     "package": "../archive/fm1-x0x-acultur8/x0x-0.1.59-monosteady.fwsc",
     "repo": "https://github.com/keyboy250/fm1-x0x-acultur8",
-    "hub": null,
+    "catalogId": null,
     "sha256": "1d166b2db82f5013e621dd2e08c5833d7ddf30ec28bd32420da7405ed39bec9e",
     "product": "FM-1_9000159",
     "licenseReviewed": "2026-11-09"
@@ -410,7 +410,7 @@
     "about": "Generative music firmware for the M-VAVE FM-1, written in Lean 4 with 313 theorems about it",
     "package": "../archive/fmfm/formalfred.fwsc",
     "repo": "https://github.com/mpancia/fmfm",
-    "hub": null,
+    "catalogId": null,
     "sha256": "7f85649d346c54aaa1a91b22abf25a3af7cc7824e3cc94a4dcdcff2a3d7baf90",
     "product": "FM-1_960",
     "licenseReviewed": "2026-11-09"
@@ -426,7 +426,7 @@
     "about": "mvave-fm1 impressionism firmware",
     "package": "../archive/fm-1-impressionism/impressionism-0.0.1.fwsc",
     "repo": "https://github.com/darrenjaworski/fm-1-impressionism",
-    "hub": null,
+    "catalogId": null,
     "sha256": "61377df1b57049aa0741b06a2f8b7f3f578e2e0230d7c602d7deeb12317c60a7",
     "product": "FM-1_950",
     "licenseReviewed": "2026-11-09"
@@ -442,7 +442,7 @@
     "about": "keySTEP ONE - M-VAVE FM-1 four-track arranger, LIVE PLAY and USB/BLE MIDI (community beta)",
     "package": "../archive/keySTEP-ONE/keySTEP_ONE_v0.5.35_BETA.fwsc",
     "repo": "https://github.com/dzwerg/keySTEP-ONE",
-    "hub": null,
+    "catalogId": null,
     "sha256": "0cdf16c8ceef2be151f4ce641e629ba2b96e85d9910e1f4bc083ac95c6808884",
     "product": "FM-1_731000535",
     "licenseReviewed": "2026-11-09"
@@ -458,7 +458,7 @@
     "about": "A monosynth inspired by the legendary Novation Bass Station II, built for the M-VAVE FM-1. Also a companion for Cyma Forma's RND Synth (seeds, locks and a track mixer), and runs on an iPhone or iPad in RemoteFM1.",
     "package": "../archive/bass-something-2/bass-something-2-0.6.fwsc",
     "repo": "https://github.com/imijes/bass-something-2",
-    "hub": null,
+    "catalogId": null,
     "sha256": "d3b08a1f93f1c2f111007b0a65d14051e5eb22fc84bf0e04bee1f6a0fc9094d9",
     "product": "FM-1_62000600",
     "licenseReviewed": "2026-11-09"
@@ -474,7 +474,7 @@
     "about": "Music theory firmware for the M-VAVE FM-1: lessons, quizzes and a chord lab (scales, modes, chords, harmony, keys) in English, Italian, Spanish and German.",
     "package": "../archive/theory1/theory1-1.2.fwsc",
     "repo": "https://github.com/wave00066/theory1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "f2e10e0d17d0f3c86b59e17e1db5a35e1e44310ecb21b859d6316a33ea0bf64b",
     "product": "FM-1_58010200",
     "licenseReviewed": "2026-11-09"
@@ -490,7 +490,7 @@
     "about": "RED MASS VAMPIRE OS FOR M-VAVE FM1 with a lot of new features",
     "package": "../archive/RED-MASS-VAMPIRE-OS-FOR-M-VAVE-FM1/RED-MASS-VAMPIRE-OS-v0.5.2-beta-FM1.fwsc",
     "repo": "https://github.com/karlalex732-dotcom/RED-MASS-VAMPIRE-OS-FOR-M-VAVE-FM1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "3ed689e102facb29db4f6aa742dfffd17982326bc63e5edc0135e8d26a40645b",
     "product": "FM-1_907",
     "licenseReviewed": "2026-11-09"
@@ -506,7 +506,7 @@
     "about": "Tidepool for the M-VAVE FM-1: an ambient loop instrument as custom firmware. Twelve synthesised scenes, autoplay, and a Blank Canvas to record your own loops.",
     "package": "../archive/tidepool-fm1/tidepool-1.0.7.fwsc",
     "repo": "https://github.com/pjh-133/tidepool-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "e43a42e61d4e81c49df9e67897cc987eb9ef14df64a5197a572bd9756e27b76d",
     "product": "FM-1_86010007",
     "licenseReviewed": "2026-11-09"
@@ -522,7 +522,7 @@
     "about": "EWI dedicated FM1 firmware",
     "package": "../archive/typhoon_fm1/typhoon_fm1-0.5.fwsc",
     "repo": "https://github.com/ignis32/typhoon_fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "403876d786471ccfba75ddb81050c038fa8bb8df04b563c81b363a4321d4823b",
     "product": "FM-1_128000500",
     "licenseReviewed": "2026-11-09"
@@ -538,7 +538,7 @@
     "about": "Community FM-1 firmware (added from our archive).",
     "package": "../archive/OpenIFW-fm1/OpenIFW-FM1-0.4.7-rc12.fwsc",
     "repo": "https://github.com/rcell233/OpenIFW-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "58336cb035e2686acce5e6df4ab0ba655bf4abc2bda5ec47a0a945c810bee7c4",
     "product": "FM-1_982",
     "licenseReviewed": "2026-11-09"
@@ -554,7 +554,7 @@
     "about": "NCC 0.4: FM-1 companion for Novation Circuit Tracks. 12 engines, 161 sounds, Circuit macro control, Dual parts and chord drones. Felucca fork.",
     "package": "../archive/fm1-nc-companion/ncc-0.5.fwsc",
     "repo": "https://github.com/fenderberg/fm1-nc-companion",
-    "hub": null,
+    "catalogId": null,
     "sha256": "b98b152f77c5d510f9c062f5907d126c837e61d5a77a2239c6886138fd54ec52",
     "product": "FM-1_705",
     "licenseReviewed": "2026-11-09"
@@ -570,7 +570,7 @@
     "about": "NU//METAL SKRATCHMASTER PRO: robot turntablist + nu metal band firmware for the M-VAVE FM-1. Tempo-synced LFO, 17 scratch techniques, mixer. Web MIDI installer. GPL-3, built on Dinghy/Felucca.",
     "package": "../archive/numetal-skratchmaster-pro-fm1/numetal-pro-3.0.fwsc",
     "repo": "https://github.com/mhellar/numetal-skratchmaster-pro-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "ab42db973da1ddbfd23e14362a760ce79c1f4270e28dd16430c2b49dd2478b08",
     "product": "FM-1_926",
     "licenseReviewed": "2026-11-09"
@@ -586,7 +586,7 @@
     "about": "CYMA-1 by Team EG & Lizard_Man",
     "package": "../archive/cyma-1/cyma-1-v1.1.3.fwsc",
     "repo": "https://github.com/TEG-Lizard-Man/cyma-1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "1c61abd4d1754a5c181cd60ed8895cf98b6d7970b1e42f3c84ddc480f0f413d3",
     "product": "FM-1_94010103",
     "licenseReviewed": "2026-11-09"
@@ -602,7 +602,7 @@
     "about": "Turns the M-VAVE FM-1 and SMK-37 into an audio/video synth. It's the first firmware for them that sends video over USB, so the instrument shows up as a camera in OBS, Zoom and FaceTime.",
     "package": "../archive/synthesthetic/synthesthetic-0.3.fwsc",
     "repo": "https://github.com/michaeljsmalley/synthesthetic",
-    "hub": null,
+    "catalogId": null,
     "sha256": "993e4e45f660db226d5e2703cf5ee1928b09893184a68b73397b459ea0be0bda",
     "product": "FM-1_953",
     "licenseReviewed": "2026-11-09"
@@ -618,7 +618,7 @@
     "about": "A throaty talking formant synth with a 303-style pattern sequencer: The synth is a saw wave through a three-formant vowel filter with an envelope, an added resonant LPF with cutoff and a ping-pong delay with drive. The 16-step sequencer has vowels, accent and slide per step, a pattern randomizer and storage for 16 patterns.",
     "package": "../archive/fmlarynx/fmlarynx-0.1.1.fwsc",
     "repo": "https://github.com/ejtb76/FMLarynx",
-    "hub": null,
+    "catalogId": null,
     "sha256": "6d15be0e9804fb0588cefc6e312245aa257252365dffac694b6fd8106a3d8c30",
     "product": "FM-1_984",
     "licenseReviewed": "2026-11-09"
@@ -634,7 +634,7 @@
     "about": "Cinco Identity Generator 2.5 (Celery Man) custom firmware for M-VAVE FM-1",
     "package": "../archive/CINCO/cinco.fwsc",
     "repo": "https://github.com/mrjoshida/CINCO",
-    "hub": null,
+    "catalogId": null,
     "sha256": "98604093b9048b869fe5e670eaf5f3ec87395005a73738a5688368a282972a50",
     "product": "FM-1_555",
     "licenseReviewed": "2026-11-09"
@@ -650,7 +650,7 @@
     "about": "Custom firmware for M-VAVE FM-1: fork of felucca to add a Korg Opsix style engine",
     "package": "../archive/Felucca-opx/opx-0.2.0.fwsc",
     "repo": "https://github.com/thomasgregorymarsden-code/Felucca-opx",
-    "hub": null,
+    "catalogId": null,
     "sha256": "a4a917bfaeaf9d77ff4221979af5ca017075a47e9504f1c28fe6ce163a1a37bc",
     "product": "FM-1_9001",
     "licenseReviewed": "2026-11-09"
@@ -666,7 +666,7 @@
     "about": "Norilsk: a firmware for the M-VAVE FM-1 for ambient hellscapes, barren and grim atmospheres and noise -- everything drawn at random, wired at random, torn apart at will.",
     "package": "../archive/norilsk/norilsk.fwsc",
     "repo": "https://github.com/nzimas/norilsk",
-    "hub": null,
+    "catalogId": null,
     "sha256": "e4dce601d6fb57cc58d5d1b27ffc56443bdb0941c2914b82810ae46886535d61",
     "product": "FM-1_700",
     "licenseReviewed": "2026-11-09"
@@ -682,7 +682,7 @@
     "about": "Synth-module firmware for the M-VAVE FM-1, built on Dinghy / Felucca (GPL-3.0)",
     "package": "../archive/Prysm/prysm-1.4.fwsc",
     "repo": "https://github.com/NicholasPratt/Prysm",
-    "hub": null,
+    "catalogId": null,
     "sha256": "2fbf4fea48db230485b05999540a710327b472cc907c217bc28a883bf6ba2bde",
     "product": "FM-1_989",
     "licenseReviewed": "2026-11-09"
@@ -698,7 +698,7 @@
     "about": "Drum Machine & Synth Custom Firmware for M-VAVE FM-1",
     "package": "../archive/dwnlo/dwnlo-0.1-beta.fwsc",
     "repo": "https://github.com/jeffwebb-to/dwnlo",
-    "hub": null,
+    "catalogId": null,
     "sha256": "3c19e94a32a0bff2050667ffa3dc51fb79e2972baf2931ce6dd0bd7f077f3126",
     "product": "FM-1_9000100",
     "licenseReviewed": "2026-11-09"
@@ -714,7 +714,7 @@
     "about": "Boardwalk: a seaside arcade of music games for the M-VAVE FM-1 (fm1-base firmware)",
     "package": "../archive/fm1-boardwalk/boardwalk-0.9.fwsc",
     "repo": "https://github.com/charlesvestal/fm1-boardwalk",
-    "hub": null,
+    "catalogId": null,
     "sha256": "ffc1df868f6c30b511258f3a1f9abc94be32108095bef187a86eaa9ed6dc85ce",
     "product": "FM-1_12000900",
     "licenseReviewed": "2026-11-09"
@@ -730,7 +730,7 @@
     "about": "Custom firmware for M-VAVE FM-1",
     "package": "../archive/OrangeCat/orangecat-0.15.0.fwsc",
     "repo": "https://github.com/SeattleUser0/OrangeCat",
-    "hub": null,
+    "catalogId": null,
     "sha256": "e8ee957e71ad264f142cfe7a0bcfcf0adac3168e0b07e164b01a06a71f5447a6",
     "product": "FM-1_90150",
     "licenseReviewed": "2026-11-09"
@@ -746,7 +746,7 @@
     "about": "SuperCollider patches on the M-VAVE FM-1: an embedded SynthDef runtime, two-voice instrument and local patch editor.",
     "package": "../archive/fm1-synthdef/FM1-SynthDef-0.1.0-preview.fwsc",
     "repo": "https://github.com/little-scale/fm1-synthdef",
-    "hub": null,
+    "catalogId": null,
     "sha256": "3637563155def6c86fff2767e2a905b80547d6c775788e70854f7c6b745aa450",
     "product": "FM-1_1200",
     "licenseReviewed": "2026-11-09"
@@ -762,7 +762,7 @@
     "about": "Community FM-1 firmware (added from our archive).",
     "package": "../archive/Forge-Five/forge-five-f9f60f2.fwsc",
     "repo": "https://github.com/kkasemsa/Forge-Five",
-    "hub": null,
+    "catalogId": null,
     "sha256": "8b75971a39960d74d6683f89fd2d355fa50554ae8e0a1b62fef077c65e80a7ab",
     "product": "FM-1_900",
     "licenseReviewed": "2026-11-09"
@@ -778,7 +778,7 @@
     "about": "Community FM-1 firmware (added from our archive).",
     "package": "../archive/fm1-windsynth/windsynth-0.1.0.fwsc",
     "repo": "https://github.com/jcroft/fm1-windsynth",
-    "hub": null,
+    "catalogId": null,
     "sha256": "57883b2767da95d918950c573853cfd4a9c8c6f3bf0b9b4edd735f828ced44ac",
     "product": "FM-1_8000100",
     "licenseReviewed": "2026-11-09"
@@ -794,7 +794,7 @@
     "about": "FM1 Jungle Synth",
     "package": "../archive/DREADNOUGHT/DREADNOUGHT-0.44.fwsc",
     "repo": "https://github.com/TwistedGenetics/DREADNOUGHT",
-    "hub": null,
+    "catalogId": null,
     "sha256": "65b8ca7cee753e9b1c94625d8f83050ed71d6f630965f568723cc24cce56618a",
     "product": "FM-1_9004400",
     "licenseReviewed": "2026-11-09"
@@ -810,7 +810,7 @@
     "about": "Free standalone synth and four-track groovebox firmware for the M-VAVE FM-1, by TERKINSTEIN.",
     "package": "../archive/Crepuscular_Homunculus/Crepuscular-Homunculus-0.26.19.fwsc",
     "repo": "https://github.com/TerkWerX/Crepuscular_Homunculus",
-    "hub": null,
+    "catalogId": null,
     "sha256": "985c1000dc58dd0afeafb18185a5de980795908166e9356d4c72fd07e656708f",
     "product": "FM-1_986",
     "licenseReviewed": "2026-11-09"
@@ -826,7 +826,7 @@
     "about": "A spoon-feeding balance game for the M-VAVE FM-1: a grumpy 3D baby, rainbow rewards, character voices and a very strange fifth bite. Firmware, source and quick-start guide.",
     "package": "../archive/hungry-travis/HUNGRY-TRAVIS-FM-1_797.fwsc",
     "repo": "https://github.com/adamcharleswilsonmusic-code/Hungry-Travis",
-    "hub": null,
+    "catalogId": null,
     "sha256": "de460db393835644f013540ba5620396eb23c72e4373cdcbac889466bd7ef32c",
     "product": "FM-1_797",
     "licenseReviewed": "2026-11-09"
@@ -842,7 +842,7 @@
     "about": "Film-music firmware for the M-VAVE FM-1, based on Felucca",
     "package": "../archive/modular-one/modular-one-0.2-beta.fwsc",
     "repo": "https://github.com/bunglesociety/modular-one",
-    "hub": null,
+    "catalogId": null,
     "sha256": "1dac495c068e8a220598920bbcd79b03ce39d7d260966ae1b591ab6d54cc274c",
     "product": "FM-1_900",
     "licenseReviewed": "2026-11-09"
@@ -858,7 +858,7 @@
     "about": "The Mini-Vision is an FM-1 firmware with the goal to replicate the Roland n/vision synthesizer",
     "package": "../archive/Mini-Vision/minivision-1.0.1.fwsc",
     "repo": "https://github.com/eldontyrellcorp/Mini-Vision",
-    "hub": null,
+    "catalogId": null,
     "sha256": "a53432d8fa30b7e78337053ff7536a0488a74bdc915521513bb95260ef0c8e9f",
     "product": "FM-1_900",
     "licenseReviewed": "2026-11-09"
@@ -874,7 +874,7 @@
     "about": "FIELD — independent M-VAVE FM-1 firmware for Radio Aporee field recordings, with region browsing and an inline USB web flasher.",
     "package": "../archive/fm1-field/field-0.1.19-alpha.fwsc",
     "repo": "https://github.com/AveyCole/FM1-Field",
-    "hub": null,
+    "catalogId": null,
     "sha256": "4ead6ebca23430268f22be0ede2b4569c0a6013830ec24d628d01dec4308fc49",
     "product": "FM-1_84000119",
     "licenseReviewed": "2026-11-09"
@@ -890,7 +890,7 @@
     "about": "Optimist: an open, modular firmware platform for the M-VAVE FM-1 (from SLOOP / Felucca)",
     "package": "../archive/optimist/optimist-0.2-synths.fwsc",
     "repo": "https://github.com/w0ts/optimist",
-    "hub": null,
+    "catalogId": null,
     "sha256": "926f08a95fa0e00f988bfd73f82fd8df130b9a8e4aa95a98e3aca925ec9b89a7",
     "product": "FM-1_722",
     "licenseReviewed": "2026-11-09"
@@ -906,7 +906,7 @@
     "about": "A Digitone-style FM groovebox firmware for the M-VAVE FM-1: FM, VA and drum engines, 12 voices, a 64-step sequencer with p-locks. Browser emulator and web installer included.",
     "package": "../archive/tonic-fm1/tonic-0.12.fwsc",
     "repo": "https://github.com/RahelPuest/tonic-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "7480de7f5cdbd47bd6dbbcc039d06639ca87ab611795942b15ff88781c579034",
     "product": "FM-1_47001200",
     "licenseReviewed": "2026-11-09"
@@ -922,7 +922,7 @@
     "about": "UTA BOX — a singing keyboard for the M-VAVE FM-1",
     "package": "../archive/uta-box/utabox-teto.fwsc",
     "repo": "https://github.com/Kashiwayo-593/uta-box",
-    "hub": null,
+    "catalogId": null,
     "sha256": "29af429de44486d06075247fee2de79d5295cc998dbbe731a92c86f34240c197",
     "product": "FM-1_924",
     "licenseReviewed": "2026-11-09"
@@ -938,7 +938,7 @@
     "about": "FN ACID: an M-VAVE FM-1 firmware where every track is a function y(s, phi), after AA's 'trying to turn math into acid'. Built on Dinghy / SLOOP / Felucca (GPL-3.0).",
     "package": "../archive/function-acid-fw/function-acid-3443693257.fwsc",
     "repo": "https://github.com/Electro-Dig/function-acid-fw",
-    "hub": null,
+    "catalogId": null,
     "sha256": "b976bfa367b7e4625489ada0503008610314846d296a89f7baa2f3350d1a88bd",
     "product": "FM-1_956",
     "licenseReviewed": "2026-11-09"
@@ -954,7 +954,7 @@
     "about": "MASIF: a 4-track sample tracker and rack sampler for the M-VAVE FM-1 (free firmware, GPL-3.0)",
     "package": "../archive/masif-fm1/masif-0.1.fwsc",
     "repo": "https://github.com/thecemeterygates/masif-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "64c8d8dd1a48189ad370e8e149107f69c44311659bac6bf88116634b61bd46ab",
     "product": "FM-1_961",
     "licenseReviewed": "2026-11-09"
@@ -970,7 +970,7 @@
     "about": "PICO-8 (femto8) firmware for the M-Vave SMK-37 Pro, and the browser simulator built from the same sources",
     "package": "../archive/picovave/picovave-fm1.fwsc",
     "repo": "https://github.com/acidsound/picovave",
-    "hub": null,
+    "catalogId": null,
     "sha256": "936e6924cf802366f54dc2fa3062d079094d39698f4ef9ccb2287fee6c41dff3",
     "product": "FM-1_900",
     "licenseReviewed": "2026-11-09"
@@ -986,7 +986,7 @@
     "about": "OPLBOX: custom firmware turning the M-VAVE FM-1 into an AdLib — OPL2 emulation, SoundFX Macs Opera player and .CMF tracker/editor",
     "package": "../archive/oplbox/oplbox-0.4.2.fwsc",
     "repo": "https://github.com/LXXero/oplbox",
-    "hub": null,
+    "catalogId": null,
     "sha256": "2b1576873d3eb2e5d0929169e1a3c6618e98e28afb1aa9a9ddba4c5e4db49500",
     "product": "FM-1_964",
     "licenseReviewed": "2026-11-09"
@@ -1002,7 +1002,7 @@
     "about": "Bongo Cat’s Tiny Studio by Impossible Knot. Four cats, thirteen synth engines and zero rent contributions. Playable M-VAVE FM-1 firmware built on Felucca.",
     "package": "../archive/bongo-cat-studio/bongo-cat-studio-0.4.0-rc1.fwsc",
     "repo": "https://github.com/ImpossibleKnot/bongo-cat-studio",
-    "hub": null,
+    "catalogId": null,
     "sha256": "6796ac71b56b2bffbd35a18ee6df5a0e8010ee9a16714c9c64a716b10c6c3a39",
     "product": "FM-1_980",
     "licenseReviewed": "2026-11-09"
@@ -1018,7 +1018,7 @@
     "about": "Peking opera percussion (锣鼓经) and 京胡 accompaniment for the M-VAVE FM-1: an fm1-base firmware",
     "package": "../archive/fm1-luogu/luogu-1.0.1.fwsc",
     "repo": "https://github.com/Reytian/fm1-luogu",
-    "hub": null,
+    "catalogId": null,
     "sha256": "4e7d9262e55b57fab36b0660770952528b9333f62971fcc7e9c5bd3aedb81199",
     "product": "FM-1_53010001",
     "licenseReviewed": "2026-11-09"
@@ -1034,7 +1034,7 @@
     "about": "BRUTAL FM: experimental FM synth firmware for the M-VAVE FM-1 (Felucca-based)",
     "package": "../archive/brutal-fm/brutal-fm-v0.1.5.fwsc",
     "repo": "https://github.com/hiroikezawa/brutal-fm",
-    "hub": null,
+    "catalogId": null,
     "sha256": "6fcf5c16f3221a87581641935c4b373053cc746760d9d911e4ec94f3510c9661",
     "product": "FM-1_700",
     "licenseReviewed": "2026-11-09"
@@ -1050,7 +1050,7 @@
     "about": "Experimental FM-1 firmware for playable synth sounds and interactive Novation Launchpad Pro MK3 lightshows. Public edition with original procedural patterns.",
     "package": "../archive/launchparty-fm1/launchparty-0.3.2-public.fwsc",
     "repo": "https://github.com/megagott/launchparty-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "83b4a2ee4aa539c8946e8b9660a51b0bc6eff5abd1677fab0f3b55712429873e",
     "product": "FM-1_900",
     "licenseReviewed": "2026-11-09"
@@ -1066,7 +1066,7 @@
     "about": "NIGHTFALL: independent FM-1 synthesizer firmware and browser studio",
     "package": "../archive/nightfall-fm1/NIGHTFALL-FM1-999-GREEN2.fwsc",
     "repo": "https://github.com/SylarPu-X/nightfall-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "8e72edc5d894b99efc556d20e64dfe4ea2bb59877920c5314d9befbf3f612be8",
     "product": "FM-1_999",
     "licenseReviewed": "2026-11-09"
@@ -1082,7 +1082,7 @@
     "about": "Five generative firmwares for the M-VAVE FM-1: haunted ambient with meaningful controls",
     "package": "../archive/haunted-fm1/untrue-0.1.fwsc",
     "repo": "https://github.com/davidpryan/haunted-fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "38db751f4507942754aeba63121bff847f90f3d1465cf68c80f6ec30701597d4",
     "product": "FM-1_73000100",
     "licenseReviewed": "2026-11-09"
@@ -1098,7 +1098,7 @@
     "about": "Gnomad: easy, kid-friendly firmware for the M-VAVE FM-1 synth. Sound pictures instead of menus, four colour knobs, the singing Gnome. Free, open source (GPL-3.0), built on Felucca.",
     "package": "../archive/gnomad-firmware/gnomad-v1-115e11e.fwsc",
     "repo": "https://github.com/kpalaniuk/gnomad-firmware",
-    "hub": null,
+    "catalogId": null,
     "sha256": "8bab81bb3cf3a197a7f9c7a4b07ae962a45a2ae90b85bd88ae267fc2a707d052",
     "product": "FM-1_900",
     "licenseReviewed": "2026-11-09"
@@ -1114,7 +1114,7 @@
     "about": "VIAL compatible macros keyboard firmware for Mvave FM1",
     "package": "../archive/trireme_fm1/trireme-fm1-v0.1.1.fwsc",
     "repo": "https://github.com/ignis32/trireme_fm1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "9e7028d1d65398aa6d7f2c883a95b6dbe7ded4f0cbaaf88197c81684d347fded",
     "product": "FM-1_961",
     "licenseReviewed": "2026-11-09"
@@ -1130,7 +1130,7 @@
     "about": "custom FM-1 Firmware with android / ableton integration",
     "package": "../archive/NoteSorcery/botanica-0.3.fwsc",
     "repo": "https://github.com/catacombius/NoteSorcery",
-    "hub": null,
+    "catalogId": null,
     "sha256": "2a47080c14038709f396447dfaf55b32686d818b0d0f348f212c2a7312431e57",
     "product": "FM-1_9603",
     "licenseReviewed": "2026-11-09"
@@ -1146,7 +1146,7 @@
     "about": "TRIO: a jazz trio in your M-VAVE FM-1. You play the chords; small neural networks on the FM-1's chip walk the bass and play the drums. FM-1 上的爵士乐队",
     "package": "../archive/fm1-trio/trio-0.1.fwsc",
     "repo": "https://github.com/Reytian/fm1-trio",
-    "hub": null,
+    "catalogId": null,
     "sha256": "bceb87245d9cf360405e8fa3514e0e1e2e40d5dffbf74923c38ca94e8b35557c",
     "product": "FM-1_52000100",
     "licenseReviewed": "2026-11-09"
@@ -1162,7 +1162,7 @@
     "about": "Ravel is a custom firmware for the M-VAVE FM-1 that turns the FM-1 into a pocket groovebox for sound design. It has 8 tracks that synthesize, catch what they play onto a shared tape, cut it up & rebuild it with tracks that can play, excite, and reshape one another",
     "package": "../archive/Ravel-FM1/Ravel-FM1.fwsc",
     "repo": "https://github.com/Kenneth-Rakentine/Ravel-FM1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "856dedf9ccfb121f72a2a61fee793c0f1d048be45428b2e6239a8b30379d37c1",
     "product": "FM-1_96000301",
     "licenseReviewed": "2026-11-09"
@@ -1178,7 +1178,7 @@
     "about": "KIDBOY 0.1 — toddler toy firmware for the M-VAVE FM-1 (built on Felucca, GPL-3.0)",
     "package": "../archive/kidboy-firmware/kidboy-2e400c2.fwsc",
     "repo": "https://github.com/WillCMcC/kidboy-firmware",
-    "hub": null,
+    "catalogId": null,
     "sha256": "d4c4fe43f2970b45a5be8a67c45a8206590da59b29ef6e96454cbdce836d959e",
     "product": "FM-1_938",
     "licenseReviewed": "2026-11-09"
@@ -1194,7 +1194,7 @@
     "about": "Selva1: sintetizador da DeAbrew inspirado na selva d pedra de São Paulo. Web, plugin VST3/AU e M-VAVE FM1.",
     "package": "../archive/Selva1/selva1-fm1-0.1.fwsc",
     "repo": "https://github.com/deabrewcontato-code/Selva1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "cd4b8f82764beb3c71d065805c43cbba6c4217ab7b2607cceaf88cf0d0cf2461",
     "product": "FM-1_901",
     "licenseReviewed": "2026-11-09"
@@ -1210,7 +1210,7 @@
     "about": "FM Lab: a learning-focused FM synth firmware for the M-VAVE FM-1",
     "package": "../archive/fm_lab/fmlab-1.1.0.fwsc",
     "repo": "https://github.com/jsmith13/fm_lab",
-    "hub": null,
+    "catalogId": null,
     "sha256": "545f518eecdb87f33cd251d4a0f6ee6078b17e1cacc3d52892a7497781b5f837",
     "product": "FM-1_971",
     "licenseReviewed": "2026-11-09"
@@ -1226,7 +1226,7 @@
     "about": "BOP-1 for M-Vave FM-1",
     "package": "../archive/BOP-1/bop1-0.1.0.fwsc",
     "repo": "https://github.com/devrvega/BOP-1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "0b9375aa4a586e6ac57a72392998b2de152752da39a94382e5e9b8191e3bf97a",
     "product": "FM-1_61000100",
     "licenseReviewed": "2026-11-09"
@@ -1242,7 +1242,7 @@
     "about": "Community FM-1 firmware (added from our archive).",
     "package": "../archive/TransitFM1/transit-0.1.3.fwsc",
     "repo": "https://github.com/Quixotic7/TransitFM1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "d1b027d5fcafc374ff174bbd5f3b6dac7686554f5a3f44c04cc4d30cc3213baa",
     "product": "FM-1_015",
     "licenseReviewed": "2026-11-09"
@@ -1258,7 +1258,7 @@
     "about": "Ambient firmware for the M-VAVE FM-1, derived from Felucca.",
     "package": "../archive/ambwave/ambwave-0.1.0.fwsc",
     "repo": "https://github.com/mentalcells/ambwave",
-    "hub": null,
+    "catalogId": null,
     "sha256": "4605411cfa91ba5143c79523837db7b09a19abf2bf4bf3f2a40e95c1b81a2933",
     "product": "FM-1_900",
     "licenseReviewed": "2026-11-09"
@@ -1274,7 +1274,7 @@
     "about": "A beaver-versus-robots action platformer for the M-VAVE FM-1, with firmware, source, and a quick-start guide.",
     "package": "../archive/RAMBEAVER/RAMBEAVER-FM-1_745.fwsc",
     "repo": "https://github.com/adamcharleswilsonmusic-code/RAMBEAVER",
-    "hub": null,
+    "catalogId": null,
     "sha256": "045f7386e5a33efbb1b544d5a3e34aafa4d3a4b33a133312080cbaec4126c79f",
     "product": "FM-1_745",
     "licenseReviewed": "2026-11-09"
@@ -1290,7 +1290,7 @@
     "about": "ROM-1 for M-Vave FM-1",
     "package": "../archive/ROM-1/rom1-0.1.1.fwsc",
     "repo": "https://github.com/devrvega/ROM-1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "cc670b99897058ad6b7fff3094b640a40d4be6a765bd8492e647b6834ef54557",
     "product": "FM-1_0000101",
     "licenseReviewed": "2026-11-09"
@@ -1306,7 +1306,7 @@
     "about": "Generative Ambient-Firmware für den M-VAVE FM-1: AMB-1-Bedienung, 64 Sounds, 32 Themen und Bunkai-Wolf-A1-Design. GPL-3.0-only.",
     "package": "../archive/AMB-1-Evolved/amb1-evolved-e1.fwsc",
     "repo": "https://github.com/kidbee85-beep/AMB-1-Evolved",
-    "hub": null,
+    "catalogId": null,
     "sha256": "61755b43e6dad1080b0db84aad36972116be703fdf4ff910c5b2c8c1b4546e5b",
     "product": "FM-1_7080001",
     "licenseReviewed": "2026-11-09"
@@ -1322,7 +1322,7 @@
     "about": "Community FM-1 firmware (added from our archive).",
     "package": "../archive/Fm1dnbchatgpt/break174-0.2.0-alpha.fwsc",
     "repo": "https://github.com/EremanSim/Fm1dnbchatgpt",
-    "hub": null,
+    "catalogId": null,
     "sha256": "a5b18e95c637bbe94d94674b00ada7cbf275fab38b292f2b931b98faee189a7b",
     "product": "FM-1_9174020",
     "licenseReviewed": "2026-11-09"
@@ -1338,7 +1338,7 @@
     "about": "CRT-4 for M-Vave FM-1",
     "package": "../archive/CRT-4/crt4-0.1.2.fwsc",
     "repo": "https://github.com/devrvega/CRT-4",
-    "hub": null,
+    "catalogId": null,
     "sha256": "356083da727894e256d18b51e63da54bfb7bf776d240fc06a19c76272df3aded",
     "product": "FM-1_2000102",
     "licenseReviewed": "2026-11-09"
@@ -1354,7 +1354,7 @@
     "about": "LCD-4 for M-Vave FM-1",
     "package": "../archive/LCD-4/lcd4-0.1.2.fwsc",
     "repo": "https://github.com/devrvega/LCD-4",
-    "hub": null,
+    "catalogId": null,
     "sha256": "56716b513a2483028a597fbcd18588db7edc3d9fff5ac3717c2ea4148aab4e0f",
     "product": "FM-1_4000102",
     "licenseReviewed": "2026-11-09"
@@ -1370,7 +1370,7 @@
     "about": "IND-1 for M-Vave FM-1",
     "package": "../archive/IND-1/ind-0.2.1.fwsc",
     "repo": "https://github.com/devrvega/IND-1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "819e1baee04987f2cacfa35c7fd36d553e79c2b7eca8d3ef6b8cf09dc3e6c6fc",
     "product": "FM-1_5000201",
     "licenseReviewed": "2026-11-09"
@@ -1386,7 +1386,7 @@
     "about": "SEQ-4 for M-Vave FM-1",
     "package": "../archive/SEQ-4/seq4-0.1.0.fwsc",
     "repo": "https://github.com/devrvega/SEQ-4",
-    "hub": null,
+    "catalogId": null,
     "sha256": "7dae8979da10ba034f37aa0bb555f786a3c0e9af981920b9d8f3409232d5ec39",
     "product": "FM-1_1000100",
     "licenseReviewed": "2026-11-09"
@@ -1402,7 +1402,7 @@
     "about": "A ghostly, ambient synth firmware for the M-VAVE FM-1. A fork of Felucca",
     "package": "../archive/Fantasma/Fantasma-1.1.fwsc",
     "repo": "https://github.com/Gadlele/Fantasma",
-    "hub": null,
+    "catalogId": null,
     "sha256": "4bbd4416e25d9717ff166cfc7093a3ee716c5f41350be8543bc6aa37786ddffe",
     "product": "FM-1_911",
     "licenseReviewed": "2026-11-09"
@@ -1418,7 +1418,7 @@
     "about": "Mocky: pictures on the M-VAVE FM-1's screen, sent from the browser (custom firmware + web app)",
     "package": "../archive/fm1-mocky/mocky-0.9.1.fwsc",
     "repo": "https://github.com/charlesvestal/fm1-mocky",
-    "hub": null,
+    "catalogId": null,
     "sha256": "76ffe96997e385d8c7f84ddc34ace6fe68987f62638aa8f2991523bc5cf36f40",
     "product": "FM-1_1000901",
     "licenseReviewed": "2026-11-09"
@@ -1434,7 +1434,7 @@
     "about": "Community FM-1 firmware (added from our archive).",
     "package": "../archive/Modular-1/modular-1.fwsc",
     "repo": "https://github.com/WiggisModular/Modular-1",
-    "hub": null,
+    "catalogId": null,
     "sha256": "8197e3e5acefb40f0d334ddd21ec216372cfe1c38cac31d9e922246d7d1fea53",
     "product": "FM-1_800",
     "licenseReviewed": "2026-11-09"
@@ -1450,7 +1450,7 @@
     "about": "Port of Choral Root to MWave FM1 but with Roland j6 chord set",
     "package": "../archive/choralrootj-6/choralroot-0.23-j6.fwsc",
     "repo": "https://github.com/EremanSim/ChoralRootj-6",
-    "hub": null,
+    "catalogId": null,
     "sha256": "ec84b99aac5b00e6a4d43bdaaf48ec804fe8930050a1581217683feb10bddb2b",
     "product": "FM-1_920",
     "licenseReviewed": "2026-11-09"
@@ -1466,7 +1466,7 @@
     "about": "An unofficial Trump virtual pet for M-VAVE FM-1. Burgers, praise, questionable news and bongos.",
     "package": "../archive/Trumpagotchi/trumpagotchi.fwsc",
     "repo": "https://github.com/adamcharleswilsonmusic-code/Trumpagotchi",
-    "hub": null,
+    "catalogId": null,
     "sha256": "cf05c608818d54ad9b4061968f5f67de34ad41faa45672852c82774ed8277222",
     "product": "FM-1_710",
     "licenseReviewed": "2026-11-09"
@@ -1482,7 +1482,7 @@
     "about": "Dungeon synth firmware for the M-VAVE FM-1, turned toward the desert: maqam tuning, Arabic rhythm, oud and ney, stone rooms. GHOULBOX on Felucca 1.6, with code from SLOOP, JIANT and Melodee.",
     "package": "../archive/sardab/ghoulbox-1.4-microtonal-preview2.fwsc",
     "repo": "https://github.com/jrdntnnr/sardab",
-    "hub": null,
+    "catalogId": null,
     "sha256": "f8eaf0b27c35ecc9ded8e319d7a977a3f8615275ec2c3cb4d44b9ed1e939620d",
     "product": "FM-1_900",
     "licenseReviewed": "2026-11-09"
@@ -1498,7 +1498,7 @@
     "about": "Doom on the FM-1: one arena from FreeDM, played on the keys and a knob, on the FM-1's screen, with synthesised sound effects and no music.",
     "package": "../archive/fm1doom/zvenson__fm1doom-640bc2d.fwsc",
     "repo": "https://github.com/zvenson/fm1doom",
-    "hub": null,
+    "catalogId": null,
     "sha256": "60956825ef5eed9ea0178bb342a15fe951828549c098280a1d09da41185843c4",
     "product": "FM-1_980",
     "licenseReviewed": "2026-11-09"

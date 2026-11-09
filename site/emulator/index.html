@@ -52,7 +52,7 @@
           <span class="update-radar" aria-hidden="true"><i></i></span>
           <div><h2 class="eyebrow" id="h-updates">Open-source radar</h2><strong>Live firmware scan</strong></div>
         </div>
-        <p>Checks the Firmware Hub for new, explicitly open-licensed FM-1 releases. Nothing downloads until you select it.</p>
+        <p>Checks the open firmware catalog for new, explicitly open-licensed FM-1 releases. Nothing downloads until you select it.</p>
         <button type="button" id="scan-open-source">Scan open-source updates</button>
         <button type="button" id="apply-open-source" class="primary" hidden>Use catalog updates</button>
         <span id="open-source-status" role="status" aria-live="polite">Bundled catalog: 259 verified packages</span>
@@ -308,7 +308,7 @@
           the 240×240 screen, the key matrix and encoders, the MASTER knob, the audio output and the MIDI IN port.
           The stable interpreter is the default; an optional JIT can be enabled for diagnostics with <code>?jit=1</code>.</p>
         <p>Each firmware boots from its whole update package (<code>.fwsc</code>). Bundled packages stay local; update-radar
-          additions are fetched from the Firmware Hub on first use and kept with their saved flash. “Check for firmware updates” fetches a new copy; a changed
+          additions are fetched from the firmware catalog on first use and kept with their saved flash. “Check for firmware updates” fetches a new copy; a changed
           package starts a separate save so an update cannot overwrite an older version’s patches. Packages are unpacked by the page's own unpacker, <code>fwsc.js</code>; Felucca's GPL
           package code (<code>fm1pkg.js</code>) stays out of the page.</p>
         <p>The whole story, from recovering an undocumented CPU from its firmware to the two JITs and how each

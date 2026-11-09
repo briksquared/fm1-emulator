@@ -5,6 +5,9 @@
 An offline desktop emulator for the **M-VAVE FM-1**. Run FM-1 firmware with no hardware:
 choose a firmware, press **Start**, and play with your keyboard, mouse, or a MIDI controller.
 
+**Flash any firmware to your FM-1 in a few clicks, and recover if anything goes wrong.** Try a firmware
+in the emulator, then send it to your unit from the **Firmware uplink** panel.
+
 [![Release](https://img.shields.io/github/v/release/briksquared/fm1-emulator?label=release)](https://github.com/briksquared/fm1-emulator/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/briksquared/fm1-emulator/total?label=downloads)](https://github.com/briksquared/fm1-emulator/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -72,8 +75,11 @@ Edge and Firefox do.
 ## Recovery & safety
 
 The emulator runs firmware purely in software — it cannot harm your computer or your FM-1. The only
-risk is flashing real hardware, and the app is built so you can always recover: back up the unit's
-flash in one click, resume an interrupted install, or restore with the bundled M-Flasher (Windows).
+risk is flashing real hardware, and the app is built so you can always recover. Every package is
+checked (size, FM-1 identity, published SHA-256) before anything is sent, the unit's identity is
+checked again after it restarts, and an interrupted install is remembered so you can resume it or
+roll back to the firmware you had before. On Windows the bundled M-Flasher backs up and restores the
+whole flash.
 See **[Hardware flashing & recovery](docs/Recovery.md)**.
 
 ## Help

@@ -3,6 +3,10 @@
 Download the build for your system from the
 [Releases](https://github.com/briksquared/fm1-emulator/releases/latest) page.
 
+**Flash any firmware to your FM-1 in a few clicks, and recover if anything goes wrong.** Once the app is
+installed, the **Firmware uplink** panel sends any firmware to a connected FM-1, and
+[Hardware flashing & recovery](Recovery.md) covers getting back from a failed install.
+
 The builds are **not code-signed**, so each OS shows a one-time warning the first time you open
 the app. This is normal for independent software — nothing is wrong with the download.
 

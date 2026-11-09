@@ -69,7 +69,13 @@ The Linux builds are unsigned (normal for Linux — there's no Gatekeeper), so t
 
 ## Upgrading
 
-Install the new version over the old one; there's no need to uninstall first. Favorites, saved
+The app checks GitHub Releases for a newer version shortly after it starts, and **Help → Check
+for App Updates…** (on macOS, in the **FM-1 Emulator** menu) checks on demand. This is the app
+itself, separate from the firmware update radar. The Windows installer and the AppImage download
+the update and install it when the app restarts. On macOS, the `.deb`, and the portable `.exe` it
+opens the download page instead (unsigned Mac builds can't replace themselves).
+
+To update by hand, install the new version over the old one; there's no need to uninstall first. Favorites, saved
 firmware, settings and logs live in the app's own profile folder, which upgrades never touch.
 
 - **Windows installer:** the new setup removes the previous version and puts its shortcuts back.

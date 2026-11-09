@@ -17,11 +17,14 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            cmd: npm run dist:win
+            cmd: npm run dist:win -- --publish never
+            feed: latest.yml
           - os: macos-latest
-            cmd: npm run dist:mac
+            cmd: npm run dist:mac -- --publish never
+            feed: latest-mac.yml
           - os: ubuntu-latest
-            cmd: npm run dist:linux
+            cmd: npm run dist:linux -- --publish never
+            feed: latest-linux.yml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,13 +60,21 @@ jobs:
           FM1_SELFTEST: boot
           FM1_SELFTEST_FW: aurora
           FM1_SOFTWARE_RENDERING: "1"
+      # electron-builder only builds here (--publish never); the release step below uploads
+      # everything once, so assets are not uploaded twice under different names.
       - name: Build
         run: ${{ matrix.cmd }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # No Apple Developer ID cert: let electron-builder skip its own signing;
           # build/after-pack.js then ad-hoc signs the .app so arm64 will launch it.
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      # The in-app updater reads latest.yml / latest-mac.yml / latest-linux.yml and the
+      # blockmaps; a release without its platform's feed cannot offer that platform the update.
+      - name: Check update feed
+        shell: bash
+        run: |
+          test -s "dist/${{ matrix.feed }}" || { echo "missing dist/${{ matrix.feed }}"; ls dist; exit 1; }
+          cat "dist/${{ matrix.feed }}"
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -74,6 +85,8 @@ jobs:
             dist/*.zip
             dist/*.AppImage
             dist/*.deb
+            dist/*.blockmap
+            dist/latest*.yml
           if-no-files-found: ignore
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/')
@@ -85,4 +98,6 @@ jobs:
             dist/*.zip
             dist/*.AppImage
             dist/*.deb
+            dist/*.blockmap
+            dist/latest*.yml
           fail_on_unmatched_files: false

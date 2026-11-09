@@ -2,7 +2,8 @@
 // Serves the static emulator over a FIXED custom origin (fm1://app) so localStorage — favorites,
 // customize, stickers, the last firmware — lives in the app's own profile and persists every launch,
 // regardless of any dev-server port. Fully offline: the emulator, firmware archive and fw/ are bundled.
-const { app, BrowserWindow, protocol, shell, ipcMain, session } = require("electron");
+const { app, BrowserWindow, Menu, protocol, shell, ipcMain, session } = require("electron");
+const updates = require("./updater");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -239,6 +240,20 @@ function runSelfTest(win, mode) {
   });
 }
 
+// The standard menus plus "Check for App Updates…" (the desktop app itself, from GitHub
+// Releases; firmware updates are the page's own update radar).
+function appMenu() {
+  const check = { label: "Check for App Updates…", click: () => updates.checkForUpdates({ interactive: true, log: desktopLog }) };
+  const releases = { label: "Release Notes", click: () => shell.openExternal(updates.RELEASES) };
+  const mac = process.platform === "darwin";
+  return Menu.buildFromTemplate([
+    ...(mac ? [{ label: app.name, submenu: [{ role: "about" }, check, { type: "separator" }, { role: "services" },
+      { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { role: "quit" }] }] : []),
+    { role: "fileMenu" }, { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" },
+    { role: "help", submenu: [...(mac ? [] : [check]), releases] },
+  ]);
+}
+
 // Single-instance: clicking the icon again focuses the existing window instead of
 // spawning a second one (second windows never pick up new files and look "stuck").
 if (!app.requestSingleInstanceLock()) {
@@ -290,8 +305,12 @@ if (!app.requestSingleInstanceLock()) {
       return new Response("not found", { status: 404 });
     }
   });
+  Menu.setApplicationMenu(appMenu());
   const win = createWindow();
   if (process.env.FM1_SELFTEST) runSelfTest(win, process.env.FM1_SELFTEST);
+  // a quiet check shortly after launch: it only speaks up when a newer release exists
+  else if (app.isPackaged && process.env.FM1_NO_UPDATE_CHECK !== "1")
+    setTimeout(() => updates.checkForUpdates({ log: desktopLog }), 15000);
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
   });
 }

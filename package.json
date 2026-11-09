@@ -17,6 +17,9 @@
     "dist:mac": "electron-builder --mac",
     "dist:linux": "electron-builder --linux"
   },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  },
   "devDependencies": {
     "electron": "^45.2.3",
     "electron-builder": "^26.18.0"
@@ -28,7 +31,7 @@
     "appId": "com.briksquared.fm1emulator",
     "productName": "FM-1 Emulator",
     "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["main.js", "preload.js", "package.json", "icon.png", "icon.ico", "LICENSE", "LICENSES/**/*", "NOTICE.md", "THIRD-PARTY.md", "FIRMWARE-SOURCES.json", "DISCLAIMER.md"],
+    "files": ["main.js", "preload.js", "updater.js", "package.json", "icon.png", "icon.ico", "LICENSE", "LICENSES/**/*", "NOTICE.md", "THIRD-PARTY.md", "FIRMWARE-SOURCES.json", "DISCLAIMER.md"],
     "extraResources": [{ "from": "site", "to": "site" }],
     "win": {
       "target": [
@@ -50,12 +53,14 @@
       "artifactName": "FM-1-Emulator-Setup-${version}.${ext}"
     },
     "portable": { "artifactName": "FM-1-Emulator-${version}-portable.${ext}" },
+    "publish": [{ "provider": "github", "owner": "briksquared", "repo": "fm1-emulator", "releaseType": "release" }],
     "afterPack": "build/after-pack.js",
     "mac": {
       "target": [
         { "target": "dmg", "arch": ["x64", "arm64"] },
         { "target": "zip", "arch": ["x64", "arm64"] }
       ],
+      "artifactName": "FM-1-Emulator-${version}-${arch}-mac.${ext}",
       "category": "public.app-category.music",
       "icon": "build/icon.png"
     },

@@ -1,7 +1,7 @@
 // "Install to FM-1": flash a firmware onto the real device over USB-MIDI (Chrome/Edge), using the
 // community-proven OTA module (foma/Felucca lineage, GPL-3.0). Injects a compact box into the menu.
 import { Updater, isCandidatePort, isKnownOtherGear } from "./fm1ota.js?v=9";
-import { FlashJournal, explain, pendingRecovery, validatePackage } from "./flash-core.js?v=2";
+import { FlashJournal, explain, pendingRecovery, validatePackage } from "./flash-core.js?v=3";
 
 const params = new URLSearchParams(location.search);
 let cat = { firmwares: [] };
@@ -93,7 +93,7 @@ function build(side) {
       <ol>
         <li>Stuck or unsure? <b>Back up flash first</b> — a backup can always be restored, so a flash is never a dead end.</li>
         <li>No in-app connection? <b>M-Flasher · download mode</b>: hold <b>OCT− + OCT+</b> for 5 seconds (or power on holding <b>REC</b>, or use M-Flasher's <b>DOWNLOAD MODE</b> button), then write.</li>
-        <li>Install interrupted? Reconnect with a USB <b>data</b> cable and <b>Resume interrupted install</b> — the unit stays in update mode until it finishes. The app remembers which firmware it was writing, and <b>Roll back</b> writes the one you had before instead.</li>
+        <li>Install interrupted? Reconnect with a USB <b>data</b> cable and <b>Resume interrupted install</b> if it is still in update mode; keep it switched on, as a power cycle mid-install can leave it unable to return to update mode. The app remembers which firmware it was writing, and <b>Roll back</b> writes the one you had before instead.</li>
         <li>Use a USB data cable (not charge-only), plugged straight into the computer. Never flash an SMK-37 package on an FM-1.</li>
       </ol>
     </details>`;

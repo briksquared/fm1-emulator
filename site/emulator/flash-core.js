@@ -27,11 +27,73 @@ export async function validatePackage(bytes, expected = {}) {
   let product;
   try { product = productOf(bytes); } catch (e) { throw bad("badpackage", `This is not an FM-1 firmware package: ${e.message}.`); }
   if (expected.product && expected.product !== product) throw bad("badpackage", `The package identifies as ${product}, the catalog says ${expected.product}.`);
+  try { packageLayout(bytes); } catch (e) { throw bad("layout", `This file is not laid out like an FM-1 firmware package: ${e.message}. Nothing was written.`); }
   const hash = await sha256(bytes);
   if (expected.sha256 && expected.sha256.toLowerCase() !== hash) throw bad("checksum", "The downloaded package does not match its published checksum, so it was not written. Download it again.");
   const image = logicalImage(bytes);
   if (!image.length) throw bad("badpackage", "The package has no firmware image.");
   return { product, sha256: hash, image, size: bytes.length };
+}
+
+// ---------------------------------------------------------------- flash layout
+// What the package's flash image would cover on the unit's 1 MiB flash. The FM-1 (JieLi
+// AC791N / WL82) keeps its boot head below 0x4000, the firmware from 0x4000, and the per-unit
+// chip key and Bluetooth address in the last sector at 0xFF000. In the USB-MIDI update the unit's
+// own update loader decides what it writes; this app only answers its read requests from the
+// package. So the app cannot stop a loader from writing a region, but it can refuse a package
+// whose layout is not the one every known FM-1 package uses: a readable UFW header with a flash
+// image, a boot head that ends by 0x4000, the firmware area at exactly 0x4000, and an image that
+// stops before the chip key sector. (Checked against every FM-1 package in the local archive.)
+export const FLASH = { size: 0x100000, appStart: 0x4000, keySector: 0xff000 };
+function unmask(buf, off, len, key = 0xffff) {
+  for (let i = 0; i < len; i++) {
+    buf[off + i] ^= key & 0xff;
+    key = ((key << 1) ^ (key & 0x8000 ? 0x1021 : 0)) & 0xffff;
+  }
+}
+function crc16(buf, off, len) {
+  let crc = 0;
+  for (let i = 0; i < len; i++) {
+    crc ^= buf[off + i] << 8;
+    for (let b = 0; b < 8; b++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+  }
+  return crc;
+}
+const le16 = (b, o) => b[o] | (b[o + 1] << 8);
+const le32 = (b, o) => (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
+export function packageLayout(file) {
+  if (file.length < 20 * 0x30 + 0x40) throw new Error("too short");
+  const hdr = new Uint8Array(20 * 0x2f);
+  for (let i = 0; i < 20; i++) hdr.set(file.subarray(i * 0x30, i * 0x30 + 0x2f), i * 0x2f);
+  unmask(hdr, 0, 0x40);
+  if (crc16(hdr, 2, 0x3e) !== le16(hdr, 0)) throw new Error("its header checksum is wrong");
+  const count = le16(hdr, 8);
+  let start = -1, length = 0;
+  for (let k = 0; k < count && 0x90 + k * 0x50 <= hdr.length; k++) {
+    const e = hdr.slice(0x40 + k * 0x50, 0x90 + k * 0x50);
+    unmask(e, 0, 0x50);
+    if (le16(e, 0) === 0) { start = le32(e, 8) + 20; length = le32(e, 12); break; }
+  }
+  if (start < 20 * 0x30 || !length) throw new Error("it has no flash image");
+  if (start + length > file.length) throw new Error("its flash image runs past the end of the file");
+  if (length > FLASH.keySector) throw new Error(`its flash image (0x${length.toString(16)} bytes) would reach the unit's chip key sector at 0xFF000`);
+  const flash = file.slice(start, start + Math.min(length, 0x4000));
+  unmask(flash, 0, 32);
+  const entries = [];
+  for (let o = 32; o + 32 <= flash.length && entries.length < 32; o += 32) {
+    unmask(flash, o, 32);
+    let name = "";
+    for (let i = 0; i < 16 && flash[o + 16 + i]; i++) name += String.fromCharCode(flash[o + 16 + i]);
+    const h = { name, offset: le32(flash, o + 4), size: le32(flash, o + 8), flags: flash[o + 12] };
+    entries.push(h);
+    if (le16(flash, o + 14)) break;
+  }
+  const boot = entries.find((h) => h.name === "uboot.boot");
+  if (boot && boot.offset + boot.size > FLASH.appStart) throw new Error("its boot head reaches past 0x4000");
+  const app = entries.find((h) => h.name === "app_dir_head" && h.flags === 0x81);
+  if (!app) throw new Error("it has no FM-1 firmware area");
+  if (app.offset !== FLASH.appStart) throw new Error(`its firmware area starts at 0x${app.offset.toString(16)}, not 0x4000`);
+  return { flashLength: length, appStart: app.offset, bootEnd: boot ? boot.offset + boot.size : 0, entries: entries.map((h) => h.name) };
 }
 
 // ---------------------------------------------------------------- journal
@@ -90,6 +152,61 @@ export class FlashJournal {
   }
 }
 
+// ---------------------------------------------------------------- event log
+// A short local history of install and recovery attempts, for troubleshooting: time, step,
+// result code, and the package identity. No file paths, port names, serial numbers or firmware
+// bytes; nothing is sent anywhere. Bounded, and a storage failure is ignored so it can never stop
+// an install.
+export const LOG_KEY = "fm1.flash-log.v1";
+export const LOG_MAX = 50;
+export const LOG_STEPS = ["check", "confirm", "cancel", "start", "stage", "loader", "write", "reboot", "done", "fail", "usb-check", "m-flasher", "copy-info"];
+const tidy = (v, n) => (v == null ? null : String(v).replace(/[^\w .:+#()/-]/g, "").slice(0, n) || null);
+export class FlashLog {
+  constructor(storage, key = LOG_KEY, max = LOG_MAX) {
+    this.storage = storage;
+    this.key = key;
+    this.max = max;
+  }
+  read() {
+    try {
+      const v = JSON.parse(this.storage.getItem(this.key) || "[]");
+      return Array.isArray(v) ? v.filter((e) => e && typeof e === "object").slice(-this.max) : [];
+    } catch { return []; }
+  }
+  add(step, { code = null, product = null, mode = null } = {}) {
+    const e = {
+      t: new Date().toISOString(),
+      step: LOG_STEPS.includes(step) ? step : "other",
+      code: /^[a-z]{1,24}$/.test(code || "") ? code : (code ? "other" : null),
+      product: /^(ota-)?FM-1_\d{1,4}$/i.test(product || "") ? product : null,
+      mode: ["install", "resume", "rollback"].includes(mode) ? mode : null,
+    };
+    for (const k of Object.keys(e)) if (e[k] == null) delete e[k];
+    try { this.storage.setItem(this.key, JSON.stringify([...this.read(), e].slice(-this.max))); } catch { /* full or blocked: skip */ }
+    return e;
+  }
+  clear() { try { this.storage.removeItem(this.key); } catch { /* ignore */ } }
+}
+
+// Plain text the user can paste into a message when asking for help: what the app saw, the
+// last install record, and recent steps. Same rule as the log: no paths, ports or serials.
+export function troubleshootingText({ journal = null, log = [], seen = null, usb = null, app = "" } = {}) {
+  const lines = ["FM-1 install troubleshooting", `Created: ${new Date().toISOString()}`];
+  if (app) lines.push(`App: ${tidy(app, 60)}`);
+  if (seen) lines.push(`USB-MIDI check: ${seen.found ? `found ${tidy(seen.id, 40)}${seen.inUpdateMode ? " (update mode)" : ""}` : `not found (${tidy(seen.code, 24)})`}`);
+  if (usb) lines.push(`USB device check: ${tidy(usb.summary, 120)}`);
+  if (journal && journal.status && journal.status !== "idle") {
+    lines.push(`Last install: ${tidy(journal.name, 60)} ${tidy(journal.product, 24) || ""}, step ${tidy(journal.phase, 16)}, ${tidy(journal.status, 12)}${journal.code ? ` (${tidy(journal.code, 24)})` : ""}`);
+    if (journal.updated) lines.push(`Last install updated: ${new Date(journal.updated).toISOString()}`);
+  } else lines.push("Last install: none pending");
+  if (journal?.lastGood) lines.push(`Previous good install: ${tidy(journal.lastGood.name, 60)} ${tidy(journal.lastGood.product, 24) || ""}`);
+  lines.push("Recent steps:");
+  const recent = log.slice(-15);
+  if (!recent.length) lines.push("  (none)");
+  for (const e of recent) lines.push(`  ${e.t} ${e.step || "?"}${e.mode ? ` [${e.mode}]` : ""}${e.product ? ` ${e.product}` : ""}${e.code ? ` code=${e.code}` : ""}`);
+  return lines.join("\n");
+}
+
 // What an unfinished journal means for the unit, and what to offer. null when nothing is pending.
 //  - before the loader ran, the running firmware only staged the loader: nothing was written,
 //    retry is safe
@@ -110,6 +227,7 @@ export function pendingRecovery(j) {
 export const HELP = {
   badpackage: ["That file is not a firmware for this unit.", "Pick a firmware from the list, or a .fwsc made for the FM-1."],
   checksum: ["The package failed its checksum, so nothing was written.", "Check the internet connection and press Deploy again."],
+  layout: ["This file is not laid out like an FM-1 firmware package, so nothing was written.", "Pick a firmware from the list, or a .fwsc made for the FM-1 (not an SMK-37 or other model)."],
   midiaccess: ["This browser cannot reach USB-MIDI.", "Use the FM-1 Emulator desktop app, or Chrome or Edge."],
   midiperm: ["MIDI access was not allowed.", "Allow MIDI (with SysEx) for this page, then press Deploy again."],
   nomidi: ["No USB-MIDI device is visible.", "Connect the FM-1 with a USB data cable (charge-only cables do not work), then press SCAN."],
@@ -120,7 +238,7 @@ export const HELP = {
   inupdate: ["The FM-1 is waiting in update mode from an earlier install.", "Press Resume interrupted install, or Roll back to put the previous firmware back."],
   downloadmode: ["The running firmware does not take updates over USB-MIDI. Nothing was written.", "Use download mode with M-Flasher (Recovery options) to flash this unit."],
   stopped: ["The FM-1 stopped answering during the install.", "Replug the USB cable and press Resume interrupted install."],
-  lost: ["The FM-1 was disconnected during the install.", "Reconnect it and press Resume interrupted install. The unit stays in update mode until it is finished."],
+  lost: ["The FM-1 was disconnected during the install.", "Do not switch it off. Reconnect it, press SCAN, and if it shows update mode press Resume interrupted install. If it was switched off or its battery ran out, it may not come back in update mode."],
   badreq: ["The FM-1 asked for data outside the package, so the install stopped.", "Press Resume interrupted install with the same firmware; if it happens again, roll back."],
   noloader: ["The update loader did not appear after staging.", "Replug the USB cable and press Resume interrupted install."],
   noreturn: ["The firmware was written but the FM-1 did not restart on its own.", "Power-cycle the FM-1, then press SCAN to check the new firmware."],

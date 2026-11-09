@@ -6,11 +6,52 @@ const HS_QUERY = [0xf0, 0x00, 0x32, 0x45, 0x00, 0x00, 0x00, 0x40, 0x7f, 0xf7];
 const UPGRADE = [0xf0, 0x22, 0x24, 0x35, 0x7f, 0xf7];
 const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 
-// a minimal .fwsc: 20 blocks whose marker bytes spell the product, then the image body
-export function makePackage(product = "FM-1_904", body = 3000, seed = 7) {
+// a minimal .fwsc laid out like a real one: 20 header blocks whose marker bytes spell the
+// product, a UFW header (masked, with its checksum) listing one flash image, and in that image a
+// directory with the boot head, the config and the firmware area at 0x4000. `layout` bends one
+// field for the refusal tests: { flashLen, appStart, bootEnd, badCrc, noApp, pastEnd }.
+const mask = (buf, off, len, key = 0xffff) => {
+  for (let i = 0; i < len; i++) { buf[off + i] ^= key & 0xff; key = ((key << 1) ^ (key & 0x8000 ? 0x1021 : 0)) & 0xffff; }
+};
+const crc16 = (buf, off, len) => {
+  let crc = 0;
+  for (let i = 0; i < len; i++) { crc ^= buf[off + i] << 8; for (let b = 0; b < 8; b++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff; }
+  return crc;
+};
+const put16 = (b, o, v) => { b[o] = v & 0xff; b[o + 1] = (v >>> 8) & 0xff; };
+const put32 = (b, o, v) => { for (let i = 0; i < 4; i++) b[o + i] = (v >>> (8 * i)) & 0xff; };
+export function makePackage(product = "FM-1_904", body = 3000, seed = 7, layout = {}) {
   const out = new Uint8Array(20 * 0x30 + body);
   let x = seed;
   for (let i = 0; i < out.length; i++) { x = (x * 1103515245 + 12345) >>> 0; out[i] = x >>> 24; }
+  // the UFW header: 940 logical bytes spread over the 20 blocks
+  const hdr = new Uint8Array(20 * 0x2f);
+  for (let i = 0; i < 20; i++) hdr.set(out.subarray(i * 0x30, i * 0x30 + 0x2f), i * 0x2f);
+  const flashAt = 20 * 0x2f;                                   // logical offset: right after the header
+  const flashLen = layout.flashLen ?? Math.min(body - 16, 0x93000);
+  put16(hdr, 8, 1);
+  const e = new Uint8Array(0x50);
+  put16(e, 0, 0); put32(e, 8, flashAt); put32(e, 12, layout.pastEnd ? body + 64 : flashLen);
+  mask(e, 0, 0x50);
+  hdr.set(e, 0x40);
+  put16(hdr, 0, crc16(hdr, 2, 0x3e) ^ (layout.badCrc ? 1 : 0));
+  mask(hdr, 0, 0x40);
+  for (let i = 0; i < 20; i++) out.set(hdr.subarray(i * 0x2f, i * 0x2f + 0x2f), i * 0x30);
+  // the flash image's directory
+  const f = 20 * 0x30;
+  const dir = [
+    ["uboot.boot", 0xa0, (layout.bootEnd ?? 0x3968) - 0xa0, 0x00],
+    ["isd_config.ini", 0x3968, 0x2d, 0x02],
+    [layout.noApp ? "app_dir_tail" : "app_dir_head", layout.appStart ?? 0x4000, 0xffffffff, 0x81],
+  ];
+  mask(out, f, 32);
+  dir.forEach(([name, offset, size, flags], k) => {
+    const o = f + 32 + k * 32;
+    out.fill(0, o, o + 32);
+    put32(out, o + 4, offset); put32(out, o + 8, size); out[o + 12] = flags; put16(out, o + 14, k === dir.length - 1 ? 1 : 0);
+    for (let i = 0; i < name.length; i++) out[o + 16 + i] = name.charCodeAt(i);
+    mask(out, o, 32);
+  });
   for (let i = 0; i < 20; i++) out[i * 0x30 + 0x2f] = i < product.length ? (product.charCodeAt(i) + i + 1) & 0xff : 0x7d;
   return out;
 }

@@ -12,7 +12,7 @@ const { Updater } = await import(new URL("../site/emulator/fm1ota.js", import.me
 const { Unit, makePackage } = await import(new URL("./fake-fm1.mjs", import.meta.url));
 const core = await import(new URL("../site/emulator/flash-core.js", import.meta.url));
 const { logicalImage } = await import(new URL("../site/emulator/fm1pkg.js", import.meta.url));
-const { FlashJournal, HELP, explain, pendingRecovery, validatePackage } = core;
+const { FlashJournal, FlashLog, HELP, explain, pendingRecovery, validatePackage, packageLayout, troubleshootingText } = core;
 
 const FAST = { settle: 5, loaderBoot: 5, rebootBoot: 5, stageIdle: 150, writeIdle: 150, loaderWait: 300, returnWait: 300, poll: 15, openTimeout: 60, handshake: 40, packetGap: 0, backoff: 5, retries: 3 };
 const pkgBytes = makePackage("FM-1_904");
@@ -45,6 +45,25 @@ await test("package checks refuse bad input", async () => {
   await failsWith(validatePackage(pkgBytes, { sha256: "0".repeat(64) }), "checksum", "checksum mismatch");
   await failsWith(validatePackage(pkgBytes, { product: "FM-1_900" }), "badpackage", "catalog product differs");
   await failsWith(validatePackage("not bytes"), "badpackage", "not bytes");
+});
+
+await test("package layout must match the FM-1 flash map", async () => {
+  assert.equal(packageLayout(pkgBytes).appStart, 0x4000);
+  const bent = (layout, label) => failsWith(validatePackage(makePackage("FM-1_904", 3000, 7, layout)), "layout", label);
+  await bent({ badCrc: true }, "header checksum");
+  await bent({ flashLen: 0xff001 }, "image reaching the chip key sector");
+  await bent({ appStart: 0x3000 }, "firmware area below 0x4000");
+  await bent({ appStart: 0x5000 }, "firmware area elsewhere");
+  await bent({ bootEnd: 0x4100 }, "boot head past 0x4000");
+  await bent({ noApp: true }, "no firmware area");
+  await bent({ pastEnd: true }, "image past the end of the file");
+  for (const entry of JSON.parse(readFileSync(resolve(emulator, "firmwares.json"), "utf8")).firmwares.slice(0, 3)) {
+    const name = entry.package;
+    const real = new Uint8Array(readFileSync(resolve(emulator, name)));
+    const l = packageLayout(real);
+    assert.equal(l.appStart, 0x4000, name);
+    assert.ok(l.bootEnd <= 0x4000 && l.flashLength < 0xff000, name);
+  }
 });
 
 // ---------------------------------------------------------------- protocol, happy paths
@@ -109,6 +128,19 @@ await test("unplugged while writing, then resumed", async () => {
   unit.attach("loader");
   assert.equal(await updater(unit).resume(pkg.image, pkg.product), pkg.product, "resume finishes and verifies");
   assert.deepEqual(unit.written, pkg.image);
+});
+await test("a lost write is never retried on its own", async () => {
+  const unit = unitFor({ fault: { disconnectIn: "write", after: 3 } });
+  let sends = 0;
+  const send = unit.output.send;
+  unit.output.send = (b) => { sends++; return send(b); };
+  await failsWith(updater(unit).install(pkg.image, pkg.product), "lost", "lost in write");
+  const after = sends;
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(sends, after, "nothing is sent after the failure");
+  unit.attach("loader");
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal(unit.written.some((v, i) => i > 3 * 512 && v !== 0), false, "reconnecting alone writes nothing");
 });
 await test("silent while writing", async () => {
   await failsWith(updater(unitFor({ fault: { stallIn: "write" } })).install(pkg.image, pkg.product), "stopped", "stopped in write");
@@ -176,9 +208,39 @@ await test("pending recovery for each stopping point", async () => {
   assert.equal(pendingRecovery(j.read()), null);
   assert.equal(j.read().lastGood.fwId, "a");
 });
+await test("journal storage failures never stop an install", async () => {
+  const full = { getItem: () => null, setItem: () => { throw new Error("QuotaExceededError"); }, removeItem() {} };
+  const j = new FlashJournal(full);
+  j.begin({ fwId: "a", name: "A", product: "FM-1_900", sha256: "aa" });
+  assert.equal(j.unsaved, true, "the journal knows it was not saved");
+  const log = new FlashLog(full);
+  assert.doesNotThrow(() => log.add("start", { code: "x" }));
+  assert.deepEqual(log.read(), []);
+  const corrupt = { getItem: () => "{not json", setItem() {}, removeItem() {} };
+  assert.equal(new FlashJournal(corrupt).read(), null, "a corrupt journal reads as none");
+  assert.equal(pendingRecovery(new FlashJournal(corrupt).read()), null);
+  assert.deepEqual(new FlashLog(corrupt).read(), []);
+  const odd = new Store(); odd.setItem("fm1.flash-journal.v1", JSON.stringify({ status: "running", phase: "nonsense" }));
+  assert.equal(pendingRecovery(new FlashJournal(odd).read()), null, "an unknown phase offers nothing");
+});
+await test("event log is bounded and keeps no paths, ports or serials", async () => {
+  const store = new Store();
+  const log = new FlashLog(store, undefined, 5);
+  for (let i = 0; i < 9; i++) log.add(i < 4 ? "start" : "write", { code: i === 4 ? "lost" : null, product: "FM-1_904", mode: "install" });
+  assert.equal(log.read().length, 5, "bounded");
+  assert.equal(log.read()[0].code, "lost", "oldest dropped first");
+  const e = log.add("C:\\Users\\someone\\x<script>", { code: "a".repeat(80), product: "FM-1_904\nserial=ABC", mode: "\\\\.\\PhysicalDrive5" });
+  assert.deepEqual({ step: e.step, code: e.code, product: e.product, mode: e.mode }, { step: "other", code: "other", product: undefined, mode: undefined });
+  const text = troubleshootingText({
+    journal: { status: "failed", phase: "writing", code: "lost", name: "B 2", product: "FM-1_904", updated: 1, lastGood: { name: "A 1", product: "FM-1_900" } },
+    log: log.read(), seen: { found: false, code: "nomidi" }, usb: { summary: "download mode (WL82 UBOOT1.00)" }, app: "FM-1 Emulator",
+  });
+  for (const want of ["step writing, failed (lost)", "other code=other", "write [install] FM-1_904", "Previous good install: A 1", "not found (nomidi)", "download mode"]) assert.ok(text.includes(want), want);
+  assert.ok(!/C:|Users|someone|Physical|serial/.test(text), "no local paths, drives or serials");
+});
 await test("every updater failure has words and a next step", async () => {
   const codes = new Set([...readFileSync(resolve(emulator, "fm1ota.js"), "utf8").matchAll(/fail\('(\w+)'/g)].map((m) => m[1]));
-  for (const code of [...codes, "badpackage", "checksum", "midiperm", "midiaccess", "sourcemismatch", "busy", "notfound", "nomidi", "noport"]) {
+  for (const code of [...codes, "badpackage", "layout", "checksum", "midiperm", "midiaccess", "sourcemismatch", "busy", "notfound", "nomidi", "noport"]) {
     assert.ok(HELP[code], `message for ${code}`);
     const x = explain(Object.assign(new Error("x"), { code }));
     assert.ok(x.what && x.next, `${code}: what and next`);

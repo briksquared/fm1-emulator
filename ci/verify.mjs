@@ -128,14 +128,10 @@ assert.equal(packageJson.build.nsis.guid, "79b50ff1-604f-59d5-b1fb-36e19b956082"
 assert.equal(packageJson.build.nsis.perMachine, false, "per-user install, as before");
 assert.notEqual(packageJson.build.nsis.deleteAppDataOnUninstall, true, "upgrades keep user data");
 assert.match(host, /setAppUserModelId\("com\.briksquared\.fm1emulator"\)/, "window AppUserModelID matches the shortcuts");
-// App updates: electron-updater reads the GitHub feed the release workflow uploads.
-assert.deepEqual(packageJson.build.publish?.map(p => [p.provider, p.owner, p.repo]), [["github", "briksquared", "fm1-emulator"]], "update feed is this repository's releases");
-assert.ok(packageJson.build.files.includes("updater.js"), "updater packaged");
-assert.ok(packageJson.dependencies?.["electron-updater"], "electron-updater is a runtime dependency");
-const workflow = text(".github/workflows/release.yml");
-for (const feed of ["latest.yml", "latest-mac.yml", "latest-linux.yml"]) assert.ok(workflow.includes(feed), `release workflow checks ${feed}`);
-assert.match(workflow, /dist\/latest\*\.yml/, "release workflow uploads the update feeds");
-assert.match(workflow, /dist\/\*\.blockmap/, "release workflow uploads blockmaps");
+// App updates only check GitHub and link to the release page: nothing downloads or installs itself.
+assert.ok(packageJson.build.files.includes("updater.js"), "update check packaged");
+assert.ok(!packageJson.dependencies?.["electron-updater"] && !packageJson.devDependencies?.["electron-updater"], "no self-installing updater");
+assert.ok(!text("updater.js").includes("electron-updater") && !host.includes("electron-updater"), "no self-installing updater in the app");
 assert.ok(packageJson.build.files.includes("FIRMWARE-SOURCES.json"), "source manifest included in packaged app");
 assert.ok(packageJson.build.files.includes("LICENSES/**/*"), "third-party license texts included in packaged app");
 console.log(`PASS: ${entries.length} unique, open-license FM-1 packages; hashes, identities, order, source manifest, patch, and resource loader verified.`);

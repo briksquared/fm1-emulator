@@ -101,10 +101,9 @@ firmware to your FM-1 in a few clicks, and recover if anything goes wrong.**
   accent colours; text contrast is kept readable
 
 ### Stays up to date
-- **In-app updates**: the desktop app checks GitHub Releases and tells you when a new version is
-  out. Nothing downloads until you say so. With the Windows installer, and an AppImage that can
-  write to its own file, a download you start installs when you restart or quit; macOS, `.deb`,
-  and portable builds open the right download page
+- **Update check**: the desktop app checks GitHub Releases and tells you when a new version is
+  out, with a button that opens its release page. It never downloads or installs anything itself;
+  you install the new version over the old one, as the first time
 - **Clean upgrades**: install a new version over the old one with no uninstall; favorites, saved
   firmware, and settings are kept
 

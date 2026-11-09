@@ -93,11 +93,10 @@ Edge and Firefox do.
 
 The app checks GitHub Releases for a newer version shortly after it starts, and **Help → Check
 for App Updates…** (on macOS, in the **FM-1 Emulator** menu) checks on demand. This is the app
-itself, separate from the firmware update radar. Nothing downloads until you choose **Download**.
-With the Windows installer, and an AppImage that can write to its own file, that download
-installs when you choose **Restart now**, or the next time you quit. On macOS, the `.deb`, and
-the portable `.exe` it offers the download page instead (unsigned Mac builds can't replace
-themselves); install the new version over the old one as below.
+itself, separate from the firmware update radar. When there's a newer release it says so and
+offers **Open release page**; nothing opens unless you choose it, and the app never downloads or
+installs an update itself. Download the new version from that page and install it over the old
+one as below. The check at startup stays quiet when you're up to date or offline.
 
 To update by hand, install the new version over the old one; there's no need to uninstall first. Favorites, saved
 firmware, settings and logs live in the app's own profile folder, which upgrades never touch.

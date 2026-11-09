@@ -1,43 +1,74 @@
-// App updates from GitHub Releases (briksquared/fm1-emulator). Separate from the firmware
-// update radar in the page: this updates the desktop app itself.
+// Checking for a newer app version on GitHub Releases (briksquared/fm1-emulator). Separate from
+// the firmware update radar in the page: this is about the desktop app itself.
 //
-// Where the build can replace itself (the Windows installer, an AppImage), a newer release is
-// downloaded and installed when the app restarts. Elsewhere it opens the release page:
-// unsigned macOS builds cannot install updates in place (Squirrel.Mac requires a signed app),
-// a .deb is upgraded through the package manager, and the portable .exe has no installation.
+// Nothing is downloaded or installed here. A check asks GitHub for the latest published release
+// and, when it is newer, offers to open its release page; downloading and installing it is up
+// to the player, as with the first install.
 const { app, dialog, shell, net, BrowserWindow } = require("electron");
 
 const RELEASES = "https://github.com/briksquared/fm1-emulator/releases";
 const LATEST_API = "https://api.github.com/repos/briksquared/fm1-emulator/releases/latest";
+const TIMEOUT_MS = 15000;
 
-// The newest published (non-draft, non-prerelease) version, for builds that only link to it.
-async function latestRelease() {
-  const response = await net.fetch(LATEST_API, { headers: { accept: "application/vnd.github+json", "user-agent": `fm1-emulator/${app.getVersion()}` } });
-  if (!response.ok) throw new Error(`GitHub answered ${response.status}`);
-  const release = await response.json();
-  return cleanVersion(release.tag_name);
+class CheckError extends Error {
+  constructor(kind, message) { super(message); this.kind = kind; }
 }
 
-let updater = null;
-function getUpdater() {
-  if (!updater) {
-    updater = require("electron-updater").autoUpdater;
-    updater.autoDownload = false;            // ask first; a download is ~100 MB
-    updater.autoInstallOnAppQuit = true;     // a finished download installs on the next quit
-    updater.allowPrerelease = false;
-    updater.logger = null;
+// The latest published (non-draft, non-prerelease) release as { version, page }, or null when
+// there is none.
+async function latestRelease(fetch = net.fetch) {
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
+  let response, release;
+  try {
+    response = await fetch(LATEST_API, { signal: abort.signal,
+      headers: { accept: "application/vnd.github+json", "user-agent": `fm1-emulator/${app.getVersion()}` } });
+    if (response.status === 404) return null;   // no published release yet
+    if (response.status === 403 || response.status === 429) {
+      const left = response.headers?.get?.("x-ratelimit-remaining");
+      throw new CheckError("limited", left === "0" || response.status === 429 ? "GitHub is limiting checks from this network right now." : `GitHub answered ${response.status}.`);
+    }
+    if (!response.ok) throw new CheckError("http", `GitHub answered ${response.status}.`);
+    release = await response.json();
+  } catch (error) {
+    if (error instanceof CheckError) throw error;
+    if (abort.signal.aborted) throw new CheckError("timeout", "GitHub didn't answer in time.");
+    if (error instanceof SyntaxError) throw new CheckError("http", "GitHub's answer could not be read.");
+    throw new CheckError(offlineError(error) ? "offline" : "other", String(error?.message || error).split("\n")[0]);
+  } finally {
+    clearTimeout(timer);
   }
-  return updater;
+  if (!release || typeof release !== "object" || release.draft || release.prerelease) return null;
+  const tag = typeof release.tag_name === "string" ? release.tag_name.trim() : "";
+  const version = cleanVersion(tag);
+  if (!version) throw new CheckError("http", "GitHub's latest release has no version number.");
+  return { version, page: releasePage(tag) };
 }
 
-// How this copy was installed decides whether it can update itself.
+const offlineError = (error) => /ENOTFOUND|ENETUNREACH|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|net::ERR_(INTERNET_DISCONNECTED|NAME_NOT_RESOLVED|NETWORK_CHANGED|CONNECTION|ADDRESS_UNREACHABLE|PROXY|TIMED_OUT)/i
+  .test(String(error?.message || error) + " " + String(error?.cause?.code || ""));
+
+// the page opened in the browser: always this repository's release page for a validated tag
+function releasePage(tag) {
+  if (!cleanVersion(tag)) return RELEASES;
+  const url = new URL(`${RELEASES}/tag/${encodeURIComponent(tag)}`);
+  return url.origin === "https://github.com" && url.pathname.startsWith("/briksquared/fm1-emulator/releases/tag/") ? url.href : RELEASES;
+}
+
+// How this copy was installed only changes the advice on how to install the new version.
 function installKind() {
-  if (process.platform === "win32") return process.env.PORTABLE_EXECUTABLE_DIR ? "portable" : "nsis";
+  if (process.platform === "win32") return process.env.PORTABLE_EXECUTABLE_DIR ? "portable" : "installer";
   if (process.platform === "darwin") return "mac";
   if (process.platform === "linux") return process.env.APPIMAGE ? "appimage" : "deb";
   return "other";
 }
-const canSelfInstall = () => ["nsis", "appimage"].includes(installKind());
+const HOW = {
+  installer: "Download the new installer and run it; it installs over this copy and keeps your settings.",
+  portable: "Download the new portable .exe or the installer.",
+  mac: "Download it and drag it to Applications to replace this copy.",
+  appimage: "Download the new AppImage and use it in place of this one.",
+  deb: "Download the .deb and install it over this one (sudo apt install ./FM-1-Emulator-*.deb).",
+};
 
 const appWindow = () => BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0] || null;
 function message(options) {
@@ -45,97 +76,80 @@ function message(options) {
   return win ? dialog.showMessageBox(win, options) : dialog.showMessageBox(options);
 }
 
-let busy = false, downloaded = null;
+let busy = false, offered = null;
 
-// interactive: from the menu (always answers); otherwise the quiet check at startup, which
-// only speaks up when there is a newer version and never reports network failures.
-async function checkForUpdates({ interactive = false, log = () => {} } = {}) {
-  if (downloaded) return promptRestart(downloaded);
+// interactive: from the menu (always answers). Otherwise the quiet check at startup, which only
+// speaks up, once per run and per version, when there is a newer version, and never reports
+// failures. Neither opens a browser unless the player picks "Open release page".
+async function checkForUpdates({ interactive = false, log = () => {}, fetch } = {}) {
   if (busy) {
-    if (interactive) message({ type: "info", message: "Already checking for updates.", buttons: ["OK"] });
+    if (interactive) await message({ type: "info", message: "Already checking for updates.", buttons: ["OK"] });
     return;
   }
-  if (!app.isPackaged) {
-    if (interactive) message({ type: "info", message: "Updates are checked in the installed app.",
-      detail: `This is a development copy (${app.getVersion()}).`, buttons: ["OK"] });
-    return;
-  }
+  if (!app.isPackaged && !interactive) return;
   busy = true;
+  const current = app.getVersion();
   try {
-    const u = canSelfInstall() ? getUpdater() : null;
-    let latest;
-    if (u) {
-      const result = await u.checkForUpdates();
-      if (!result) throw new Error("this copy cannot check for updates");
-      latest = cleanVersion(result.updateInfo?.version);
-    } else latest = await latestRelease();
-    const newer = !!(latest && isNewer(latest, app.getVersion()));
-    log("update-check", { current: app.getVersion(), latest: latest || null, newer, kind: installKind() });
+    const latest = await latestRelease(fetch);
+    const newer = !!(latest && isNewer(latest.version, current));
+    log("update-check", { current, latest: latest?.version || null, newer });
     if (!newer) {
       if (interactive) await message({ type: "info", message: "FM-1 Emulator is up to date.",
-        detail: `You have version ${app.getVersion()}, the latest release.`, buttons: ["OK"] });
+        detail: latest ? `You have version ${current}; the latest release is ${latest.version}.` : `You have version ${current}. There is no published release to compare with yet.`,
+        buttons: ["OK"] });
       return;
     }
-    const page = `${RELEASES}/tag/v${latest}`;
-    if (!canSelfInstall()) {
-      const how = { mac: "Download it and drag it to Applications to replace this copy.",
-        deb: "Download the .deb and install it over this one (sudo apt install ./FM-1-Emulator-*.deb).",
-        portable: "Download the new portable .exe or the installer." }[installKind()] || "Download it from the release page.";
-      const { response } = await message({ type: "info", message: `FM-1 Emulator ${latest} is available.`,
-        detail: `You have ${app.getVersion()}. ${how}`, buttons: ["Open download page", "Later"], defaultId: 0, cancelId: 1 });
-      if (response === 0) shell.openExternal(page);
-      return;
-    }
-    const { response } = await message({ type: "info", message: `FM-1 Emulator ${latest} is available.`,
-      detail: `You have ${app.getVersion()}. Download it now? It installs when the app restarts; your settings and saved firmware are kept.`,
-      buttons: ["Download", "Release notes", "Later"], defaultId: 0, cancelId: 2 });
-    if (response === 1) { shell.openExternal(page); return; }
-    if (response !== 0) return;
-    const win = appWindow();
-    const progress = (p) => { if (win && !win.isDestroyed()) win.setProgressBar(Math.max(0, Math.min(1, p.percent / 100))); };
-    u.on("download-progress", progress);
-    try {
-      await u.downloadUpdate();
-    } finally {
-      u.removeListener("download-progress", progress);
-      if (win && !win.isDestroyed()) win.setProgressBar(-1);
-    }
-    downloaded = latest;
-    log("update-downloaded", { version: latest });
-    await promptRestart(latest);
+    if (!interactive && offered === latest.version) return;
+    offered = latest.version;
+    const { response } = await message({ type: "info", message: `FM-1 Emulator ${latest.version} is available.`,
+      detail: `You have ${current}. ${HOW[installKind()] || "Download it from the release page."}`,
+      buttons: ["Open release page", "Later"], defaultId: 0, cancelId: 1 });
+    if (response === 0) await shell.openExternal(latest.page);
   } catch (error) {
-    log("update-error", { error: String(error?.message || error) });
+    log("update-error", { kind: error?.kind || "other", error: String(error?.message || error).split("\n")[0] });
     if (interactive) {
-      const offline = /ENOTFOUND|ENETUNREACH|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|net::ERR_/i.test(String(error?.message || error));
-      const { response } = await message({ type: "warning", message: "Couldn't check for updates.",
-        detail: offline ? "There's no connection to GitHub right now. Try again when you're online."
-          : `${String(error?.message || error).split("\n")[0]}\nYou can also look for a newer version on the releases page.`,
+      const detail = {
+        offline: "There's no connection to GitHub right now. Try again when you're online.",
+        timeout: "GitHub didn't answer in time. Try again in a moment.",
+        limited: "GitHub is limiting update checks from this network for now. Try again later, or look at the releases page.",
+      }[error?.kind] || `${String(error?.message || error).split("\n")[0]}\nYou can also look for a newer version on the releases page.`;
+      const { response } = await message({ type: "warning", message: "Couldn't check for updates.", detail,
         buttons: ["OK", "Open releases page"], defaultId: 0, cancelId: 0 });
-      if (response === 1) shell.openExternal(RELEASES);
+      if (response === 1) await shell.openExternal(RELEASES);
     }
   } finally {
     busy = false;
   }
 }
 
-async function promptRestart(version) {
-  const { response } = await message({ type: "info", message: `FM-1 Emulator ${version} is ready to install.`,
-    detail: "Restart now to finish, or it installs the next time you quit.", buttons: ["Restart now", "Later"], defaultId: 0, cancelId: 1 });
-  if (response === 0) setImmediate(() => getUpdater().quitAndInstall(false, true));
-}
-
-// a release version as x.y.z (with an optional suffix), or null: it ends up in a URL and a dialog
+// a release version as x.y.z with an optional prerelease and build suffix, or null: it ends up
+// in a URL and a dialog
 function cleanVersion(v) {
-  const m = /^v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(String(v || "").trim());
+  const m = /^v?(\d{1,9}\.\d{1,9}\.\d{1,9}(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)(?:\+[0-9A-Za-z.-]+)?$/.exec(String(v ?? "").trim());
   return m ? m[1] : null;
 }
 
-// semver core comparison (release builds only carry x.y.z)
-function isNewer(latest, current) {
-  const parse = (v) => String(v).replace(/^v/, "").split(/[.+-]/).slice(0, 3).map((n) => Number(n) || 0);
-  const a = parse(latest), b = parse(current);
-  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i];
-  return false;
+// semver precedence: x.y.z first; then a release is newer than its own prereleases (1.2.0 >
+// 1.2.0-beta.2), and prereleases compare field by field (numbers numerically, beta.10 > beta.2).
+// Anything unreadable is never newer.
+function compareVersions(a, b) {
+  const pa = cleanVersion(a), pb = cleanVersion(b);
+  if (!pa || !pb) return null;
+  const split = (v) => { const i = v.indexOf("-"); return [v.slice(0, i < 0 ? v.length : i).split(".").map(Number), i < 0 ? [] : v.slice(i + 1).split(".")]; };
+  const [ca, ra] = split(pa), [cb, rb] = split(pb);
+  for (let i = 0; i < 3; i++) if (ca[i] !== cb[i]) return ca[i] > cb[i] ? 1 : -1;
+  if (!ra.length || !rb.length) return ra.length === rb.length ? 0 : ra.length ? -1 : 1;
+  for (let i = 0; i < Math.max(ra.length, rb.length); i++) {
+    if (i >= ra.length) return -1;
+    if (i >= rb.length) return 1;
+    const x = ra[i], y = rb[i], nx = /^\d+$/.test(x), ny = /^\d+$/.test(y);
+    if (x === y) continue;
+    if (nx && ny) return Number(x) > Number(y) ? 1 : -1;
+    if (nx !== ny) return nx ? -1 : 1;
+    return x > y ? 1 : -1;
+  }
+  return 0;
 }
+const isNewer = (latest, current) => compareVersions(latest, current) === 1;
 
-module.exports = { checkForUpdates, installKind, isNewer, cleanVersion, RELEASES };
+module.exports = { checkForUpdates, latestRelease, installKind, isNewer, compareVersions, cleanVersion, releasePage, RELEASES };

@@ -14,6 +14,9 @@ const softwareRendering = process.env.FM1_SOFTWARE_RENDERING !== "0";
 if (softwareRendering) app.disableHardwareAcceleration();
 // Automated checks can use an isolated profile so they never contend with a
 // user's running installed copy or alter its favorites and saved firmware.
+// The installer's shortcuts carry the appId as their AppUserModelID. The window must use the
+// same one, or Windows groups it apart from a pinned shortcut and keeps the pin's old icon.
+if (process.platform === "win32") app.setAppUserModelId("com.briksquared.fm1emulator");
 if (process.env.FM1_SELFTEST_PROFILE) app.setPath("userData", path.resolve(process.env.FM1_SELFTEST_PROFILE));
 
 function desktopLog(event, details) {

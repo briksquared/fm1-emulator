@@ -115,6 +115,15 @@ assert.ok(entries.some(entry => entry.id === "aurora" && entry.version === "0.9.
 const readme = text("README.md");
 assert.match(readme, new RegExp(`\\b${entries.length}\\b`), "README firmware count");
 assert.match(text("THIRD-PARTY.md"), new RegExp(`Bundled firmware \\(${entries.length}\\)`), "third-party count");
+// Upgrades: every public installer so far used this appId, product name and NSIS GUID (the GUID
+// electron-builder derives from the appId). Changing any of them makes a new installer a
+// different app, which leaves the old one installed beside it.
+assert.equal(packageJson.build.appId, "com.briksquared.fm1emulator", "appId stays stable across releases");
+assert.equal(packageJson.build.productName, "FM-1 Emulator", "productName stays stable across releases");
+assert.equal(packageJson.build.nsis.guid, "79b50ff1-604f-59d5-b1fb-36e19b956082", "NSIS GUID matches earlier installers");
+assert.equal(packageJson.build.nsis.perMachine, false, "per-user install, as before");
+assert.notEqual(packageJson.build.nsis.deleteAppDataOnUninstall, true, "upgrades keep user data");
+assert.match(host, /setAppUserModelId\("com\.briksquared\.fm1emulator"\)/, "window AppUserModelID matches the shortcuts");
 assert.ok(packageJson.build.files.includes("FIRMWARE-SOURCES.json"), "source manifest included in packaged app");
 assert.ok(packageJson.build.files.includes("LICENSES/**/*"), "third-party license texts included in packaged app");
 console.log(`PASS: ${entries.length} unique, open-license FM-1 packages; hashes, identities, order, source manifest, patch, and resource loader verified.`);

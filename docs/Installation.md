@@ -31,6 +31,8 @@ the app. This is normal for independent software — nothing is wrong with the d
   codesign --force --deep --sign - "/Applications/FM-1 Emulator.app"
   ```
 
+## Linux
+
 The Linux builds are unsigned (normal for Linux — there's no Gatekeeper), so they just run. If one
 **won't launch**, it's almost always one of the two system issues below, not the app.
 
@@ -64,3 +66,16 @@ The Linux builds are unsigned (normal for Linux — there's no Gatekeeper), so t
   ```
 
   (`--no-sandbox` disables one Chromium security layer — fine for a local, offline tool.)
+
+## Upgrading
+
+Install the new version over the old one; there's no need to uninstall first. Favorites, saved
+firmware, settings and logs live in the app's own profile folder, which upgrades never touch.
+
+- **Windows installer:** the new setup removes the previous version and puts its shortcuts back.
+  If you change the install folder, the old folder is still cleaned up. Keep the same install mode
+  (just me / all users) as before; the setup preselects it. The portable `.exe` never installs
+  anything, so delete old copies yourself.
+- **macOS:** drag the new app to Applications and choose **Replace**.
+- **Debian / Ubuntu:** `sudo apt install ./FM-1-Emulator-*.deb` upgrades the installed package.
+- **AppImage:** delete the old `.AppImage` file and use the new one.

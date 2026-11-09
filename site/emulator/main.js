@@ -64,7 +64,11 @@ const saveStatus = document.getElementById("save-status");
 const saveStore = new SaveStore();
 const memoryRecords = new Map();
 const saveMessage = (text, failed = false) => { saveStatus.textContent = text; saveStatus.dataset.error = String(failed); };
-const saveFailure = error => saveMessage(`Not saved in browser: ${error.message}. Export a backup to keep your changes.`, true);
+const issue = window.FM1Issues || { show() {}, clear() {} };   // the status chip in the transport bar (issues.js)
+const saveFailure = error => {
+  saveMessage(`Not saved in browser: ${error.message}. Export a backup to keep your changes.`, true);
+  issue.show("save", { title: "Not saved", text: `Changes were not saved in the app: ${error.message}. Export a backup to keep them.`, level: "error" });
+};
 
 // per-firmware capability audit (what each one accepts, so the info panel can say how to drive it)
 const CAPS = await fetch("classify.json?v=53").then(r => r.json()).then(a => Object.fromEntries(a.map(x => [x.id, x]))).catch(() => ({}));
@@ -367,7 +371,10 @@ async function openLocal(file) {
   if (node) boot();
   else status.textContent = `${file.name} ready: click Start`;
 }
-const fileFailure = error => { status.textContent = `Could not open file: ${error.message || error}`; };
+const fileFailure = error => {
+  status.textContent = `Could not open file: ${error.message || error}`;
+  issue.show("file", { title: "File not opened", text: status.textContent, level: "error" });
+};
 openInput.addEventListener("change", () => { openLocal(openInput.files[0]).catch(fileFailure); openInput.value = ""; });
 bankInput.addEventListener("change", async () => {
   const file = bankInput.files[0];
@@ -717,13 +724,14 @@ midiChSel.addEventListener("change", () => {
 // Some seconds of either, once the JIT has warmed up, bring up a warning that offers the fix.
 // The speed shown is the emulator's own: emulated time per time spent emulating (as
 // `node web/bench.mjs` and `fm1-live --bench` print it); at 1x a device just keeps up.
-const warnBox = document.getElementById("perfwarn");
 const perf = {
   reset() {
     this.busy = 0; this.span = 0; this.emulated = 0; this.idle = 0; this.idleShare = 0; this.worst = 0;
     this.secs = 0; this.bad = 0; this.drops = 0; this.loads = []; this.speeds = []; this.drift = 0;
-    this.stamp = null; this.jit = null; this.dismissed = false;
-    warnBox.hidden = true;
+    this.stamp = null; this.jit = null; this.lastSecond = 0; this.dryAt = null; this.shown = false;
+    // a dismissed warning stays dismissed for this firmware, clock and buffer, across reboots
+    if (this.dismissedFor !== this.key()) this.dismissed = false;
+    issue.clear("perf");
   },
   add(m) {
     this.busy += m.busy;
@@ -733,6 +741,7 @@ const perf = {
     if (m.worst > this.worst) this.worst = m.worst;
     this.jit = m.jit;
   },
+  key() { return `${fw?.id}|${mhz}|${latency}`; },
   load() { return this.loads.length ? this.loads[this.loads.length - 1] : 0; },
   loadText() { return this.loads.length ? `${Math.round(100 * this.load())}%` : "…"; },
   speed() { return this.speeds.length ? this.speeds[this.speeds.length - 1] : NaN; },
@@ -756,11 +765,24 @@ const perf = {
       this.stamp = ts;
     }
     this.drift = drift;
+    // Seconds that say nothing about this device keeping up: the audio clock stopped (an output
+    // device change, Bluetooth reconnecting, sleep, a suspended context) or the page was hidden.
+    // They used to count as "late" and brought up the buffer warning, which no buffer fixes.
+    const now = performance.now(), gap = this.lastSecond ? now - this.lastSecond : 1000;
+    this.lastSecond = now;
+    const stalled = ac?.state !== "running" || document.hidden || gap > 1600 || Math.abs(drift) > 0.5;
+    // The worker engine: the audio thread keeps time and plays silence when the emulator is late,
+    // so the clock stays steady either way; the real measure is the quanta that ran dry.
+    const dry = worker && stream ? stream.underruns : null;
+    const newDry = dry != null && this.dryAt != null ? dry - this.dryAt : 0;
+    if (dry != null) this.dryAt = dry;
     if (++this.secs <= 3 || m.halted) return;      // (the first seconds: booting, compiling)
-    const over = this.load() > 0.95, late = drift > 0.02;
+    if (stalled) { this.bad = 0; return; }
+    const over = this.load() > 0.95;
+    const late = worker ? newDry >= 3 : drift > 0.02;
     if (late) this.drops++;
     this.bad = over || late ? this.bad + 1 : 0;
-    if (this.bad >= 3 && warnBox.hidden && !this.dismissed) this.warn(over);
+    if (this.bad >= 3 && !this.shown && !this.dismissed) this.warn(over);
   },
   // A lower clock that brings the load down to ~80%, if one does. The cost of emulating a
   // second is a fixed part (about a quarter at the clocks offered: the peripherals, the audio, the
@@ -779,8 +801,7 @@ const perf = {
   warn(over) {
     const load = this.load();
     const pick = over ? this.lowerClock(load) : null;
-    const text = document.getElementById("perfwarn-text");
-    const fix = document.getElementById("perfwarn-fix");
+    const text = { textContent: "" }, fix = { hidden: false, textContent: "", onclick: null };
     // (a debugger attached, as DevTools open, runs the WebAssembly 3-4x slower)
     const devtools = " If the browser's developer tools are open, close them: they slow the emulator down 3-4x.";
     fix.hidden = false;
@@ -812,7 +833,13 @@ const perf = {
       text.textContent = `The sound drops out on this device even with the largest audio buffer (load ${Math.round(100 * load)}%).`;
       fix.hidden = true;
     }
-    warnBox.hidden = false;
+    this.shown = true;
+    const actions = [];
+    if (!fix.hidden) actions.push({ label: fix.textContent, primary: true, run: fix.onclick });
+    actions.push({ label: "Copy a report", closes: false, run: copyReport });
+    actions.push({ label: "Report on GitHub ↗", href: "https://github.com/briksquared/fm1-emulator/issues/new" });
+    issue.show("perf", { title: over ? "Emulator can't keep up" : "Audio dropouts", text: text.textContent, level: "warn", actions,
+      onDismiss: () => { this.dismissed = true; this.dismissedFor = this.key(); } });
   },
   // for a bug report: what the device is and how it kept up
   report() {
@@ -835,8 +862,7 @@ const perf = {
     ].join("\n");
   },
 };
-document.getElementById("perfwarn-copy").addEventListener("click", async (e) => {
-  const b = e.currentTarget;
+async function copyReport(b) {
   try {
     await navigator.clipboard.writeText(perf.report());
     b.textContent = "Copied";
@@ -844,11 +870,7 @@ document.getElementById("perfwarn-copy").addEventListener("click", async (e) => 
     prompt("Copy this report:", perf.report());     // (no clipboard access: let them copy it)
   }
   setTimeout(() => { b.textContent = "Copy a report"; }, 2000);
-});
-document.getElementById("perfwarn-close").addEventListener("click", () => {
-  warnBox.hidden = true;
-  perf.dismissed = true;
-});
+}
 function setClock(c) {
   mhz = c;
   if (![...mhzSel.options].some((o) => Number(o.value) === c)) mhzSel.add(new Option(`${c} MHz`, c));
@@ -878,11 +900,21 @@ async function setLatency(l) {
     return true;
   } catch (error) {
     latency = previous;
+    // the old context is already closed: bring the sound back on the buffer that worked
+    let restored = false;
+    try {
+      if (!node) await startAudio();
+      restored = await boot();
+      if (restored) await ac.resume();
+    } catch { restored = false; }
     if (!running) {
       startBtn.hidden = false;
       startBtn.disabled = false;
     }
-    status.textContent = `Audio buffer change failed: ${error.message || error}. Click Start to retry.`;
+    const why = error.message || String(error);
+    status.textContent = restored ? `Audio buffer change failed: ${why}. Kept the previous buffer.`
+      : `Audio buffer change failed: ${why}. Click Start to retry.`;
+    issue.show("audio", { title: "Buffer change failed", text: status.textContent, level: "error" });
     return false;
   } finally {
     if (bufSel) { bufSel.value = latency; bufSel.disabled = false; }
@@ -1061,7 +1093,10 @@ async function startAudio() {
       const prefill = STREAM_PREFILL[latency] || 8192;
       node = new AudioWorkletNode(ac, "fm1-stream", { numberOfInputs: 0, outputChannelCount: [2], processorOptions: { prefill } });
       worker = new Worker("engine.js?v=1", { type: "module" });
-      worker.onerror = (e) => { status.textContent = `the emulator worker failed: ${e.message || "unknown error"}`; };
+      worker.onerror = (e) => {
+        status.textContent = `the emulator worker failed: ${e.message || "unknown error"}`;
+        issue.show("boot", { title: "Emulator stopped", text: status.textContent + ". Press Start to run it again.", level: "error" });
+      };
       const channel = new MessageChannel();
       worker.postMessage({ type: "engine-init", sampleRate: ac.sampleRate, audio: channel.port1 }, [channel.port1]);
       node.port.postMessage({ type: "engine", port: channel.port2 }, [channel.port2]);
@@ -1098,7 +1133,10 @@ function onWorklet(e) {
     }
     const waiter = bootWaiters.get(m.seq);
     if (waiter) { clearTimeout(waiter.timer); bootWaiters.delete(m.seq); waiter.reject(new Error(m.message)); }
-    if (m.seq === bootSeq) status.textContent = `${fw.name}: ${m.message}`;
+    if (m.seq === bootSeq) {
+      status.textContent = `${fw.name}: ${m.message}`;
+      issue.show("boot", { title: `${fw.name} stopped`, text: `${fw.name}: ${m.message}`, level: "error" });
+    }
     return;
   }
   if (m.type === "flash-changed") {
@@ -1132,6 +1170,7 @@ function onWorklet(e) {
     clearTimeout(waiter.timer); bootWaiters.delete(m.seq); waiter.resolve();
     if (m.seq === bootSeq) {
       booting = 0;
+      issue.clear("boot");
       setBoard(m.board);
       if (m.board === 1) for (let i = 16; i < 22; i++) send({ type: "analog", idx: i, value: analog[i] });
     }
@@ -1174,6 +1213,7 @@ startBtn.addEventListener("click", async () => {
     if (matchMedia("(orientation: landscape) and (max-height: 560px)").matches) canvas.scrollIntoView({ block: "center" });
   } catch (error) {
     status.textContent = `Could not start audio: ${error.message || error}`;
+    issue.show("audio", { title: "No audio", text: `${status.textContent}. Check that an output device is connected, then press Start again.`, level: "error" });
   } finally {
     if (!startBtn.hidden) startBtn.disabled = false;
   }
@@ -1260,7 +1300,7 @@ if (scanOpenSource && applyOpenSource && openSourceStatus) {
     scanOpenSource.classList.add("scanning");
     applyOpenSource.hidden = true;
     openSourceStatus.dataset.error = "false";
-    openSourceStatus.textContent = "Scanning the live open-source catalog…";
+    openSourceStatus.textContent = "Scanning for new firmware…";
     try {
       const result = await scanOpenFirmwareUpdates(bundledCatalog, catalog);
       store(updateKey, JSON.stringify(result.remember));
@@ -1281,6 +1321,7 @@ if (scanOpenSource && applyOpenSource && openSourceStatus) {
     }
   });
   applyOpenSource.addEventListener("click", () => location.reload());
+  scanOpenSource.disabled = false;   // enabled once the handler is wired (the page loads the emulator first)
 }
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden" && running) flushRunning().catch(saveFailure);

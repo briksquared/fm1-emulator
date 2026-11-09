@@ -174,11 +174,11 @@
         line-height:1;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;text-align:center}
       .fm1-ov img.fm1-ov-c{height:auto}
       .fm1-ov .h{position:absolute;display:none;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;
-        background:#0c0d0f;border:1.5px solid var(--amber);color:#fff;font-size:15px;cursor:pointer;z-index:2;line-height:1;padding:0}
-      #fm1-ov-layer.edit .fm1-ov.sel{outline:1.5px dashed rgba(250,84,0,.9);outline-offset:3px}
+        background:var(--ui-pop,#0c0d0f);border:1.5px solid var(--amber);color:var(--ui-text,#fff);font-size:15px;cursor:pointer;z-index:2;line-height:1;padding:0}
+      #fm1-ov-layer.edit .fm1-ov.sel{outline:1.5px dashed color-mix(in srgb,var(--amber) 90%,transparent);outline-offset:3px}
       #fm1-ov-layer.edit .fm1-ov.sel .h{display:flex}
       /* a faint dashed frame on every item while arranging, so you can see what's grabbable */
-      #fm1-ov-layer.edit .fm1-ov{outline:1px dashed rgba(250,84,0,.35);outline-offset:2px}
+      #fm1-ov-layer.edit .fm1-ov{outline:1px dashed color-mix(in srgb,var(--amber) 35%,transparent);outline-offset:2px}
       .fm1-ov .del{top:-13px;right:-13px;cursor:pointer}
       .fm1-ov .rot{top:-13px;left:-13px;cursor:grab;font-size:14px}
       .fm1-ov .rsz{bottom:-13px;right:-13px;cursor:nwse-resize}

@@ -160,8 +160,8 @@
     try { SAMPLES = await (await fetch("samples.json?v=23")).json(); } catch {}
     const css = document.createElement("style"); css.textContent = `
       #tape-btn{cursor:pointer}
-      #tape-pop{position:fixed;z-index:9997;width:300px;max-width:93vw;background:#0c0d0f;border:1px solid #232428;
-        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:13px;display:none;flex-direction:column;gap:10px;color:#e9edf2;font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
+      #tape-pop{position:fixed;z-index:9997;width:300px;max-width:93vw;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);
+        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:13px;display:none;flex-direction:column;gap:10px;color:var(--ui-text,#e9edf2);font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
       #tape-pop.open{display:flex}
       #tape-pop h3{margin:0;font-size:13px;display:flex;align-items:center;gap:7px}
       #tape-pop h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber)}
@@ -170,10 +170,10 @@
         background:linear-gradient(160deg,#202225,#121316 70%);border:1px solid #2c2e33;overflow:hidden;box-shadow:inset 0 1px 0 #3a3d44,inset 0 -10px 20px rgba(0,0,0,.5)}
       .cass .label{position:absolute;left:12px;right:12px;top:10px;height:30px;border-radius:4px;
         background:linear-gradient(#f4f1e8,#d9d4c4);box-shadow:0 1px 2px rgba(0,0,0,.4)}
-      .cass .label b{position:absolute;left:8px;top:6px;font:700 11px Georgia,serif;color:#b23c00}
+      .cass .label b{position:absolute;left:8px;top:6px;font:700 11px Georgia,serif;color:var(--amber-lo,#b23c00)}
       .cass .label i{position:absolute;right:8px;top:7px;font:italic 10px Georgia,serif;color:#555}
       .cass .win{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;width:150px;height:40px;border-radius:6px;
-        background:#0c0d0f;border:1px solid #000;box-shadow:inset 0 2px 6px #000;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+        background:var(--ui-pop,#0c0d0f);border:1px solid #000;box-shadow:inset 0 2px 6px #000;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
       .reel{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#3a3d44 28%,#17181b 30%,#17181b 44%,#2a2c31 46%);
         position:relative}
       .reel::before{content:"";position:absolute;inset:11px;border-radius:50%;background:var(--amber);box-shadow:0 0 6px var(--amber)}
@@ -188,21 +188,21 @@
       @keyframes reelspin{to{transform:rotate(360deg)}}
       .cass .tapeline{position:absolute;bottom:30px;left:70px;right:70px;height:2px;background:#5a3a1a;opacity:.6}
       #tape-pop select,#tape-pop input[type=range]{width:100%}
-      #tape-pop select{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px}
+      #tape-pop select{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px}
       #tape-pop .seg{display:flex;gap:6px}
-      #tape-pop .seg button{flex:1;background:#17181b;border:1px solid #2a2c31;color:#9aa0ab;border-radius:7px;padding:6px;font:inherit;font-size:12px;cursor:pointer}
-      #tape-pop .seg button.on{border-color:var(--amber);color:var(--amber)}
+      #tape-pop .seg button{flex:1;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-dim,#9aa0ab);border-radius:7px;padding:6px;font:inherit;font-size:12px;cursor:pointer}
+      #tape-pop .seg button.on{border-color:var(--amber);color:var(--amber-ink, var(--amber))}
       #tape-pop .tp{display:flex;gap:7px}
-      #tape-pop .tp button{flex:1;background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:9px;font:inherit;font-size:14px;cursor:pointer}
-      #tape-pop .tp button.play{background:var(--amber);color:#180a02;border:0;font-weight:700}
+      #tape-pop .tp button{flex:1;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:9px;font:inherit;font-size:14px;cursor:pointer}
+      #tape-pop .tp button.play{background:var(--amber);color:var(--ui-on-accent,#180a02);border:0;font-weight:700}
       #tape-pop .tp button.rec{color:#ff6a6a;border-color:#5a2a2a}
       #tape-pop .tp button.rec.on{background:#ff2a2a;color:#190404;border:0}
-      #tape-pop .loopon{border-color:var(--amber);color:var(--amber)}
-      #tape-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:#8c93a0;margin-bottom:2px}
-      #tape-status{margin:0;font-size:11.5px;color:#cfd4da;min-height:1em}
-      #tape-badge{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid #2a2c31;color:#8c93a0}
+      #tape-pop .loopon{border-color:var(--amber);color:var(--amber-ink, var(--amber))}
+      #tape-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ui-dim,#8c93a0);margin-bottom:2px}
+      #tape-status{margin:0;font-size:11.5px;color:var(--ui-text2,#cfd4da);min-height:1em}
+      #tape-badge{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--ui-line,#2a2c31);color:var(--ui-dim,#8c93a0)}
       #tape-badge.ok{border-color:#2f6b35;color:#62d36e}
-      #tape-pop a.dl{color:var(--amber);font-size:11.5px}`;
+      #tape-pop a.dl{color:var(--amber-ink, var(--amber));font-size:11.5px}`;
     document.head.appendChild(css);
 
     const btn = document.createElement("a"); btn.id = "tape-btn"; btn.href = "#";
@@ -237,7 +237,7 @@
       <div><div class="lbl"><span>Speed / pitch <span style="opacity:.7">(double-click = 1×)</span></span><span id="tape-speed-l">1.00× · 0 st</span></div>
         <input id="tape-speed" type="range" min="-24" max="24" value="0" step="1"></div>
       <p id="tape-status"></p>
-      <p style="margin:0;font-size:11px;color:#8c93a0"><b>Feed</b> plays audio into the FM-1 over USB. On a sampler (zp12, pigeon…) set it recording — on zp12: tap <b>LFO</b>, then <b>REC</b> — and it samples what you feed (loop it so you can catch it). <b>Rec</b> here captures the FM-1's own output to a .wav.</p>`;
+      <p style="margin:0;font-size:11px;color:var(--ui-dim,#8c93a0)"><b>Feed</b> plays audio into the FM-1 over USB. On a sampler (zp12, pigeon…) set it recording — on zp12: tap <b>LFO</b>, then <b>REC</b> — and it samples what you feed (loop it so you can catch it). <b>Rec</b> here captures the FM-1's own output to a .wav.</p>`;
     document.body.appendChild(pop);
 
     const statusEl = pop.querySelector("#tape-status");

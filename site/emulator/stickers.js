@@ -168,37 +168,37 @@
     const total = Object.values(LIB).reduce((n, a) => n + a.length, 0) + Object.values(IMG).reduce((n, a) => n + a.length, 0);
     const css = document.createElement("style"); css.textContent = `
       #stk-btn{cursor:pointer}
-      #stk-pop{position:fixed;z-index:9998;width:430px;max-width:95vw;height:460px;max-height:80vh;background:#0c0d0f;border:1px solid #232428;
-        border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.65);display:none;flex-direction:column;color:#e9edf2;font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
+      #stk-pop{position:fixed;z-index:9998;width:430px;max-width:95vw;height:460px;max-height:80vh;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);
+        border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.65);display:none;flex-direction:column;color:var(--ui-text,#e9edf2);font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
       #stk-pop.open{display:flex}
-      #stk-pop .top{padding:11px 13px 8px;border-bottom:1px solid #1c1d20;display:flex;flex-direction:column;gap:8px}
+      #stk-pop .top{padding:11px 13px 8px;border-bottom:1px solid var(--ui-line,#1c1d20);display:flex;flex-direction:column;gap:8px}
       #stk-pop h3{margin:0;font-size:13px;display:flex;align-items:center;gap:7px}
       #stk-pop h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber)}
-      #stk-pop h3 .cnt{margin-left:auto;font-size:10.5px;color:#8c93a0;font-weight:400}
-      #stk-pop h3 .clr{background:#17181b;border:1px solid #2a2c31;color:#cfd4da;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer}
-      #stk-search{width:100%;background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:6px 9px;font:inherit;font-size:12.5px;outline:none}
+      #stk-pop h3 .cnt{margin-left:auto;font-size:10.5px;color:var(--ui-dim,#8c93a0);font-weight:400}
+      #stk-pop h3 .clr{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text2,#cfd4da);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer}
+      #stk-search{width:100%;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:6px 9px;font:inherit;font-size:12.5px;outline:none}
       #stk-search:focus{border-color:var(--amber)}
-      #stk-tabs{display:flex;gap:5px;overflow-x:auto;padding:7px 11px;border-bottom:1px solid #1c1d20;scrollbar-width:thin}
-      #stk-tabs button{flex:0 0 auto;background:#17181b;border:1px solid #2a2c31;color:#9aa0ab;border-radius:999px;padding:4px 11px;font:inherit;font-size:11.5px;cursor:pointer;white-space:nowrap}
-      #stk-tabs button.on{background:var(--amber);color:#180a02;border-color:transparent;font-weight:700}
+      #stk-tabs{display:flex;gap:5px;overflow-x:auto;padding:7px 11px;border-bottom:1px solid var(--ui-line,#1c1d20);scrollbar-width:thin}
+      #stk-tabs button{flex:0 0 auto;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-dim,#9aa0ab);border-radius:999px;padding:4px 11px;font:inherit;font-size:11.5px;cursor:pointer;white-space:nowrap}
+      #stk-tabs button.on{background:var(--amber);color:var(--ui-on-accent,#180a02);border-color:transparent;font-weight:700}
       #stk-grid{flex:1;overflow:auto;padding:9px 11px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:4px;align-content:start}
       #stk-grid button{aspect-ratio:1;background:transparent;border:1px solid transparent;border-radius:9px;font-size:24px;line-height:1;cursor:grab;padding:0;
         display:flex;align-items:center;justify-content:center;transition:background .1s}
-      #stk-grid button:hover{background:#1b1c20;border-color:#2a2c31;transform:scale(1.12)}
+      #stk-grid button:hover{background:var(--ui-surface,#1b1c20);border-color:var(--ui-line,#2a2c31);transform:scale(1.12)}
       #stk-grid button.img{font-size:0}
       #stk-grid button.img img{width:31px;height:31px;display:block;pointer-events:none}
-      #stk-grid .cat{grid-column:1/-1;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#8c93a0;margin:8px 2px 1px}
-      #stk-hint{padding:6px 13px;border-top:1px solid #1c1d20;font-size:10.5px;color:#8c93a0}
+      #stk-grid .cat{grid-column:1/-1;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ui-dim,#8c93a0);margin:8px 2px 1px}
+      #stk-hint{padding:6px 13px;border-top:1px solid var(--ui-line,#1c1d20);font-size:10.5px;color:var(--ui-dim,#8c93a0)}
       #stk-pop .top{cursor:grab}
       #stk-pop.dragging .top{cursor:grabbing}
-      #stk-pop h3 .mini{background:#17181b;border:1px solid #2a2c31;color:#cfd4da;border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;line-height:1;font-weight:700}
+      #stk-pop h3 .mini{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text2,#cfd4da);border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;line-height:1;font-weight:700}
       #stk-pop.min{height:auto!important}
       #stk-pop.min #stk-search,#stk-pop.min #stk-tabs,#stk-pop.min #stk-grid,#stk-pop.min #stk-hint{display:none}
       #stk-arrange{position:fixed;z-index:9997;left:14px;bottom:14px;display:none;align-items:center;gap:7px;
-        background:#0c0d0f;border:1px solid var(--amber);border-radius:999px;padding:8px 15px;color:#e9edf2;
+        background:var(--ui-pop,#0c0d0f);border:1px solid var(--amber);border-radius:999px;padding:8px 15px;color:var(--ui-text,#e9edf2);
         font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.6);cursor:pointer;user-select:none}
       #stk-arrange.show{display:inline-flex}
-      #stk-arrange.on{background:var(--amber);color:#180a02;font-weight:700;border-color:transparent}
+      #stk-arrange.on{background:var(--amber);color:var(--ui-on-accent,#180a02);font-weight:700;border-color:transparent}
       #stk-arrange .ic{font-size:15px;line-height:1}`;
     document.head.appendChild(css);
 

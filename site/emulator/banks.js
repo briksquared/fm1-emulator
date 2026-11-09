@@ -15,33 +15,33 @@
 
     const css = document.createElement("style"); css.textContent = `
       #bank-btn{cursor:pointer}
-      #bank-pop{position:fixed;z-index:9997;width:320px;max-width:94vw;max-height:80vh;overflow:auto;background:#0c0d0f;border:1px solid #232428;
-        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:13px;display:none;flex-direction:column;gap:10px;color:#e9edf2;font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
+      #bank-pop{position:fixed;z-index:9997;width:320px;max-width:94vw;max-height:80vh;overflow:auto;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);
+        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:13px;display:none;flex-direction:column;gap:10px;color:var(--ui-text,#e9edf2);font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
       #bank-pop.open{display:flex}
       #bank-pop h3{margin:0;font-size:13px;display:flex;align-items:center;gap:7px}
       #bank-pop h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber)}
       /* the cartridge */
       .cart{position:relative;height:74px;flex:0 0 74px;border-radius:9px 9px 7px 7px;background:linear-gradient(150deg,#26282c,#141518 72%);
-        border:1px solid #2c2e33;box-shadow:inset 0 1px 0 #3a3d44,inset 0 -8px 16px rgba(0,0,0,.5);overflow:hidden}
+        border:1px solid #2c2e33;box-shadow:inset 0 1px 0 var(--ui-line-hi,#3a3d44),inset 0 -8px 16px rgba(0,0,0,.5);overflow:hidden}
       .cart .lip{position:absolute;left:10px;right:10px;bottom:0;height:12px;background:repeating-linear-gradient(90deg,#1b1c1f 0 4px,#2a2c31 4px 8px);border-radius:0 0 6px 6px}
       .cart .lbl{position:absolute;left:10px;right:10px;top:9px;height:42px;border-radius:4px;background:linear-gradient(var(--amber),#c2440b);
-        box-shadow:0 1px 2px rgba(0,0,0,.4);padding:6px 9px;color:#180a02}
+        box-shadow:0 1px 2px rgba(0,0,0,.4);padding:6px 9px;color:var(--ui-on-accent,#180a02)}
       .cart .lbl b{display:block;font:800 13px 'Space Grotesk',-apple-system,Segoe UI,sans-serif;letter-spacing:.02em}
       .cart .lbl span{font-size:10px;opacity:.8}
-      #bank-pop select{width:100%;background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px}
-      #bank-pop .about{font-size:11px;color:#9aa0ab;margin:0;min-height:1.2em}
+      #bank-pop select{width:100%;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px}
+      #bank-pop .about{font-size:11px;color:var(--ui-dim,#9aa0ab);margin:0;min-height:1.2em}
       #bank-pop .tp{display:flex;gap:7px}
-      #bank-pop .tp button{flex:1;background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:9px;font:inherit;font-size:13px;cursor:pointer}
-      #bank-pop .tp button.load{background:var(--amber);color:#180a02;border:0;font-weight:700}
+      #bank-pop .tp button{flex:1;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:9px;font:inherit;font-size:13px;cursor:pointer}
+      #bank-pop .tp button.load{background:var(--amber);color:var(--ui-on-accent,#180a02);border:0;font-weight:700}
       #bank-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-      #bank-grid button{background:#141518;border:1px solid #26282c;color:#cfd4da;border-radius:6px;padding:5px 7px;font:inherit;font-size:11px;
+      #bank-grid button{background:var(--ui-surface,#141518);border:1px solid var(--ui-line,#26282c);color:var(--ui-text2,#cfd4da);border-radius:6px;padding:5px 7px;font:inherit;font-size:11px;
         cursor:pointer;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      #bank-grid button:hover{border-color:var(--amber);color:#fff}
-      #bank-grid button .n{color:#6b6e76;margin-right:5px}
-      #bank-badge{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid #2a2c31;color:#8c93a0;margin-left:auto}
+      #bank-grid button:hover{border-color:var(--amber);color:var(--ui-text,#fff)}
+      #bank-grid button .n{color:var(--ui-dim,#6b6e76);margin-right:5px}
+      #bank-badge{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--ui-line,#2a2c31);color:var(--ui-dim,#8c93a0);margin-left:auto}
       #bank-badge.ok{border-color:#2f6b35;color:#62d36e}
-      #bank-status{margin:0;font-size:11.5px;color:#cfd4da;min-height:1em}
-      #bank-pop a.syx{color:var(--amber);font-size:11.5px}`;
+      #bank-status{margin:0;font-size:11.5px;color:var(--ui-text2,#cfd4da);min-height:1em}
+      #bank-pop a.syx{color:var(--amber-ink, var(--amber));font-size:11.5px}`;
     document.head.appendChild(css);
 
     const btn = document.createElement("a"); btn.id = "bank-btn"; btn.href = "#";
@@ -58,7 +58,7 @@
       <div id="bank-grid"></div>
       <p id="bank-status"></p>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:11px;color:#8c93a0">Loading a bank reboots with it. Click a voice to select it.</span>
+        <span style="font-size:11px;color:var(--ui-dim,#8c93a0)">Loading a bank reboots with it. Click a voice to select it.</span>
         <a class="syx" id="bank-own" href="#">Load .syx…</a></div>
       <input type="file" id="bank-file" accept=".syx" hidden>`;
     document.body.appendChild(pop);

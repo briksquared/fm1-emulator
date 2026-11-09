@@ -121,34 +121,34 @@
   ready((nav) => {
     const css = document.createElement("style"); css.textContent = `
       #rec-btn{cursor:pointer}
-      #rec-pop{position:fixed;z-index:9997;width:262px;max-width:92vw;background:#0c0d0f;border:1px solid #232428;
-        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:12px;display:none;flex-direction:column;gap:9px;color:#e9edf2;font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
+      #rec-pop{position:fixed;z-index:9997;width:262px;max-width:92vw;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);
+        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:12px;display:none;flex-direction:column;gap:9px;color:var(--ui-text,#e9edf2);font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
       #rec-pop.open{display:flex}
       #rec-pop h3{margin:0;font-size:13px;display:flex;align-items:center;gap:7px}
       #rec-pop h3 .dot{width:8px;height:8px;border-radius:50%;background:#e23b3b;box-shadow:0 0 8px #e23b3b}
       #rec-pop h3 .dot.live{animation:recblink 1s steps(2,start) infinite}
       @keyframes recblink{50%{opacity:.25}}
       #rec-pop .rrow{display:flex;gap:7px;align-items:center}
-      #rec-pop button{flex:1;background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:8px;font:inherit;font-size:13px;cursor:pointer}
+      #rec-pop button{flex:1;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:8px;font:inherit;font-size:13px;cursor:pointer}
       #rec-pop button:disabled{opacity:.4;cursor:default}
-      #rec-pop button.on{border-color:var(--amber);color:var(--amber)}
-      #rec-pop button.rec{background:#e23b3b;color:#fff;border:0;font-weight:700}
-      #rec-pop button.dl{background:var(--amber);color:#180a02;border:0;font-weight:700}
-      #rec-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:#8c93a0}
+      #rec-pop button.on{border-color:var(--amber);color:var(--amber-ink, var(--amber))}
+      #rec-pop button.rec{background:#e23b3b;color:var(--ui-text,#fff);border:0;font-weight:700}
+      #rec-pop button.dl{background:var(--amber);color:var(--ui-on-accent,#180a02);border:0;font-weight:700}
+      #rec-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ui-dim,#8c93a0)}
       #rec-pop input[type=range]{width:100%}
-      #rec-pop .mini{font-size:11px;color:#8c93a0;display:flex;align-items:center;gap:4px;white-space:nowrap}
-      #rec-pop select{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:6px;padding:3px 5px;font:inherit;font-size:11px;cursor:pointer}
-      #rec-pop .splitrow{display:flex;align-items:center;gap:7px;font-size:12px;color:#cfd4da;cursor:pointer}
+      #rec-pop .mini{font-size:11px;color:var(--ui-dim,#8c93a0);display:flex;align-items:center;gap:4px;white-space:nowrap}
+      #rec-pop select{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:6px;padding:3px 5px;font:inherit;font-size:11px;cursor:pointer}
+      #rec-pop .splitrow{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ui-text2,#cfd4da);cursor:pointer}
       #rec-pop .qrow{display:none;flex-direction:column;gap:5px;border-top:1px solid #1c1d21;padding-top:8px}
       #rec-pop .qrow.show{display:flex}
       #rec-pop .mixer{display:flex;flex-direction:column;gap:4px;border-top:1px solid #1c1d21;padding-top:8px}
-      #rec-pop .mixer .ch{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#cfd4da}
+      #rec-pop .mixer .ch{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ui-text2,#cfd4da)}
       #rec-pop .mixer .ch b{font-variant-numeric:tabular-nums;min-width:2.2em}
       #rec-pop .mixer .bar{flex:1;height:6px;background:#1a1b1e;border-radius:3px;overflow:hidden}
       #rec-pop .mixer .bar i{display:block;height:100%;background:var(--amber);border-radius:3px}
       #rec-pop .mixer .mute{font-size:10px;padding:3px 6px;flex:0 0 auto}
       #rec-pop .mixer .mute.on{border-color:#e23b3b;color:#e23b3b}
-      #rec-status{margin:0;font-size:11.5px;color:#cfd4da;min-height:1em}`;
+      #rec-status{margin:0;font-size:11.5px;color:var(--ui-text2,#cfd4da);min-height:1em}`;
     document.head.appendChild(css);
 
     const btn = document.createElement("a"); btn.id = "rec-btn"; btn.href = "#";

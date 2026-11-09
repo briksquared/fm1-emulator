@@ -87,35 +87,43 @@
     const el = document.createElement("style");
     el.id = "fm1-cz-style";
     el.textContent = `
-      #fm1-cz-btn{background:var(--amber,#fa5400);color:#180a02;border:0;border-radius:999px;padding:6px 13px;
+      #fm1-cz-btn{background:var(--amber,#fa5400);color:var(--ui-on-accent,#180a02);border:0;border-radius:999px;padding:6px 13px;
         font:600 13px/1 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer;white-space:nowrap}
       #fm1-cz .cz-tabs{display:flex;gap:6px;margin:2px 0 12px}
-      #fm1-cz .cz-tab{flex:1;background:#17181b;border:1px solid #2a2c31;color:#aeb4bd;border-radius:8px;padding:7px;font:600 13px/1 inherit;cursor:pointer}
-      #fm1-cz .cz-tab.on{background:var(--amber,#fa5400);color:#180a02;border-color:transparent}
+      #fm1-cz .cz-tab{flex:1;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text2,#aeb4bd);border-radius:8px;padding:7px;font:600 13px/1 inherit;cursor:pointer}
+      #fm1-cz .cz-tab.on{background:var(--amber,#fa5400);color:var(--ui-on-accent,#180a02);border-color:transparent}
       #fm1-cz .cz-sw{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
-      #fm1-cz .cz-swatch{width:30px;height:30px;border-radius:50%;border:2px solid #2a2c31;cursor:pointer;padding:0;transition:transform .08s}
+      #fm1-cz .cz-note{color:var(--ui-dim,#8c93a0);margin:4px 0 8px}
+      #fm1-cz .cz-themes{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+      #fm1-cz .cz-theme{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:8px 9px;border-radius:9px;
+        border:1px solid var(--ui-line,#2a2c31);cursor:pointer;font:600 12.5px/1.1 inherit;text-align:left;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 1px 2px rgba(0,0,0,.35)}
+      #fm1-cz .cz-theme .dots{display:flex;gap:3px}
+      #fm1-cz .cz-theme .dots i{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 1px rgba(127,127,127,.45)}
+      #fm1-cz .cz-theme.on{outline:2px solid var(--amber);outline-offset:1px}
+      #fm1-cz .cz-swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--ui-line,#2a2c31);cursor:pointer;padding:0;transition:transform .08s}
       #fm1-cz .cz-swatch:hover{border-color:#fff;transform:scale(1.1)}
       #fm1-cz-btn:hover{filter:brightness(1.1)}
-      #fm1-cz{position:fixed;top:0;right:0;height:100%;width:320px;max-width:92vw;z-index:9999;background:#0c0d0f;
-        border-left:1px solid #232428;box-shadow:-10px 0 40px rgba(0,0,0,.6);transform:translateX(100%);
-        transition:transform .22s ease;display:flex;flex-direction:column;color:#e9edf2;
+      #fm1-cz{position:fixed;top:0;right:0;height:100%;width:320px;max-width:92vw;z-index:9999;background:var(--ui-pop,#0c0d0f);
+        border-left:1px solid var(--ui-line,#232428);box-shadow:-10px 0 40px rgba(0,0,0,.6);transform:translateX(100%);
+        transition:transform .22s ease;display:flex;flex-direction:column;color:var(--ui-text,#e9edf2);
         font:14px/1.4 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
       #fm1-cz.open{transform:none}
-      #fm1-cz h2{margin:0;padding:14px 16px;font-size:16px;border-bottom:1px solid #1e1f22;display:flex;align-items:center;gap:8px}
+      #fm1-cz h2{margin:0;padding:14px 16px;font-size:16px;border-bottom:1px solid var(--ui-line,#1e1f22);display:flex;align-items:center;gap:8px}
       #fm1-cz .close{margin-left:auto;background:none;border:0;color:#9aa6b2;font-size:20px;cursor:pointer;line-height:1}
       #fm1-cz .body{overflow:auto;padding:12px 16px 90px;flex:1}
-      #fm1-cz .sec{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#8c93a0;margin:16px 0 6px}
+      #fm1-cz .sec{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ui-dim,#8c93a0);margin:16px 0 6px}
       #fm1-cz .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0}
-      #fm1-cz .row label{color:#cfd4da}
+      #fm1-cz .row label{color:var(--ui-text2,#cfd4da)}
       #fm1-cz input[type=color]{width:42px;height:28px;border:1px solid #2a2c31;border-radius:7px;background:#000;padding:0;cursor:pointer}
-      #fm1-cz select,#fm1-cz .file{width:100%;background:#17181b;color:#e9edf2;border:1px solid #2a2c31;border-radius:8px;padding:8px;font:inherit;cursor:pointer}
+      #fm1-cz select,#fm1-cz .file{width:100%;background:var(--ui-surface,#17181b);color:var(--ui-text,#e9edf2);border:1px solid var(--ui-line,#2a2c31);border-radius:8px;padding:8px;font:inherit;cursor:pointer}
       #fm1-cz input[type=range]{width:100%}
       #fm1-cz .decal-row{display:flex;gap:8px;align-items:center;margin-top:8px}
-      #fm1-cz .decal-row button{flex:1;background:#17181b;color:#e9edf2;border:1px solid #2a2c31;border-radius:8px;padding:7px;cursor:pointer}
-      #fm1-cz .foot{position:absolute;bottom:0;left:0;right:0;display:flex;gap:8px;padding:12px 16px;background:#0c0d0f;border-top:1px solid #1e1f22}
+      #fm1-cz .decal-row button{flex:1;background:var(--ui-surface,#17181b);color:var(--ui-text,#e9edf2);border:1px solid var(--ui-line,#2a2c31);border-radius:8px;padding:7px;cursor:pointer}
+      #fm1-cz .foot{position:absolute;bottom:0;left:0;right:0;display:flex;gap:8px;padding:12px 16px;background:var(--ui-pop,#0c0d0f);border-top:1px solid var(--ui-line,#1e1f22)}
       #fm1-cz .foot button{flex:1;border:0;border-radius:9px;padding:11px;font:600 14px/1 inherit;cursor:pointer}
       #fm1-cz .apply{background:#62d36e;color:#07130d}
-      #fm1-cz .reset{background:#232428;color:#e9edf2}
+      #fm1-cz .reset{background:var(--ui-line,#232428);color:var(--ui-text,#e9edf2)}
     `;
     document.head.appendChild(el);
   }
@@ -162,7 +170,7 @@
       <div class="foot"><button class="reset">Reset</button><button class="apply">Apply</button></div>`;
     document.body.appendChild(pan);
     const outer = pan.querySelector(".body");
-    // two tabs: Device (the synth skin) and Interface (the page/app accent colour)
+    // two tabs: Device (the synth skin) and Interface (the app's own colours)
     outer.insertAdjacentHTML("beforeend", `<div class="cz-tabs"><button type="button" class="cz-tab on" data-t="device">Device</button><button type="button" class="cz-tab" data-t="ui">Interface</button></div>`);
     const body = document.createElement("div"); outer.appendChild(body);         // device content appends here, unchanged
     const uipane = document.createElement("div"); uipane.hidden = true; outer.appendChild(uipane);
@@ -171,34 +179,67 @@
       body.hidden = t.dataset.t !== "device"; uipane.hidden = t.dataset.t !== "ui";
     });
 
-    // --- Interface tab: recolour the whole UI accent (the electro-orange --amber) ---
-    const DEF_ACCENT = "#fa5400";
-    let ui = {}; try { ui = JSON.parse(localStorage.getItem("fm1.ui") || "{}"); } catch {}
-    const applyUI = () => { const a = ui.accent || DEF_ACCENT; const root = document.documentElement.style; root.setProperty("--amber", a); root.setProperty("--amber-hi", lt(a, 1.32)); };
-    const persistUI = () => { try { localStorage.setItem("fm1.ui", JSON.stringify(ui)); } catch {} };
-    // a shared "look" in the URL (?look=…) previews someone's skin + accent for this visit,
+    // --- Interface tab: the app's own colours (ui-theme.js): a theme, an accent, custom colours ---
+    const TH = window.FM1Theme;
+    let ui = TH.load();
+    const persistUI = () => TH.save(ui);
+    // a shared "look" in the URL (?look=…) previews someone's skin + interface for this visit,
     // without overwriting your own saved look — adopt it by touching any control or pressing Apply.
     const czParams = new URLSearchParams(location.search);
     try {
       const lk = czParams.get("look");
-      if (lk) { const o = JSON.parse(decodeURIComponent(escape(atob(lk.replace(/-/g, "+").replace(/_/g, "/"))))); if (o && o.s) skin = { ...FM1.SKIN_DEFAULT, ...o.s }; if (o && o.a) ui.accent = o.a; }
+      if (lk) {
+        const o = JSON.parse(decodeURIComponent(escape(atob(lk.replace(/-/g, "+").replace(/_/g, "/")))));
+        if (o && o.s) skin = { ...FM1.SKIN_DEFAULT, ...o.s };
+        if (o && o.u && typeof o.u === "object") ui = { ...o.u };
+        else if (o && o.a) ui = { accent: o.a };
+      }
     } catch {}
-    applyUI();
-    uipane.insertAdjacentHTML("beforeend", `<div class="sec">Accent colour</div>
-      <p style="color:#8c93a0;margin:4px 0 8px">Recolours the whole interface — buttons, links, highlights, the patch cables — away from electro orange. (The synth's own colours live on the Device tab.)</p>`);
-    const sw = document.createElement("div"); sw.className = "cz-sw"; uipane.appendChild(sw);
-    const accInp = document.createElement("input"); accInp.type = "color"; accInp.value = ui.accent || DEF_ACCENT;
-    for (const c of ["#fa5400", "#ff2d95", "#2f6bff", "#10b981", "#9b5cff", "#ffd400", "#ff3a3a", "#22e0d6", "#7cc48a", "#e9e6de"]) {
-      const b = document.createElement("button"); b.type = "button"; b.className = "cz-swatch"; b.style.background = c; b.title = c;
-      b.onclick = () => { ui.accent = c; applyUI(); persistUI(); accInp.value = c; }; sw.appendChild(b);
+    uipane.insertAdjacentHTML("beforeend", `<div class="sec">Theme</div>
+      <p class="cz-note">Colours for the app itself: the page, panels, controls and text. (The synth's own colours live on the Device tab.)</p>`);
+    const themes = document.createElement("div"); themes.className = "cz-themes"; uipane.appendChild(themes);
+    const themeBtns = {};
+    for (const [name, t] of Object.entries(TH.THEMES)) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "cz-theme"; b.dataset.theme = name;
+      b.style.background = `linear-gradient(135deg, ${t.panel}, ${t.bg})`; b.style.color = t.text;
+      b.innerHTML = `<span class="nm">${name}</span><span class="dots">` +
+        [t.bg, t.panel, t.surface, t.text, t.accent].map((c) => `<i style="background:${c}"></i>`).join("") + `</span>`;
+      b.onclick = () => { ui = { theme: name }; refreshUI(true); };
+      themes.appendChild(b); themeBtns[name] = b;
     }
-    const accRow = document.createElement("div"); accRow.className = "row"; accRow.innerHTML = `<label>Custom accent</label>`;
-    accInp.oninput = () => { ui.accent = accInp.value; applyUI(); persistUI(); };
-    accRow.appendChild(accInp); uipane.appendChild(accRow);
-    const resetUI = document.createElement("button"); resetUI.type = "button"; resetUI.className = "file"; resetUI.textContent = "Reset to electro orange";
+    uipane.insertAdjacentHTML("beforeend", `<div class="sec">Accent colour</div>
+      <p class="cz-note">Buttons, links, highlights and the Tape cable.</p>`);
+    const sw = document.createElement("div"); sw.className = "cz-sw"; uipane.appendChild(sw);
+    for (const c of ["#ff2d95", "#2f6bff", "#10b981", "#9b5cff", "#ffd400", "#ff3a3a", "#22e0d6", "#7cc48a", "#e9e6de", TH.DEFAULT_ACCENT]) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "cz-swatch"; b.style.background = c; b.title = c;
+      b.onclick = () => { ui.accent = c; refreshUI(true); }; sw.appendChild(b);
+    }
+    uipane.insertAdjacentHTML("beforeend", `<div class="sec">Custom colours</div>`);
+    const LABELS = { bg: "Background", panel: "Panels", surface: "Controls", text: "Text", accent: "Accent" };
+    const pickers = {};
+    for (const k of TH.FIELDS) {
+      const row = document.createElement("div"); row.className = "row"; row.innerHTML = `<label>${LABELS[k]}</label>`;
+      const inp = document.createElement("input"); inp.type = "color"; inp.dataset.field = k;
+      inp.oninput = () => { ui[k] = inp.value; refreshUI(true); };
+      row.appendChild(inp); uipane.appendChild(row); pickers[k] = inp;
+    }
+    const note = document.createElement("p"); note.className = "cz-note cz-contrast"; note.hidden = true;
+    note.textContent = "Text colour adjusted so it stays readable on these panels.";
+    uipane.appendChild(note);
+    const resetUI = document.createElement("button"); resetUI.type = "button"; resetUI.className = "file"; resetUI.textContent = "Reset to default";
     resetUI.style.marginTop = "10px";
-    resetUI.onclick = () => { ui.accent = DEF_ACCENT; applyUI(); persistUI(); accInp.value = DEF_ACCENT; };
+    resetUI.onclick = () => { ui = {}; refreshUI(true); };
     uipane.appendChild(resetUI);
+    function refreshUI(save) {
+      const t = TH.apply(ui);
+      if (save) persistUI();
+      const cur = TH.FIELDS.some((k) => k !== "accent" && ui[k]) ? "" : (ui.theme || TH.DEFAULT_THEME);
+      for (const [n, b] of Object.entries(themeBtns)) b.classList.toggle("on", n === cur);
+      for (const k of TH.FIELDS) pickers[k].value = t[k];
+      const d = TH.isStock(ui) ? null : TH.derive(t);
+      note.hidden = !d || d.text.toLowerCase() === t.text.toLowerCase();
+    }
+    refreshUI(false);
 
     const apply = () => { try { FM1.applySkin(skin); } catch (e) {} };
     const persist = () => { try { localStorage.setItem(SKIN_KEY, JSON.stringify(skin)); } catch {} };
@@ -227,7 +268,7 @@
 
     // picture on the case (added to the shared overlay layer; any number allowed)
     body.insertAdjacentHTML("beforeend", `<div class="sec">Picture on the case</div>
-      <p style="color:#8c93a0;margin:4px 0 8px">Add any picture and it drops onto the machine. Keep "Remove background" on to cut it out of its backdrop. Then drag to move, corner to resize or rotate, × to remove. Want stickers instead? Use the <b>Stickers</b> button in the top bar — hundreds to pick from.</p>`);
+      <p style="color:var(--ui-dim,#8c93a0);margin:4px 0 8px">Add any picture and it drops onto the machine. Keep "Remove background" on to cut it out of its backdrop. Then drag to move, corner to resize or rotate, × to remove. Want stickers instead? Use the <b>Stickers</b> button in the top bar — hundreds to pick from.</p>`);
     const file = document.createElement("input"); file.type = "file"; file.accept = "image/*"; file.className = "file";
     body.appendChild(file);
     const bgRow = document.createElement("label"); bgRow.className = "row"; bgRow.style.cursor = "pointer";
@@ -235,7 +276,7 @@
     const bgChk = document.createElement("input"); bgChk.type = "checkbox"; bgChk.checked = true; bgChk.style.width = "18px"; bgChk.style.height = "18px";
     bgRow.appendChild(bgChk); body.appendChild(bgRow);
     const tolWrap = document.createElement("div"); tolWrap.style.margin = "2px 0 4px";
-    tolWrap.innerHTML = `<label style="font-size:12px;color:#8c93a0">Cut-out strength</label>`;
+    tolWrap.innerHTML = `<label style="font-size:12px;color:var(--ui-dim,#8c93a0)">Cut-out strength</label>`;
     const tol = document.createElement("input"); tol.type = "range"; tol.min = "10"; tol.max = "90"; tol.value = "40";
     tolWrap.appendChild(tol); body.appendChild(tolWrap);
 
@@ -284,13 +325,13 @@
       try { window.FM1Overlay && window.FM1Overlay.compositeOnto(ctx, c); } catch {}
       out.toBlob((b) => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "fm1-panel.png"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
     };
-    // Share look: pack the skin (as a diff from defaults) + UI accent into a ?look= link, with the
-    // current firmware/clock, and copy it. Opening it previews the exact paint job — colours + accent.
+    // Share look: pack the skin (as a diff from defaults) + the interface theme into a ?look= link, with
+    // the current firmware/clock, and copy it. Opening it previews the exact paint job.
     tools.querySelector(".shr").onclick = async (e) => {
       const btnEl = e.currentTarget;
       const base = FM1.SKIN_DEFAULT || {};
       const diff = {}; for (const k in skin) if (skin[k] !== base[k]) diff[k] = skin[k];
-      const payload = { s: diff }; if ((ui.accent || DEF_ACCENT) !== DEF_ACCENT) payload.a = ui.accent;
+      const payload = { s: diff }; if (Object.keys(ui).length) payload.u = ui;
       const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
       let fw = ""; try { const m = (document.getElementById("fullpage")?.getAttribute("href") || "").match(/[?&]fw=([^&]+)/); if (m) fw = decodeURIComponent(m[1]); } catch {}
       if (!fw) fw = czParams.get("fw") || "";

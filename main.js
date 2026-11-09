@@ -156,14 +156,16 @@ function runSelfTest(win, mode) {
     try {
       const js = mode === "layout"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<60;i++){ const s=document.getElementById('fw'); if(s&&s.options.length>1) break; await sleep(250); }
-             const st=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Start'); st&&st.click(); await sleep(3500);
-             const r=el=>el?(b=>({x:Math.round(b.left),w:Math.round(b.width),h:Math.round(b.height),top:Math.round(b.top)}))(el.getBoundingClientRect()):null;
-             const L=document.getElementById('side-left'),deck=document.querySelector('.deck'),R=document.querySelector('.side.bar');
-             return { vw:innerWidth, vh:innerHeight, left:r(L), deck:r(deck), right:r(R),
-               flashInLeft:!!L?.querySelector('.install-box'), saveInLeft:!!L?.querySelector('.save-box'),
-               threeInaRow: L&&deck&&R ? (L.getBoundingClientRect().left<deck.getBoundingClientRect().left && deck.getBoundingClientRect().left<R.getBoundingClientRect().left && Math.abs(L.getBoundingClientRect().top-R.getBoundingClientRect().top)<60) : false,
-               pageScrolls: document.documentElement.scrollHeight>innerHeight+2, scrollH: document.documentElement.scrollHeight }; })()`
+             for(let i=0;i<60;i++){ const s=document.getElementById('fw'); if(s&&s.options.length>1&&document.querySelector('.future-install')) break; await sleep(250); }
+             const st=document.getElementById('start'); st&&st.click(); await sleep(3500);
+             const r=el=>el?(b=>({x:Math.round(b.left),w:Math.round(b.width),h:Math.round(b.height),top:Math.round(b.top),bottom:Math.round(b.bottom)}))(el.getBoundingClientRect()):null;
+             const L=document.querySelector('.side-left'),deck=document.querySelector('.deck'),R=document.querySelector('.side-right'),cv=window.FM1&&window.FM1.panelCanvas;
+             const lb=L&&L.getBoundingClientRect(),db=deck&&deck.getBoundingClientRect(),rb=R&&R.getBoundingClientRect(),cb=cv&&cv.getBoundingClientRect();
+             return { vw:innerWidth, vh:innerHeight, left:r(L), deck:r(deck), right:r(R), canvas:r(cv),
+               flashInRight:!!R?.querySelector('.future-install'), firmwareInLeft:!!L?.querySelector('#fw'),
+               threeInaRow: lb&&db&&rb ? (lb.right<=db.left+1 && db.right<=rb.left+1 && Math.abs(lb.top-rb.top)<60) : false,
+               machineInView: !!cb && cb.top>=0 && cb.bottom<=innerHeight+1 && cb.left>=0 && cb.right<=innerWidth+1,
+               noSideScroll: document.documentElement.scrollWidth<=innerWidth+1 }; })()`
         : mode === "search"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
              for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&(document.getElementById('fw')?.options.length||0)>=259) break; await sleep(200); }
@@ -174,7 +176,7 @@ function runSelfTest(win, mode) {
              return {fwCount:document.getElementById('fw')?.options.length,aurora,accent,version,cleared:results.hidden}; })()`
         : mode === "updates"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<80;i++){ if(document.getElementById('scan-open-source')) break; await sleep(200); }
+             for(let i=0;i<80;i++){ const b=document.getElementById('scan-open-source'); if(b&&!b.disabled) break; await sleep(200); }
              const button=document.getElementById('scan-open-source'), status=document.getElementById('open-source-status');
              button.click(); for(let i=0;i<120&&button.classList.contains('scanning');i++) await sleep(250);
              return {finished:!button.classList.contains('scanning'),error:status.dataset.error==='true',status:status.textContent}; })()`
@@ -244,7 +246,7 @@ function runSelfTest(win, mode) {
         : mode === "ports"
           ? !res.error && Array.isArray(res.inputs) && Array.isArray(res.outputs)
         : mode === "layout"
-          ? res.flashInLeft && res.saveInLeft && res.threeInaRow && !res.pageScrolls
+          ? res.flashInRight && res.firmwareInLeft && res.threeInaRow && res.machineInView && res.noSideScroll
           : Number(res.fwCount) > 1 && res.hasFavApi && res.hasGallery && res.hasLoader &&
             res.hasDeviceLab && res.hasRecovery && res.hasStart && res.running;
       if (!passed) {

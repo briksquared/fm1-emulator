@@ -127,15 +127,15 @@
       .fw-chip{background:var(--well);border:1px solid var(--line);color:var(--dim);border-radius:999px;
         padding:3px 11px;font:600 11.5px 'Space Grotesk',-apple-system,sans-serif;cursor:pointer}
       .fw-chip:hover{color:var(--ink);border-color:var(--amber)}
-      .fw-chip.on{background:var(--amber);color:#180a02;border-color:transparent}
+      .fw-chip.on{background:var(--amber);color:var(--ui-on-accent,#180a02);border-color:transparent}
       #res-btn{cursor:pointer}
       #res-pop{position:fixed;z-index:9997;width:280px;max-width:92vw;max-height:72vh;overflow:auto;
-        background:#0c0d0f;border:1px solid #232428;border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.6)}
+        background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.6)}
       #res-pop .grp{padding:6px 12px 10px}
       #res-pop h4{margin:9px 0 3px;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
       #res-pop a{display:block;color:var(--text);text-decoration:none;font-size:12.5px;padding:3px 0}
-      #res-pop a:hover{color:var(--amber)}
-      #fs-btn{background:var(--amber);border:0;color:#180a02;border-radius:7px;font-weight:700;
+      #res-pop a:hover{color:var(--amber-ink, var(--amber))}
+      #fs-btn{background:var(--amber);border:0;color:var(--ui-on-accent,#180a02);border-radius:7px;font-weight:700;
         padding:5px 10px;font:inherit;font-size:11.5px;cursor:pointer}
       #fs-btn:hover{background:var(--amber-hi)}
       .fw-quick{display:flex;gap:6px;margin-bottom:6px}
@@ -144,15 +144,15 @@
       .fw-quick button:hover{border-color:var(--amber);color:var(--ink)}
       header.site .gh{display:none !important;}
       #fs-ctrl-fab{position:absolute;top:10px;right:10px;z-index:40;width:34px;height:34px;border-radius:50%;
-        background:rgba(18,18,20,.82);border:1px solid #333;color:#fff;font-size:16px;cursor:pointer;line-height:1}
-      #fs-ctrl-fab:hover{background:var(--amber);color:#180a02;border-color:transparent}
-      #fs-ctrl-pop{position:absolute;top:52px;right:10px;z-index:41;width:240px;max-width:90%;background:#0c0d0f;
-        border:1px solid #2a2c31;border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.6);padding:10px;display:flex;flex-direction:column;gap:7px}
-      #fs-ctrl-pop input,#fs-ctrl-pop select{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px;width:100%}
-      #fs-ctrl-pop button{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:7px;font:inherit;font-size:12.5px;cursor:pointer}
-      #fs-ctrl-pop button.primary{background:var(--amber);color:#180a02;border:0;font-weight:600}
+        background:rgba(18,18,20,.82);border:1px solid var(--ui-line,#333);color:#fff;font-size:16px;cursor:pointer;line-height:1}
+      #fs-ctrl-fab:hover{background:var(--amber);color:var(--ui-on-accent,#180a02);border-color:transparent}
+      #fs-ctrl-pop{position:absolute;top:52px;right:10px;z-index:41;width:240px;max-width:90%;background:var(--ui-pop,#0c0d0f);
+        border:1px solid var(--ui-line,#2a2c31);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.6);padding:10px;display:flex;flex-direction:column;gap:7px}
+      #fs-ctrl-pop input,#fs-ctrl-pop select{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px;width:100%}
+      #fs-ctrl-pop button{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:7px;font:inherit;font-size:12.5px;cursor:pointer}
+      #fs-ctrl-pop button.primary{background:var(--amber);color:var(--ui-on-accent,#180a02);border:0;font-weight:600}
       #fs-ctrl-pop .fsc-row{display:flex;gap:6px}#fs-ctrl-pop .fsc-row>*{flex:1}
-      #fsc-status{font-size:11.5px;color:#cfd4da;min-height:1em;margin:0}
+      #fsc-status{font-size:11.5px;color:var(--ui-text2,#cfd4da);min-height:1em;margin:0}
     `;
     document.head.appendChild(el);
   }

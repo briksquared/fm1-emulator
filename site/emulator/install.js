@@ -21,7 +21,7 @@ function build(side) {
   style.textContent = `
     .future-install{position:relative;overflow:hidden;padding:0!important}
     .fi-head{padding:9px 14px 8px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,color-mix(in srgb,var(--amber) 11%,transparent),transparent)}
-    .fi-eye{display:flex;align-items:center;gap:7px;font:700 9px 'Space Mono',monospace;letter-spacing:.16em;color:var(--amber)}
+    .fi-eye{display:flex;align-items:center;gap:7px;font:700 9px 'Space Mono',monospace;letter-spacing:.16em;color:var(--amber-ink, var(--amber))}
     .fi-eye i{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber);animation:fiPulse 1.9s ease-in-out infinite}
     .fi-head h2{margin:4px 0 0!important;font:650 15px 'Space Grotesk',sans-serif!important;letter-spacing:.01em;color:var(--ink)}
     .fi-pitch{margin:4px 0 0!important;font:11px/1.35 'Space Grotesk',sans-serif!important;color:var(--dim)!important}
@@ -36,12 +36,12 @@ function build(side) {
     .fi-field{min-width:0}
     .fi-field label{display:flex!important;justify-content:space-between;align-items:center;gap:8px;min-width:0;color:var(--dim)!important;font:10px 'Space Mono',monospace!important;letter-spacing:.07em;text-transform:uppercase}
     .fi-field select{max-width:62%!important;min-width:0!important;flex:0 1 auto!important;border:1px solid var(--line)!important;background:var(--well)!important;color:var(--ink)!important;border-radius:6px!important;font:12px 'Space Grotesk',sans-serif!important}
-    .fi-main{width:100%;border:1px solid var(--amber)!important;background:var(--amber)!important;color:#180a02!important;border-radius:8px;font:700 12.5px 'Space Grotesk',sans-serif!important;letter-spacing:.02em;min-height:33px}
+    .fi-main{width:100%;border:1px solid var(--amber)!important;background:var(--amber)!important;color:var(--ui-on-accent,#180a02)!important;border-radius:8px;font:700 12.5px 'Space Grotesk',sans-serif!important;letter-spacing:.02em;min-height:33px}
     .fi-main:hover{background:var(--amber-hi)!important;border-color:var(--amber-hi)!important}
     .fi-confirm{margin-top:7px;padding:9px 10px;border:1px solid var(--amber);border-radius:8px;background:color-mix(in srgb,var(--amber) 13%,var(--card));box-shadow:0 8px 22px rgba(0,0,0,.45)}
     .fi-confirm p{margin:0 0 8px;font-size:11.5px;line-height:1.35;color:var(--ink)}
     .fi-confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-    .fi-confirm .fi-yes{border:1px solid var(--amber)!important;background:var(--amber)!important;color:#180a02!important;border-radius:7px!important;font:700 11.5px 'Space Grotesk',sans-serif!important;padding:7px!important;cursor:pointer}
+    .fi-confirm .fi-yes{border:1px solid var(--amber)!important;background:var(--amber)!important;color:var(--ui-on-accent,#180a02)!important;border-radius:7px!important;font:700 11.5px 'Space Grotesk',sans-serif!important;padding:7px!important;cursor:pointer}
     .fi-confirm .fi-yes:hover{background:var(--amber-hi)!important;border-color:var(--amber-hi)!important}
     .fi-confirm .fi-no{border:1px solid var(--line)!important;background:var(--well)!important;color:var(--ink)!important;border-radius:7px!important;font:11.5px 'Space Grotesk',sans-serif!important;padding:7px!important;cursor:pointer}
     .fi-confirm .fi-no:hover{border-color:var(--amber)!important}
@@ -55,7 +55,7 @@ function build(side) {
     .future-install[data-state="ok"] .fi-readout{color:var(--green)!important}
     .future-install[data-state="error"] .fi-readout{color:#e2705f!important}
     .fi-links{display:flex;justify-content:space-between;gap:9px;margin-top:6px;font:10px 'Space Mono',monospace;color:var(--faint)}
-    .fi-links a{color:var(--amber)!important}
+    .fi-links a{color:var(--amber-ink, var(--amber))!important}
     .fi-recovery{border-top:1px solid var(--line);background:rgba(0,0,0,.14)}
     .fi-recovery summary{padding:11px 14px;cursor:pointer;color:var(--ink);font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.03em}
     .fi-recovery ol{margin:0;padding:0 18px 13px 29px;color:var(--dim);font-size:10.5px;line-height:1.5}

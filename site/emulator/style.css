@@ -6,7 +6,7 @@
 html, body { margin: 0; background: var(--room); color: var(--ink);
              font: 15px/1.5 'Space Grotesk',-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
 html { scroll-padding-top: 12px; }
-a { color: var(--amber); }
+a { color: var(--amber-ink, var(--amber)); }
 a:hover { color: var(--amber-hi); }
 /* native form controls (select/checkbox/range) follow the UI accent, not the OS blue */
 html, select, input, textarea, button, [type="range"] { accent-color: var(--amber); }
@@ -24,7 +24,7 @@ header.site { border-bottom: 1px solid var(--rule); background: var(--bar); }
 header.site .wrap { padding-block: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 16px; }
 .brand:hover { color: var(--ink); }
-.logo { width: 26px; height: 26px; border-radius: 7px; background: var(--amber); color: #2a1a03; display: grid; place-items: center; }
+.logo { width: 26px; height: 26px; border-radius: 7px; background: var(--amber); color: var(--ui-on-accent, #2a1a03); display: grid; place-items: center; }
 /* the device switch: one segment per device */
 .devices { display: flex; background: var(--well); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
 .devices a, .devices span { padding: 4px 12px; border-radius: 6px; font-size: 13px; text-decoration: none; color: var(--dim); }
@@ -35,7 +35,7 @@ header.site .wrap { padding-block: 12px; display: flex; flex-wrap: wrap; align-i
 .sitenav a:hover { color: var(--ink); background: var(--rule); }
 /* the way to the code: always in view, on a phone too */
 .gh { margin-left: auto; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px 0 11px;
-      border: 1px solid #55565b; border-radius: 999px; color: var(--ink); text-decoration: none; font-size: 13px; font-weight: 600; }
+      border: 1px solid var(--ui-line-hi, #55565b); border-radius: 999px; color: var(--ink); text-decoration: none; font-size: 13px; font-weight: 600; }
 .gh:hover { color: var(--ink); border-color: var(--dim); background: var(--rule); }
 .gh .arrow { color: var(--dim); }
 @media (max-width: 760px) {
@@ -63,13 +63,13 @@ main { max-width: 1360px; margin: 0 auto; padding: 20px 24px 0; display: grid; g
 h1 { font-size: 17px; font-weight: 600; margin: 0; }
 #status { color: var(--dim); font: 13px 'Space Mono',ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
 .stage { position: relative; padding: 16px; border: 1px solid var(--rule); border-radius: 18px;
-         background: #000000; }
+         background: var(--room); }
 /* the whole synth in view on a laptop: as wide as the room allows below the header (--above,
    --aspect: set by main.js; 84px: the stage's padding and the hint line), never narrower than 560px */
 canvas { display: block; width: 100%; height: auto; touch-action: none; user-select: none; margin: 0 auto;
          max-width: max(600px, calc((100svh - var(--above, 140px) - 72px) * var(--aspect, 1.56))); }
 #start { position: absolute; inset: 0; margin: auto; width: clamp(110px, 30%, 220px); height: clamp(36px, 9vw, 56px);
-         border: 0; border-radius: 28px; background: var(--amber); color: #2a1a03; font-size: clamp(14px, 3.5vw, 17px);
+         border: 0; border-radius: 28px; background: var(--amber); color: var(--ui-on-accent, #2a1a03); font-size: clamp(14px, 3.5vw, 17px);
          font-weight: 600; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
 #start:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 #start[disabled] { opacity: .7; cursor: wait; }
@@ -88,7 +88,7 @@ canvas { display: block; width: 100%; height: auto; touch-action: none; user-sel
 
 /* fullscreen: the whole machine column — the panel plus its plugged-in devices (MIDI, Tape) */
 .player .deck:fullscreen, .player .deck:-webkit-full-screen {
-  background: #0a0a0b; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: var(--ui-pop, #0a0a0b); display: flex; flex-direction: column; align-items: center; gap: 10px;
   overflow-y: auto; padding: 12px 12px 40px;
 }
 .player .deck:fullscreen .deck-head,
@@ -107,11 +107,11 @@ canvas { display: block; width: 100%; height: auto; touch-action: none; user-sel
 
 /* the device can't keep up: what happens and the fix, above the synth */
 #perfwarn { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between;
-            border: 1px solid var(--amber); border-radius: 10px; background: #2a2116; padding: 9px 12px; }
+            border: 1px solid var(--amber); border-radius: 10px; background: color-mix(in srgb, var(--amber) 14%, var(--card)); padding: 9px 12px; }
 #perfwarn[hidden] { display: none; }
 #perfwarn p { margin: 0; flex: 1 1 320px; min-width: 0; }
 #perfwarn .acts { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 14px; }
-#perfwarn button.primary { background: var(--amber); border-color: var(--amber); color: #2a1a03; font-weight: 600; }
+#perfwarn button.primary { background: var(--amber); border-color: var(--amber); color: var(--ui-on-accent, #2a1a03); font-weight: 600; }
 #perfwarn button[hidden] { display: none; }
 
 /* flanking the synth: flash to the FM-1 on the left, firmware/save/MIDI on the right
@@ -151,7 +151,7 @@ canvas { display: block; width: 100%; height: auto; touch-action: none; user-sel
 #about .links { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 2px 0 6px; }
 #about .what { display: block; }
 #about .caps { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-#about .cap { font: 600 11px 'Space Mono', ui-monospace, monospace; letter-spacing: .02em; color: var(--amber);
+#about .cap { font: 600 11px 'Space Mono', ui-monospace, monospace; letter-spacing: .02em; color: var(--amber-ink, var(--amber));
   background: color-mix(in srgb, var(--amber) 12%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
   border-radius: 999px; padding: 2px 9px; cursor: help; white-space: nowrap; }
 select { font: inherit; font-size: 13px; color: var(--ink); background: var(--well); border: 1px solid var(--line); border-radius: 7px;
@@ -159,7 +159,7 @@ select { font: inherit; font-size: 13px; color: var(--ink); background: var(--we
 select:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
 /* recolour the open dropdown's highlighted row so it follows the theme, not the OS blue */
 select option { background: var(--well); color: var(--ink); }
-select option:checked, select option:hover { background: var(--amber); color: #15120e; }
+select option:checked, select option:hover { background: var(--amber); color: var(--ui-on-accent, #15120e); }
 /* the page's buttons, and file pickers that look like them */
 .box button, #perfwarn button, .file { font: inherit; font-size: 14px; color: var(--ink); background: var(--well);
   border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
@@ -170,7 +170,7 @@ select option:checked, select option:hover { background: var(--amber); color: #1
 #midiact { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex: none; }
 #midiact.on { background: var(--amber); }
 #save-status { color: var(--text); font-size: 14px; }
-#save-status[data-error="true"] { color: var(--amber); }
+#save-status[data-error="true"] { color: var(--amber-ink, var(--amber)); }
 .save-controls { margin: 0; padding: 0 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--room); }
 .save-controls summary { padding: 8px 0; font-size: 13px; font-weight: 500; color: var(--dim); cursor: pointer; }
 .save-controls[open] { padding-bottom: 10px; }
@@ -184,17 +184,17 @@ select option:checked, select option:hover { background: var(--amber); color: #1
          grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); }
 .cards li { margin: 0; background: var(--card); border: 1px solid var(--rule); border-radius: 14px;
             padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
-.cards li.on { border-color: #6b5226; box-shadow: inset 0 0 0 1px #6b5226; }
+.cards li.on { border-color: color-mix(in srgb, var(--amber) 45%, var(--card)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amber) 45%, var(--card)); }
 .cards .head { display: flex; gap: 8px; align-items: baseline; }
 .cards .head b { font-size: 16px; }
 .cards .head .dim { font: 12px 'Space Mono',ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-.cards .head button { margin-left: auto; font: inherit; font-size: 13px; font-weight: 600; color: var(--amber); background: none;
+.cards .head button { margin-left: auto; font: inherit; font-size: 13px; font-weight: 600; color: var(--amber-ink, var(--amber)); background: none;
                       border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
 .cards .head button:hover { border-color: var(--amber); }
-.cards li.on .head button { background: var(--amber); border-color: var(--amber); color: #2a1a03; }
+.cards li.on .head button { background: var(--amber); border-color: var(--amber); color: var(--ui-on-accent, #2a1a03); }
 .cards .by { color: var(--dim); font-size: 13px; }
 .cards .what { margin: 4px 0; font-size: 13.5px; color: var(--text); overflow-wrap: anywhere; }
-.cards .midi { font-size: 12.5px; color: var(--amber); }
+.cards .midi { font-size: 12.5px; color: var(--amber-ink, var(--amber)); }
 .cards .links { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--rule); font-size: 13px;
                 display: flex; flex-wrap: wrap; gap: 2px 14px; }
 .cards .links a { color: var(--dim); text-decoration: none; }
@@ -224,7 +224,7 @@ select option:checked, select option:hover { background: var(--amber); color: #1
 @keyframes radar-sweep { to { transform: rotate(360deg); } }
 .update-box p { margin: 0; color: var(--dim); font-size: 11px; line-height: 1.35; }
 .update-box button { width: 100%; }
-.update-box button.primary { color: #201607; background: var(--amber); border-color: var(--amber); font-weight: 700; }
+.update-box button.primary { color: var(--ui-on-accent, #201607); background: var(--amber); border-color: var(--amber); font-weight: 700; }
 #open-source-status { color: var(--dim); font-size: 10.5px; line-height: 1.35; }
 #open-source-status[data-error="true"] { color: #ff8176; }
 nav.toc { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: flex-start; font-size: 14px; }
@@ -245,7 +245,7 @@ section li { margin: 4px 0; }
 .steps li { margin: 0; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px 12px 50px;
             position: relative; counter-increment: step; }
 .steps li::before { content: counter(step); position: absolute; left: 14px; top: 12px; width: 24px; height: 24px; border-radius: 50%;
-                    background: var(--amber); color: #2a1a03; font-weight: 700; font-size: 13px; display: grid; place-items: center; }
+                    background: var(--amber); color: var(--ui-on-accent, #2a1a03); font-weight: 700; font-size: 13px; display: grid; place-items: center; }
 .steps b { display: block; margin-bottom: 2px; }
 
 /* the computer keyboard as a piano: 11 white keys, the black ones between */
@@ -253,8 +253,8 @@ section li { margin: 4px 0; }
 .piano span { display: grid; place-items: center; border-radius: 0 0 5px 5px; padding: 4px 0 3px; line-height: 1.15;
               font: 600 13px/1.2 'Space Mono',ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-align: center; }
 .piano i { display: block; font: 10.5px/1.2 'Space Grotesk',-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--dim); }
-.piano .w { grid-row: 2; grid-column-end: span 2; background: #2c2d31; border: 1px solid #44454a; color: var(--ink); }
-.piano .b { grid-row: 1; grid-column-end: span 2; margin: 0 3px; background: #0f1011; border: 1px solid #36373b; color: var(--ink); }
+.piano .w { grid-row: 2; grid-column-end: span 2; background: var(--ui-cap-top, #2c2d31); border: 1px solid var(--ui-line-hi, #44454a); color: var(--ink); }
+.piano .b { grid-row: 1; grid-column-end: span 2; margin: 0 3px; background: var(--ui-pop, #0f1011); border: 1px solid var(--ui-line, #36373b); color: var(--ink); }
 .map { list-style: none; padding: 0 !important; display: grid; gap: 6px 10px; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
 .map li { margin: 0; white-space: nowrap; color: var(--ink); font-size: 13px; }
 .map kbd { margin-right: 4px; }
@@ -289,6 +289,10 @@ header.site .wrap { padding-block: 7px; }
 .deck { gap: 8px; }
 .hint { font-size: 11.5px; gap: 5px 6px; } .hint span { padding: 2px 8px; }
 #status { font-size: 11.5px; }
+/* one line, always: a long message must not wrap and push the machine down (the full text is on hover) */
+.deck-head { flex-wrap: nowrap; min-width: 0; }
+.deck-head h1 { flex: none; white-space: nowrap; }
+#status { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* the bottom + extra boxes are unnecessary */
 .save-box,
 section.box[aria-labelledby="h-play-from"],
@@ -322,25 +326,27 @@ header.site .wrap { min-width: 0; row-gap: 6px; }
 /* ===== Hardware finish: a matte enclosure, raised controls, pressed states =====
    Only gradients and box-shadows (no blur filters), so it stays cheap with software rendering. */
 :root {
-  --cap-top: #2d2e33; --cap-bot: #212226; --cap-edge: #3b3c42; --cap-shade: #16171a;
-  --raised: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.55);
-  --pressed: inset 0 2px 4px rgba(0,0,0,.65), inset 0 0 0 1px rgba(0,0,0,.35);
-  --panel: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 24px -14px rgba(0,0,0,.9), 0 2px 4px rgba(0,0,0,.5);
+  --cap-top: var(--ui-cap-top, #2d2e33); --cap-bot: var(--ui-cap-bot, #212226); --cap-edge: var(--ui-cap-edge, #3b3c42);
+  --cap-shade: var(--ui-cap-shade, #16171a);
+  --raised: var(--ui-raised, inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.55));
+  --pressed: var(--ui-pressed, inset 0 2px 4px rgba(0,0,0,.65), inset 0 0 0 1px rgba(0,0,0,.35));
+  --panel: var(--ui-panel-shadow, inset 0 1px 0 rgba(255,255,255,.05), 0 10px 24px -14px rgba(0,0,0,.9), 0 2px 4px rgba(0,0,0,.5));
 }
-header.site { position: relative; z-index: 5; background: linear-gradient(180deg, #141518, #0a0a0c);
+header.site { position: relative; z-index: 5; background: linear-gradient(180deg, var(--ui-head-top, #141518), var(--ui-head-bot, #0a0a0c));
               box-shadow: inset 0 -1px 0 rgba(255,255,255,.03), 0 6px 16px -10px rgba(0,0,0,.9); }
-.logo { background: linear-gradient(180deg, var(--amber-hi), var(--amber) 60%, #d94800);
+.logo { background: linear-gradient(180deg, var(--amber-hi), var(--amber) 60%, var(--amber-lo, #d94800));
         box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1px 2px rgba(0,0,0,.6); }
 .sitenav a { transition: background-color .12s, color .12s; }
-.sitenav a:hover { background: linear-gradient(180deg, #232428, #1b1c1f); box-shadow: var(--raised); }
+.sitenav a:hover { background: linear-gradient(180deg, var(--ui-cap-top, #232428), var(--ui-cap-bot, #1b1c1f)); box-shadow: var(--raised); }
 .sitenav a:active { box-shadow: var(--pressed); }
 
 /* the panels beside and under the machine: a slightly raised, satin face */
-.box { background: linear-gradient(180deg, #222327 0%, #1a1b1e 100%); border-color: #2d2e32; box-shadow: var(--panel); }
-#about { background: linear-gradient(180deg, #1f2023, #18191c); box-shadow: inset 0 1px 2px rgba(0,0,0,.5); }
+.box { background: linear-gradient(180deg, var(--ui-box-top, #222327) 0%, var(--ui-box-bot, #1a1b1e) 100%); border-color: var(--ui-box-edge, #2d2e32); box-shadow: var(--panel); }
+#about { background: linear-gradient(180deg, var(--ui-well-top, #1f2023), var(--ui-well-bot, #18191c)); box-shadow: inset 0 1px 2px rgba(0,0,0,.5); }
 
 /* the machine sits in a recessed bay */
-.stage { background: radial-gradient(130% 80% at 50% 0%, #141518 0%, #060607 65%); border-color: #2a2b2f;
+.stage { background: radial-gradient(130% 80% at 50% 0%, var(--ui-stage-top, #141518) 0%, var(--ui-stage-bot, #060607) 65%);
+         border-color: var(--ui-box-edge, #2a2b2f);
          box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 0 0 1px rgba(0,0,0,.6),
                      0 22px 40px -24px rgba(0,0,0,.95), 0 3px 8px rgba(0,0,0,.5); }
 
@@ -350,26 +356,27 @@ header.site { position: relative; z-index: 5; background: linear-gradient(180deg
   border-bottom-color: var(--cap-shade); border-radius: 7px; box-shadow: var(--raised);
   transition: border-color .12s, box-shadow .12s, transform .05s, filter .12s; }
 .box button:hover, #perfwarn button:hover, .file:hover, .box select:hover {
-  border-color: #4a4b52; border-bottom-color: var(--cap-shade); filter: brightness(1.12); }
+  border-color: var(--ui-line-hi, #4a4b52); border-bottom-color: var(--cap-shade); filter: brightness(1.12); }
 .box button:active, #perfwarn button:active, .file:active {
   transform: translateY(1px); box-shadow: var(--pressed); filter: brightness(.95); }
 .box button[disabled], .box button:disabled { filter: saturate(.6) brightness(.8); transform: none; box-shadow: var(--raised); }
-#fw-search { box-shadow: inset 0 1px 3px rgba(0,0,0,.6); background: linear-gradient(180deg, #17181b, #1d1e21); }
-#fw-search:focus { border-color: var(--amber); outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,.6), 0 0 0 2px rgba(250,84,0,.25); }
+#fw-search { box-shadow: inset 0 1px 3px rgba(0,0,0,.6); background: linear-gradient(180deg, var(--ui-surface, #17181b), var(--ui-surface2, #1d1e21)); }
+#fw-search:focus { border-color: var(--amber); outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,.6), 0 0 0 2px color-mix(in srgb, var(--amber) 25%, transparent); }
 
-/* the orange controls: lit, glossy caps */
+/* the accent controls: lit, glossy caps */
 #start, #perfwarn button.primary, .fm1-flash-btn {
-  background: linear-gradient(180deg, #ff8a3a 0%, var(--amber) 55%, #dc4a00 100%); border: 1px solid #b83e00;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.18), 0 6px 14px -6px rgba(250,84,0,.55), 0 2px 4px rgba(0,0,0,.5);
+  background: linear-gradient(180deg, var(--amber-hi) 0%, var(--amber) 55%, var(--amber-lo, #dc4a00) 100%);
+  border: 1px solid var(--amber-edge, #b83e00); color: var(--ui-on-accent, #2a1a03);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.18), 0 6px 14px -6px color-mix(in srgb, var(--amber) 55%, transparent), 0 2px 4px rgba(0,0,0,.5);
   transition: transform .05s, box-shadow .12s, filter .12s; }
 #start:hover, #perfwarn button.primary:hover, .fm1-flash-btn:hover { filter: brightness(1.08); }
 #start:active, #perfwarn button.primary:active, .fm1-flash-btn:active {
   transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.5); }
 #start { text-shadow: 0 1px 0 rgba(255,255,255,.25); }
 
-#perfwarn { background: linear-gradient(180deg, #2f2417, #241b11); box-shadow: var(--panel); }
-.hint span { background: linear-gradient(180deg, #222327, #1b1c1f); box-shadow: var(--raised); }
-kbd { background: linear-gradient(180deg, #2c2d31, #212225); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 1px 1px rgba(0,0,0,.6); }
+#perfwarn { background: linear-gradient(180deg, color-mix(in srgb, var(--amber) 16%, var(--card)), color-mix(in srgb, var(--amber) 10%, var(--card))); box-shadow: var(--panel); }
+.hint span { background: linear-gradient(180deg, var(--ui-cap-top, #222327), var(--ui-cap-bot, #1b1c1f)); box-shadow: var(--raised); }
+kbd { background: linear-gradient(180deg, var(--ui-cap-top, #2c2d31), var(--ui-cap-bot, #212225)); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 1px 1px rgba(0,0,0,.6); }
 @media (prefers-reduced-motion: reduce) {
   .box button, #perfwarn button, .file, #start, .fm1-flash-btn, .sitenav a { transition: none; }
 }

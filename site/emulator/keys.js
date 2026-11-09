@@ -268,7 +268,7 @@
   function updateProgView(active) {
     if (!progView) return;
     if (!prog.length) { progView.innerHTML = '<span style="opacity:.6">arm ●, then tap pads to build a progression</span>'; return; }
-    progView.innerHTML = prog.map((r, i) => `<span style="${i === active ? "color:var(--amber);font-weight:700" : ""}">${degLabel(r)}</span>`).join('<span style="opacity:.4"> – </span>');
+    progView.innerHTML = prog.map((r, i) => `<span style="${i === active ? "color:var(--amber-ink, var(--amber));font-weight:700" : ""}">${degLabel(r)}</span>`).join('<span style="opacity:.4"> – </span>');
   }
   function progAppend(root) { if (!progRec) return; prog.push(root); updateProgView(-1); }
   const clearProgTimer = () => { if (progTimer) { clearTimeout(progTimer); progTimer = null; } };
@@ -384,24 +384,24 @@
   ready((nav) => {
     const css = document.createElement("style"); css.textContent = `
       #keys-btn{cursor:pointer}
-      #keys-pop{position:fixed;z-index:9997;width:316px;max-width:94vw;max-height:88vh;overflow:auto;background:#0c0d0f;border:1px solid #232428;
-        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:12px;display:none;flex-direction:column;gap:8px;color:#e9edf2;font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
+      #keys-pop{position:fixed;z-index:9997;width:316px;max-width:94vw;max-height:88vh;overflow:auto;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);
+        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:12px;display:none;flex-direction:column;gap:8px;color:var(--ui-text,#e9edf2);font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
       #keys-pop.open{display:flex}
       #keys-pop h3{margin:0;font-size:13px;display:flex;align-items:center;gap:7px}
       #keys-pop h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber)}
-      #keys-pop select{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:5px 7px;font:inherit;font-size:12px;flex:1;min-width:0}
+      #keys-pop select{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:5px 7px;font:inherit;font-size:12px;flex:1;min-width:0}
       #keys-pop input[type=range]{flex:1;min-width:0}
       #keys-pop .krow{display:flex;gap:6px;align-items:center}
-      #keys-pop .krow>.cap{font-size:11px;color:#8c93a0;flex:0 0 42px}
-      #keys-pop button{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:6px 9px;font:inherit;font-size:12.5px;cursor:pointer}
+      #keys-pop .krow>.cap{font-size:11px;color:var(--ui-dim,#8c93a0);flex:0 0 42px}
+      #keys-pop button{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:6px 9px;font:inherit;font-size:12.5px;cursor:pointer}
       #keys-pop .ob{flex:0 0 30px;font-weight:700}
-      #keys-pop .on{border-color:var(--amber);color:var(--amber)}
-      #keys-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:#8c93a0;margin-bottom:2px}
-      #keys-status{margin:0;font-size:11px;color:#8c93a0;min-height:1em}
+      #keys-pop .on{border-color:var(--amber);color:var(--amber-ink, var(--amber))}
+      #keys-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ui-dim,#8c93a0);margin-bottom:2px}
+      #keys-status{margin:0;font-size:11px;color:var(--ui-dim,#8c93a0);min-height:1em}
       .kb{position:relative;height:88px;border-radius:6px;overflow:hidden;background:#000;touch-action:none;user-select:none;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
       .kb .wk{position:absolute;top:0;height:100%;background:linear-gradient(#f4f1ea,#d7d2c6);border-right:1px solid #1a1a1a;box-sizing:border-box}
       .kb .wk.off{opacity:.38}
-      .kb .wk.act{background:linear-gradient(var(--amber),#b23c00)}
+      .kb .wk.act{background:linear-gradient(var(--amber),var(--amber-lo,#b23c00))}
       .kb .bk{position:absolute;top:0;height:58%;background:linear-gradient(#333,#090909);border:1px solid #000;border-radius:0 0 3px 3px;z-index:2;box-shadow:0 2px 3px rgba(0,0,0,.6)}
       .kb .bk.off{opacity:.4}
       .kb .bk.act{background:linear-gradient(var(--amber),#8a2d00)}
@@ -412,10 +412,10 @@
       .kb .bk.act .lab{color:#2a0f00}
       .kb.nolabels .lab{display:none}
       #keys-pop .padrow{display:flex;flex-wrap:wrap;gap:4px}
-      #keys-pop .pad{flex:1 1 auto;min-width:32px;background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:6px;padding:5px 3px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:center;line-height:1.15;touch-action:none;user-select:none}
-      #keys-pop .pad .rom{display:block;font-size:9px;font-weight:400;color:#8c93a0}
-      #keys-pop .pad.act{border-color:var(--amber);color:var(--amber)}
-      #keys-pop .pad.act .rom{color:var(--amber)}`;
+      #keys-pop .pad{flex:1 1 auto;min-width:32px;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:6px;padding:5px 3px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:center;line-height:1.15;touch-action:none;user-select:none}
+      #keys-pop .pad .rom{display:block;font-size:9px;font-weight:400;color:var(--ui-dim,#8c93a0)}
+      #keys-pop .pad.act{border-color:var(--amber);color:var(--amber-ink, var(--amber))}
+      #keys-pop .pad.act .rom{color:var(--amber-ink, var(--amber))}`;
     document.head.appendChild(css);
 
     const btn = document.createElement("a"); btn.id = "keys-btn"; btn.href = "#";
@@ -429,7 +429,7 @@
     const arpOpts = ARP_MODES.map((n) => `<option>${n}</option>`).join("");
     const rateOpts = Object.keys(RATES).map((n) => `<option${n === "1/8" ? " selected" : ""}>${n}</option>`).join("");
     pop.innerHTML = `
-      <h3><span class="dot"></span> Keys <span style="margin-left:auto;font-size:10.5px;color:#8c93a0">→ into the FM-1</span></h3>
+      <h3><span class="dot"></span> Keys <span style="margin-left:auto;font-size:10.5px;color:var(--ui-dim,#8c93a0)">→ into the FM-1</span></h3>
       <div class="kbslot"></div>
       <div id="k-now" style="min-height:1.3em;font-size:12.5px;font-weight:700;color:#cdd3db;text-align:center;letter-spacing:.3px">—</div>
       <div class="krow"><button class="ob" id="k-octdn">−</button><span class="cap" style="flex:0 0 auto;text-align:center;min-width:34px" id="k-oct">C3</span><button class="ob" id="k-octup">+</button>
@@ -443,7 +443,7 @@
       <div class="krow"><span class="cap">Strum</span>
         <select id="k-strumdir" title="Strum direction"><option value="up">↑ up</option><option value="down">↓ down</option><option value="alt">↕ alt</option></select>
         <input id="k-strum" type="range" min="0" max="120" value="0" title="Strum spread (ms per note)">
-        <span id="k-strum-l" style="flex:0 0 32px;text-align:right;font-size:11px;color:#8c93a0">off</span></div>
+        <span id="k-strum-l" style="flex:0 0 32px;text-align:right;font-size:11px;color:var(--ui-dim,#8c93a0)">off</span></div>
       <div class="krow"><span class="cap">Arp</span><select id="k-arp">${arpOpts}</select><select id="k-rate">${rateOpts}</select>
         <select id="k-octs" title="Arp octave range"><option value="1">×1</option><option value="2">×2</option><option value="3">×3</option></select></div>
       <div class="krow"><button id="k-pads" style="flex:1">▦ Scale-degree chord pads</button></div>
@@ -454,7 +454,7 @@
         <button id="k-prog-clear" title="Clear the progression" style="flex:0 0 auto">⟲</button>
         <button id="k-prog-mid" title="Export the progression as a .mid file" style="flex:0 0 auto">⤓</button>
         <select id="k-prog-len" title="Chord length"><option value="2">½ bar</option><option value="4" selected>1 bar</option><option value="8">2 bars</option><option value="1">1 beat</option></select></div>
-      <div id="k-progview" style="display:none;font-size:11px;color:#8c93a0;min-height:1.1em;text-align:center"></div>
+      <div id="k-progview" style="display:none;font-size:11px;color:var(--ui-dim,#8c93a0);min-height:1.1em;text-align:center"></div>
       <div><div class="lbl"><span>Velocity</span><span id="k-vel-l">100</span></div><input id="k-vel" type="range" min="1" max="127" value="100" style="width:100%"></div>
       <div class="krow"><span class="cap">Vel curve</span>
         <select id="k-curve" title="How key velocity maps to output"><option value="linear">Linear</option><option value="soft">Soft</option><option value="hard">Hard</option><option value="fixed">Fixed</option></select>
@@ -466,7 +466,7 @@
       <div class="krow" style="margin-top:2px"><span class="cap">Preset</span><select id="k-preset"></select>
         <button id="k-presave" title="Save current settings as a preset">💾</button>
         <button id="k-predel" title="Delete the selected saved preset">🗑</button></div>
-      <div class="krow" id="k-savewrap" style="display:none"><input id="k-savename" placeholder="name this preset" maxlength="24" style="flex:1;min-width:0;background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:5px 7px;font:inherit;font-size:12px"><button id="k-saveok" class="on">Save</button><button id="k-savecancel">✕</button></div>
+      <div class="krow" id="k-savewrap" style="display:none"><input id="k-savename" placeholder="name this preset" maxlength="24" style="flex:1;min-width:0;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:5px 7px;font:inherit;font-size:12px"><button id="k-saveok" class="on">Save</button><button id="k-savecancel">✕</button></div>
       <p id="keys-status">Click or tap the keys. Boot a firmware (Start) first.</p>`;
     document.body.appendChild(pop);
     octLab = pop.querySelector("#k-oct");
@@ -530,7 +530,7 @@
     function buildPads() {
       if (!padsOn) return;
       const sc = scaleSet(); padWrap.innerHTML = ""; padRoots = [];
-      if (!sc) { padWrap.innerHTML = '<span style="font-size:11px;color:#8c93a0;padding:4px 2px">Pick a scale to get degree pads.</span>'; return; }
+      if (!sc) { padWrap.innerHTML = '<span style="font-size:11px;color:var(--ui-dim,#8c93a0);padding:4px 2px">Pick a scale to get degree pads.</span>'; return; }
       const sorted = [...sc].sort((a, b) => a - b), oct = base - (base % 12);
       sorted.forEach((iv, i) => {
         const root = clampNote(oct + scaleRoot + iv); padRoots.push(root);

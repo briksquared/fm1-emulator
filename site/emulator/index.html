@@ -18,7 +18,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="style.css?v=81">
+<link rel="stylesheet" href="style.css?v=82">
+<script src="ui-theme.js?v=1"></script>
 <script>if (new URLSearchParams(location.search).get("embed") === "1") document.documentElement.setAttribute("data-embed", "");</script>
 </head>
 <body>
@@ -53,7 +54,7 @@
           <div><h2 class="eyebrow" id="h-updates">Open-source radar</h2><strong>Live firmware scan</strong></div>
         </div>
         <p>Checks the open firmware catalog for new, explicitly open-licensed FM-1 releases. Nothing downloads until you select it.</p>
-        <button type="button" id="scan-open-source">Scan open-source updates</button>
+        <button type="button" id="scan-open-source" disabled>Scan open-source updates</button>
         <button type="button" id="apply-open-source" class="primary" hidden>Use catalog updates</button>
         <span id="open-source-status" role="status" aria-live="polite">Bundled catalog: 259 verified packages</span>
       </section>
@@ -62,15 +63,6 @@
       <div class="deck-head">
         <h1 id="title">M-VAVE FM-1 (emulated)</h1>
         <span id="status">Preparing emulator…</span>
-      </div>
-      <div id="perfwarn" role="alert" hidden>
-        <p id="perfwarn-text"></p>
-        <div class="acts">
-          <button type="button" id="perfwarn-fix" class="primary"></button>
-          <button type="button" id="perfwarn-copy" title="A short text about this device and how it kept up, to paste into a bug report">Copy a report</button>
-          <a href="https://github.com/briksquared/fm1-emulator/issues/new" target="_blank" rel="noopener">Report on GitHub ↗</a>
-          <button type="button" id="perfwarn-close" aria-label="Dismiss">✕</button>
-        </div>
       </div>
       <div class="stage">
         <canvas id="panel" aria-label="FM-1 front panel"></canvas>
@@ -380,22 +372,23 @@
     </div>
   </div>
 </footer>
-<script src="overlay.js?v=79"></script>
-<script src="customize.js?v=61"></script>
-<script src="favorites.js?v=40"></script>
-<script src="gallery.js?v=64"></script>
-<script src="extras.js?v=62"></script>
-<script src="transport.js?v=1"></script>
-<script src="midiplayer.js?v=62"></script>
-<script src="keys.js?v=80"></script>
-<script src="recorder.js?v=5"></script>
-<script src="tape.js?v=62"></script>
-<script src="banks.js?v=60"></script>
-<script src="stickers.js?v=79"></script>
-<script src="deck.js?v=78"></script>
-<script src="loader.js?v=1"></script>
+<script src="issues.js?v=1"></script>
+<script src="overlay.js?v=80"></script>
+<script src="customize.js?v=62"></script>
+<script src="favorites.js?v=41"></script>
+<script src="gallery.js?v=65"></script>
+<script src="extras.js?v=63"></script>
+<script src="transport.js?v=2"></script>
+<script src="midiplayer.js?v=63"></script>
+<script src="keys.js?v=81"></script>
+<script src="recorder.js?v=6"></script>
+<script src="tape.js?v=63"></script>
+<script src="banks.js?v=61"></script>
+<script src="stickers.js?v=80"></script>
+<script src="deck.js?v=79"></script>
+<script src="loader.js?v=2"></script>
 <script type="module" src="main.js?v=81"></script>
-<script type="module" src="install.js?v=78"></script>
+<script type="module" src="install.js?v=79"></script>
 <style>#bmac{position:fixed;right:12px;bottom:9px;z-index:40;font:12px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;color:var(--dim,#9aa0ab);opacity:.4;text-decoration:none;transition:opacity .15s;user-select:none}#bmac:hover{opacity:.95}</style>
 <a id="bmac" href="https://cash.app/$BRIKSQUARE" target="_blank" rel="noopener" title="Buy me a coffee (Cash App)">☕ buy me a coffee</a>
 </body>

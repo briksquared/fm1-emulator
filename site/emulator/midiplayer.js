@@ -123,19 +123,19 @@
   ready((nav) => {
     const css = document.createElement("style"); css.textContent = `
       #midi-btn{cursor:pointer}
-      #midi-pop{position:fixed;z-index:9997;width:270px;max-width:92vw;background:#0c0d0f;border:1px solid #232428;
-        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:12px;display:none;flex-direction:column;gap:9px;color:#e9edf2;font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
+      #midi-pop{position:fixed;z-index:9997;width:270px;max-width:92vw;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);
+        border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.6);padding:12px;display:none;flex-direction:column;gap:9px;color:var(--ui-text,#e9edf2);font:13px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
       #midi-pop.open{display:flex}
       #midi-pop h3{margin:0;font-size:13px;display:flex;align-items:center;gap:7px}
       #midi-pop h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber)}
       #midi-pop select,#midi-pop input[type=range]{width:100%}
-      #midi-pop select{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px}
+      #midi-pop select{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px}
       #midi-pop .mprow{display:flex;gap:7px;align-items:center}
-      #midi-pop button{flex:1;background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;padding:8px;font:inherit;font-size:13px;cursor:pointer}
-      #midi-pop button.play{background:var(--amber);color:#180a02;border:0;font-weight:700}
-      #midi-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:#8c93a0}
-      #midi-pop .loopon{border-color:var(--amber);color:var(--amber)}
-      #midi-status{margin:0;font-size:11.5px;color:#cfd4da;min-height:1em}`;
+      #midi-pop button{flex:1;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;padding:8px;font:inherit;font-size:13px;cursor:pointer}
+      #midi-pop button.play{background:var(--amber);color:var(--ui-on-accent,#180a02);border:0;font-weight:700}
+      #midi-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ui-dim,#8c93a0)}
+      #midi-pop .loopon{border-color:var(--amber);color:var(--amber-ink, var(--amber))}
+      #midi-status{margin:0;font-size:11.5px;color:var(--ui-text2,#cfd4da);min-height:1em}`;
     document.head.appendChild(css);
 
     const btn = document.createElement("a"); btn.id = "midi-btn"; btn.href = "#";
@@ -146,13 +146,13 @@
     let opts = "";
     for (const [grp, list] of Object.entries(LIB)) { opts += `<optgroup label="${grp}">`; list.forEach((p, i) => opts += `<option value="${grp}|${i}">${p.name}</option>`); opts += `</optgroup>`; }
     pop.innerHTML = `
-      <h3><span class="dot"></span> MIDI Player <span style="margin-left:auto;font-size:10.5px;color:#8c93a0">→ into the FM-1</span></h3>
+      <h3><span class="dot"></span> MIDI Player <span style="margin-left:auto;font-size:10.5px;color:var(--ui-dim,#8c93a0)">→ into the FM-1</span></h3>
       <select id="midi-pat">${opts}</select>
       <div class="mprow"><button class="play" id="midi-play">▶ Play</button><button id="midi-stop">■ Stop</button><button id="midi-loop" class="loopon">↻ Loop</button><button id="midi-clock" title="Send MIDI clock so the firmware's sequencer / arp follows this tempo">⏱ Clock</button></div>
       <div><div class="lbl"><span>Tempo</span><span id="midi-bpm">120 BPM</span></div><input id="midi-tempo" type="range" min="50" max="200" value="120"></div>
       <div class="mprow"><button id="midi-file">📁 Load a .mid file</button></div>
       <p id="midi-status"></p>
-      <p style="margin:0;font-size:11px;color:#8c93a0">Plays patterns into the emulated device. Boot a firmware (Start) first.</p>`;
+      <p style="margin:0;font-size:11px;color:var(--ui-dim,#8c93a0)">Plays patterns into the emulated device. Boot a firmware (Start) first.</p>`;
     document.body.appendChild(pop);
     statusEl = pop.querySelector("#midi-status");
 

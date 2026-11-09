@@ -119,7 +119,7 @@ export function appFromPackage(file) {
 // package when a new version comes, so firmwares.json's goes stale between runs of
 // ci/sync-open-firmwares.mjs. { url, version } or null. (One catalog per fetch function: the
 // page's is fetch; a test's its own.)
-import { CATALOG_URL } from "./catalog-updates.js?v=2";
+import { CATALOG_URL } from "./catalog-updates.js?v=3";
 const liveCatalogs = new WeakMap();
 async function catalogPackage(id, fetchFn) {
   try {

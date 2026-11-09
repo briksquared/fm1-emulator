@@ -19,6 +19,13 @@ function safeSource(entry) {
   } catch { return null; }
 }
 
+// a release date the list can sort by, or none
+function released(entry) {
+  if (typeof entry.published === "string" && /^\d{4}-\d\d-\d\dT[\d:.]+Z?$/.test(entry.published)) return entry.published;
+  if (typeof entry.date === "string" && /^\d{4}-\d\d-\d\d$/.test(entry.date)) return `${entry.date}T00:00:00Z`;
+  return "";
+}
+
 export function fromCatalog(entry) {
   if (!entry || !ID.test(entry.id || "") || !OPEN_LICENSE.test(entry.lic || "") || !HASH.test(entry.sha256 || "")) return null;
   if (!/^FM-1_\d+$/.test(entry.product || "") || !/^fw\/[^/]+\.fwsc$/i.test(entry.pkg || "")) return null;
@@ -28,7 +35,7 @@ export function fromCatalog(entry) {
     id: entry.id,
     name: String(entry.name || entry.id).slice(0, 120),
     version: String(entry.version || "").slice(0, 80),
-    released: entry.published || (entry.date ? `${entry.date}T00:00:00Z` : ""),
+    released: released(entry),
     kind: String(entry.kind || "other").slice(0, 40),
     author: String(entry.author || "community").slice(0, 120),
     license: entry.lic,
@@ -69,14 +76,38 @@ export function mergeCatalog(bundled, remembered = []) {
   return { ...bundled, firmwares: [...merged.values()].sort(newestFirst) };
 }
 
-export async function scanOpenFirmwareUpdates(bundled, current, fetchFn = fetch) {
-  const response = await fetchFn(`${CATALOG_URL}?scan=${Date.now()}`);
-  if (!response.ok) throw new Error(`the firmware catalog returned HTTP ${response.status}`);
-  const live = await response.json();
-  const open = (live?.firmwares || []).map(fromCatalog).filter(Boolean);
+export const SCAN_TIMEOUT_MS = 20000;
+
+// One scan of the live catalog. Anything wrong with the answer (no answer in time, an HTTP error,
+// not JSON, a list in a format this version doesn't know, or not one readable entry) is an error,
+// and the caller keeps the catalog it has. `previous`: the entries remembered from earlier scans;
+// one the live list no longer has is kept, so a firmware in use doesn't vanish with a catalog edit.
+export async function scanOpenFirmwareUpdates(bundled, current, fetchFn = fetch, { timeoutMs = SCAN_TIMEOUT_MS, previous = [] } = {}) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  let live;
+  try {
+    const response = await fetchFn(`${CATALOG_URL}?scan=${Date.now()}`, { signal: ctl.signal, cache: "no-store" });
+    if (!response.ok) throw new Error(`the firmware catalog returned HTTP ${response.status}`);
+    try { live = await response.json(); }
+    catch (error) { if (ctl.signal.aborted) throw error; throw new Error("the firmware catalog's answer was not valid JSON"); }
+  } catch (error) {
+    if (ctl.signal.aborted) throw new Error(`the firmware catalog did not answer within ${Math.round(timeoutMs / 1000)} s`);
+    throw error;
+  } finally { clearTimeout(timer); }
+  if (!live || !Array.isArray(live.firmwares)) throw new Error("the firmware catalog's format was not recognised");
+  // newest first, then one entry per id (a list naming a firmware twice keeps its newest)
+  const open = [], seen = new Set();
+  for (const entry of live.firmwares.map(fromCatalog).filter(Boolean).sort(newestFirst)) {
+    if (seen.has(entry.id)) continue;
+    seen.add(entry.id); open.push(entry);
+  }
+  if (!open.length) throw new Error("no open-license FM-1 package in the firmware catalog could be read");
   const bundledById = new Map((bundled?.firmwares || []).filter(entry => entry.catalogId).map(entry => [entry.catalogId, entry]));
   const currentById = new Map((current?.firmwares || []).filter(entry => entry.catalogId).map(entry => [entry.catalogId, entry]));
   const remember = open.filter(entry => bundledById.get(entry.catalogId)?.sha256 !== entry.sha256);
+  for (const entry of migrateRemembered(previous))
+    if (isSafeRemembered(entry) && !seen.has(entry.id)) { remember.push(entry); seen.add(entry.id); }
   let newCount = 0, updateCount = 0;
   for (const entry of open) {
     const prior = currentById.get(entry.catalogId);

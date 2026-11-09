@@ -15,7 +15,7 @@ async function latestRelease() {
   const response = await net.fetch(LATEST_API, { headers: { accept: "application/vnd.github+json", "user-agent": `fm1-emulator/${app.getVersion()}` } });
   if (!response.ok) throw new Error(`GitHub answered ${response.status}`);
   const release = await response.json();
-  return String(release.tag_name || "").replace(/^v/, "") || null;
+  return cleanVersion(release.tag_name);
 }
 
 let updater = null;
@@ -67,7 +67,7 @@ async function checkForUpdates({ interactive = false, log = () => {} } = {}) {
     if (u) {
       const result = await u.checkForUpdates();
       if (!result) throw new Error("this copy cannot check for updates");
-      latest = result.updateInfo?.version;
+      latest = cleanVersion(result.updateInfo?.version);
     } else latest = await latestRelease();
     const newer = !!(latest && isNewer(latest, app.getVersion()));
     log("update-check", { current: app.getVersion(), latest: latest || null, newer, kind: installKind() });
@@ -124,6 +124,12 @@ async function promptRestart(version) {
   if (response === 0) setImmediate(() => getUpdater().quitAndInstall(false, true));
 }
 
+// a release version as x.y.z (with an optional suffix), or null: it ends up in a URL and a dialog
+function cleanVersion(v) {
+  const m = /^v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(String(v || "").trim());
+  return m ? m[1] : null;
+}
+
 // semver core comparison (release builds only carry x.y.z)
 function isNewer(latest, current) {
   const parse = (v) => String(v).replace(/^v/, "").split(/[.+-]/).slice(0, 3).map((n) => Number(n) || 0);
@@ -132,4 +138,4 @@ function isNewer(latest, current) {
   return false;
 }
 
-module.exports = { checkForUpdates, installKind, isNewer, RELEASES };
+module.exports = { checkForUpdates, installKind, isNewer, cleanVersion, RELEASES };

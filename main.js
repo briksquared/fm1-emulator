@@ -147,6 +147,38 @@ function createWindow() {
   return win;
 }
 
+// FM1_SELFTEST=typing: real key presses (not synthetic DOM events). Letters that are also note
+// keys must type into text fields; the same keys from the page must still play; a focused slider
+// keeps its arrow keys.
+async function typingSelfTest(win) {
+  const wc = win.webContents, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const js = (code) => wc.executeJavaScript(`(async()=>{ const $=s=>document.querySelector(s); ${code} })()`, true);
+  const press = async (k, hold = false) => {
+    wc.sendInputEvent({ type: "keyDown", keyCode: k });
+    if (k.length === 1) wc.sendInputEvent({ type: "char", keyCode: k });
+    if (!hold) { await sleep(30); wc.sendInputEvent({ type: "keyUp", keyCode: k }); }
+    await sleep(40);
+  };
+  const type = async (text) => { for (const c of text) await press(c); };
+  for (let i = 0; i < 80; i++) { if (await js(`return !!($('#gal-side') && window.FM1 && window.FM1Keys && !$('#start').disabled)`)) break; await sleep(250); }
+  await js(`$('#start').click()`);
+  for (let i = 0; i < 60; i++) { if (await js(`return window.FM1.running()`)) break; await sleep(250); }
+  win.focus(); wc.focus();
+  await js(`$('#fw-search').focus()`); await type("aws");
+  const sideTyped = await js(`const v=$('#fw-search').value; $('#fw-search').value=''; $('#fw-search').dispatchEvent(new Event('input')); $('#fw-search').blur(); return v`);
+  await js(`$('#gal-side').click()`); await sleep(400); await js(`$('#gal-q').focus()`); await type("dr");
+  const galleryTyped = await js(`const v=$('#gal-q').value; $('#gal-q').value=''; return v`);
+  await press("Escape"); await sleep(200);
+  await js(`window.FM1Keys.routePc(false); document.activeElement && document.activeElement.blur()`);
+  await press("a", true); const heldFromPage = await js(`return window.FM1.heldKeys()`);
+  wc.sendInputEvent({ type: "keyUp", keyCode: "a" }); await sleep(80);
+  const releasedAfter = await js(`return window.FM1.heldKeys()`);
+  const sliderBefore = await js(`const r=document.querySelector('input[type=range]'); r.focus(); return Number(r.value)`);
+  await press("Right");
+  const slider = await js(`const r=document.querySelector('input[type=range]'); const v=Number(r.value); r.blur(); window.FM1Keys.routePc(true); return v`);
+  return { sideTyped, galleryTyped, heldFromPage, releasedAfter, sliderBefore, slider };
+}
+
 // Automated end-to-end check (set FM1_SELFTEST=write|read). Proves assets load, a firmware boots,
 // and that localStorage survives a full app restart — logs one JSON line, then quits.
 function runSelfTest(win, mode) {
@@ -229,7 +261,7 @@ function runSelfTest(win, mode) {
              try{ localStorage.setItem('fm1.__selftest','persisted'); }catch(e){ out.lsErr=String(e); }
              out.favNow=(()=>{try{return localStorage.getItem('fm1.favs.v1')}catch{return 'ERR'}})();
              return out; })()`;
-      const res = await win.webContents.executeJavaScript(js, true);
+      const res = mode === "typing" ? await typingSelfTest(win) : await win.webContents.executeJavaScript(js, true);
       console.log("SELFTEST_RESULT " + JSON.stringify(res));
       const passed = mode === "search"
         ? Number(res.fwCount) === 259 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
@@ -245,6 +277,8 @@ function runSelfTest(win, mode) {
           ? res.initial && res.recovered && res.running
         : mode === "ports"
           ? !res.error && Array.isArray(res.inputs) && Array.isArray(res.outputs)
+        : mode === "typing"
+          ? res.sideTyped === "aws" && res.galleryTyped === "dr" && res.heldFromPage.length === 1 && res.releasedAfter.length === 0 && res.slider > res.sliderBefore
         : mode === "layout"
           ? res.flashInRight && res.firmwareInLeft && res.threeInaRow && res.machineInView && res.noSideScroll
           : Number(res.fwCount) > 1 && res.hasFavApi && res.hasGallery && res.hasLoader &&

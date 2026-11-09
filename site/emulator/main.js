@@ -7,7 +7,7 @@ import { fetchPackage } from "./fwsc.js";
 import { SaveStore, packageHash, changedSectors, packSectors, exportSave, importSave } from "./persistence.js";
 import { productOf } from "./fm1pkg.js";
 import { judgeSecond } from "./perf-judge.js?v=1";
-import { CATALOG_ORIGIN, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } from "./catalog-updates.js?v=2";
+import { CATALOG_ORIGIN, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } from "./catalog-updates.js?v=3";
 
 const CLOCKS = [60, 80, 100, 120, 160, 200, 240];
 // The device this page is for: the FM-1 (index.html) or the SMK-37 (smk37/index.html, <html
@@ -469,6 +469,7 @@ window.FM1 = { applySkin: fm1ApplySkin, SKIN_ORDER, SKIN_DEFAULT, panelCanvas: c
   fwText: (id) => fwSearchText[id] || "",                                      // searchable text (name + description) for a firmware
   isSampler: (id) => !!(CAPS[id] && CAPS[id].audioIn),                         // takes USB audio in (a sampler)
   runningFirmware: () => running ? { id: running.entry.slice(DEV.key.length), name: running.record.name, hash: running.record.hash } : null,
+  heldKeys: () => [...down.keys()].filter((i) => down[i]),                    // matrix keys held (self-tests)
   running: () => !!running };
 try { fm1ApplySkin({ ...SKIN_DEFAULT, ...JSON.parse(localStorage.getItem("fm1.skin") || "{}") }); } catch {}
 if (typeof window.initCustomize === "function") window.initCustomize(window.FM1);
@@ -602,8 +603,17 @@ function keyId(k) {
   return b === undefined ? -1 : b;
 }
 const padKey = (k) => (board === 1 && /^[1-8]$/.test(k) ? Number(k) - 1 : -1);
+// Text fields, lists and editable areas keep their keys: typing "a" into a search box used to
+// play a note and lose the letter. A focused slider keeps its arrows.
+const TEXT_INPUT = /^(text|search|email|url|tel|password|number|date|time|datetime-local|month|week)$/;
+function keepsKeys(t, key) {
+  if (!t || t === document.body) return false;
+  if (t.isContentEditable || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return true;
+  if (t instanceof HTMLInputElement) return TEXT_INPUT.test(t.type) || (t.type === "range" && key.startsWith("Arrow"));
+  return false;
+}
 addEventListener("keydown", (e) => {
-  if (e.metaKey || e.ctrlKey || e.target instanceof HTMLSelectElement) return;
+  if (e.metaKey || e.ctrlKey || e.altKey || keepsKeys(e.target, e.key)) return;
   if (ENC_KEYS[e.key]) { e.preventDefault(); turn(...ENC_KEYS[e.key]); return; }
   const pad = padKey(e.key);
   if (pad >= 0) { e.preventDefault(); if (!e.repeat) setAnalog(pad, 700); return; }
@@ -1303,7 +1313,7 @@ if (scanOpenSource && applyOpenSource && openSourceStatus) {
     openSourceStatus.dataset.error = "false";
     openSourceStatus.textContent = "Scanning for new firmware…";
     try {
-      const result = await scanOpenFirmwareUpdates(bundledCatalog, catalog);
+      const result = await scanOpenFirmwareUpdates(bundledCatalog, catalog, fetch, { previous: rememberedCatalog });
       store(updateKey, JSON.stringify(result.remember));
       const found = result.newCount + result.updateCount;
       openSourceStatus.textContent = found

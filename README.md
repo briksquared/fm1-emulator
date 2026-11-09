@@ -2,32 +2,82 @@
 
 # FM-1 Emulator
 
-An offline desktop emulator for the **M-VAVE FM-1**. Run FM-1 firmware with no hardware:
-choose a firmware, press **Start**, and play with your keyboard, mouse, or a MIDI controller.
+### Find, try, flash, and recover firmware for the M-VAVE FM-1.
 
 [![Release](https://img.shields.io/github/v/release/briksquared/fm1-emulator?label=release)](https://github.com/briksquared/fm1-emulator/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/briksquared/fm1-emulator/total?label=downloads)](https://github.com/briksquared/fm1-emulator/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-informational)
 
-<img src="docs/screenshot.jpg" alt="FM-1 Emulator running a firmware" width="760">
+<img src="docs/screenshots/01-miami.png" alt="FM-1 Emulator running a firmware" width="760">
 
 </div>
 
 ---
 
+The FM-1 has a huge community firmware scene, and this app is the easy way into it. It ships with
+**259 open-source FM-1 firmwares**, lets you search them and spot new releases, and runs any of them
+in a faithful emulator so you can **try a firmware before it goes anywhere near your unit**. When
+you find one you like, flash it to your real FM-1 over USB from the same window, with backup and
+recovery tools one click away.
+
+## How it works
+
+1. **Find.** Browse or search the bundled library, or let the firmware radar check for newly
+   published open-source releases.
+2. **Try.** Press **Start** and play the firmware in the emulator with your computer keyboard, the
+   mouse, a MIDI controller, or your FM-1 itself.
+3. **Flash.** Connect the FM-1 with a USB data cable, pick the firmware in the **Firmware uplink**
+   panel, and press **Deploy selected firmware**.
+4. **Recover.** If an install is interrupted, **Resume interrupted install** finishes it. On
+   Windows, the bundled M-Flasher backs up, restores, and reinstalls the whole flash.
+
 ## Screenshots
 
 | | |
 | --- | --- |
-| <img src="docs/screenshots/01-electro-orange.png" alt="Felucca running in the Electro Orange theme" width="400"> | <img src="docs/screenshots/02-miami-stickers.png" alt="Miami theme with stickers on the case" width="400"> |
-| **Electro Orange** — Felucca running, with the firmware radar and Firmware uplink panels | **Miami** — stickers placed in the panel's open spots |
-| <img src="docs/screenshots/03-white-blue-stickers.png" alt="FM-1 White / Blue colourway with stickers" width="400"> | <img src="docs/screenshots/04-gold-stickers-palette.png" alt="Gold on Black theme with the sticker palette open" width="400"> |
-| **FM-1 White / Blue** — one of the real hardware colourways, with stickers | **Gold on Black** — the sticker palette open over the machine |
-| <img src="docs/screenshots/05-emerald-firmware-browser.png" alt="The firmware browser with all 259 firmwares" width="400"> | <img src="docs/screenshots/06-navy-flash-recovery.png" alt="FM-1 Navy theme with the recovery options open" width="400"> |
-| **Emerald** — browsing all 259 bundled firmwares | **FM-1 Navy** — Firmware uplink with the recovery options open |
-| <img src="docs/screenshots/07-vaporwave-keys.png" alt="Vaporwave theme with the Keys module open" width="400"> | |
-| **Vaporwave** — the Keys module (scales, chords, arpeggiator) | |
+| <img src="docs/screenshots/01-miami.png" alt="Felucca running in the Miami theme" width="400"> | <img src="docs/screenshots/02-cobalt-customize-interface.png" alt="Customize, Interface tab, recolouring the app" width="400"> |
+| <img src="docs/screenshots/03-white-green-stickers.png" alt="FM-1 White / Green colourway with stickers" width="400"> | <img src="docs/screenshots/04-gold-customize-device-stickers.png" alt="Customize, Device tab, with stickers on a Gold on Black case" width="400"> |
+| <img src="docs/screenshots/05-emerald-browser-search.png" alt="Firmware browser searching for drum firmwares" width="400"> | <img src="docs/screenshots/06-amethyst-radar-uplink.png" alt="Firmware radar, Firmware uplink and recovery options" width="400"> |
+| <img src="docs/screenshots/07-crimson-banks.png" alt="DX7 patch banks" width="400"> | <img src="docs/screenshots/08-ice-cables-scope-rec.png" alt="MIDI player, Tape, Scope and the MIDI recorder" width="400"> |
+| <img src="docs/screenshots/09-vaporwave-keys.png" alt="Keys with scales, chords and arpeggiator" width="400"> |  |
+
+## Features
+
+### Firmware library
+- **259 open-source firmwares bundled**, newest first, every one boot-checked and SHA-256 verified,
+  all available offline
+- **Search** by name, author, version, license, product identity, or description (try "drum",
+  "bass", "ambient"), plus **Samplers** and **Favorites** filters and a full **Browse all** view
+- **Open-source firmware radar**: one button scans for newly published open-license FM-1 releases; nothing
+  downloads until you pick one
+- **Load your own**: open or drag in any `.fwsc` package, including M-VAVE's stock firmware
+
+### Try before you flash
+- The FM-1's chip, screen, keys, knobs, and audio emulated in software, running the same update
+  packages you would install on the hardware
+- Each firmware's card says how to drive it (*Plays MIDI*, *DX7 banks*, *Sampler*, *Clock-sync*)
+- The emulator can't touch your FM-1 or your computer, so trying a firmware carries no risk
+
+### Flash and recover
+- **Firmware uplink**: scan for the connected FM-1, pick any bundled firmware or your own `.fwsc`,
+  and deploy it over USB-MIDI (desktop app, or Chrome and Edge)
+- The unit's product identity is checked before the write, and again after it restarts
+- **Resume interrupted install** finishes a write that was cut off; the unit stays in update mode
+  until it completes
+- **Windows:** the bundled **M-Flasher** backs up, restores, and reinstalls the whole flash, and
+  reaches a unit in download mode when nothing else can
+- Step-by-step recovery guide in the app and in [docs/Recovery.md](docs/Recovery.md)
+
+### Play
+- Computer keyboard, mouse, or any USB MIDI controller; plug in your real FM-1 and the desktop app
+  picks it as the MIDI input so its keys play the emulator
+- **Keys** module with scales, chords, and an arpeggiator, a MIDI file player, and a scope
+- **Rec** records what you play to a `.mid` file; the **Tape** deck records the FM-1's output to
+  `.wav` and feeds samples into firmwares that take audio in
+- **DX7 banks** for DX7-capable firmwares
+- **Customize** the case with presets of the real FM-1 colourways and many more, your own pictures,
+  and hundreds of **stickers**
 
 ## Download
 
@@ -54,29 +104,12 @@ here's how to get past it:
 
 Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 
-## Features
-
-- **259 verified open-source firmwares bundled** — newest first, unique, and fully offline
-- **Search every firmware** — match names, IDs, versions, authors, licenses, product identities, and descriptions
-- **One-button update radar** — scans for newly published open-license FM-1 packages and downloads one only when you select it
-- **Load your own** — drag any `.fwsc` onto the window
-- **Play** with the computer keyboard, mouse, or a USB MIDI controller
-- **Customize** panel colors and add image decals; decorate the case with stickers
-- **Firmware recovery (Windows)** — back up, restore, and reinstall your FM-1; a flash is never a dead end
-
-## Recovery & safety
-
-The emulator runs firmware purely in software — it cannot harm your computer or your FM-1. The only
-risk is flashing real hardware, and the app is built so you can always recover: back up the unit's
-flash in one click, resume an interrupted install, or restore with the bundled M-Flasher (Windows).
-See **[Hardware flashing & recovery](docs/Recovery.md)**.
-
 ## Help
 
 - **[Installation & first run](docs/Installation.md)** — the unsigned-app warning on Windows, macOS, and Linux
 - **[Troubleshooting](docs/Troubleshooting.md)** — no sound, MIDI not detected, a firmware won't boot, settings not saving
 - **[Firmware](docs/Firmware.md)** — switching firmware and loading your own `.fwsc`
-- **[Hardware flashing & recovery](docs/Recovery.md)** — for a real FM-1 unit
+- **[Hardware flashing & recovery](docs/Recovery.md)** — flashing a real FM-1 and getting back from a failed install
 
 ## Firmware & licensing
 
@@ -101,8 +134,8 @@ npm run dist:win     # or dist:mac / dist:linux to package
 
 Release builds for all three platforms are produced by GitHub Actions on each tag.
 
-Maintainers can refresh the open Firmware Hub set with `npm run sync:firmwares`; the command verifies
-every SHA-256 hash and FM-1 product identity and removes superseded package files.
+Maintainers can refresh the bundled open-source set with `npm run sync:firmwares`; the command
+verifies every SHA-256 hash and FM-1 product identity and removes superseded package files.
 Run `npm run audit:firmwares -- --out <directory>` to boot every package in an isolated emulator,
 check for CPU halts or blank LCDs, and write a machine-readable report plus LCD captures.
 

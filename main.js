@@ -2,7 +2,7 @@
 // Serves the static emulator over a FIXED custom origin (fm1://app) so localStorage — favorites,
 // customize, stickers, the last firmware — lives in the app's own profile and persists every launch,
 // regardless of any dev-server port. Fully offline: the emulator, firmware archive and fw/ are bundled.
-const { app, BrowserWindow, Menu, protocol, screen, shell, ipcMain, session } = require("electron");
+const { app, BrowserWindow, Menu, dialog, protocol, screen, shell, ipcMain, session } = require("electron");
 const updates = require("./updater");
 const path = require("path");
 const fs = require("fs");
@@ -36,8 +36,8 @@ const ROOT = app.isPackaged ? path.join(process.resourcesPath, "site") : (fs.exi
 // also hands recovery work to M-Flasher.  Keep this allow-listed: renderer code
 // never supplies a command or a path to execute.
 function mFlasherPath() {
-  // M-Flasher is an optional, Windows-only third-party tool and is NOT bundled.
-  // If a user has dropped it next to the app, use it; otherwise the UI offers a download link.
+  // M-Flasher is a Windows-only third-party tool, bundled with the Windows build (resources/M-Flasher).
+  // From a source checkout it is used from vendor/; anywhere else the UI offers a download link.
   const candidates = [
     path.join(process.resourcesPath, "M-Flasher", "M-Flasher.exe"),
     path.join(__dirname, "vendor", "M-Flasher", "M-Flasher.exe"),
@@ -107,6 +107,18 @@ function createWindow() {
     desktopLog("page-loaded", { url });
   });
   win.webContents.on("unresponsive", () => desktopLog("renderer-unresponsive", {}));
+  // the page blocks unloading only while a firmware install is writing to a real FM-1
+  win.webContents.on("will-prevent-unload", (event) => {
+    const choice = dialog.showMessageBoxSync(win, {
+      type: "warning",
+      buttons: ["Keep the install running", "Close anyway"],
+      defaultId: 0,
+      cancelId: 0,
+      message: "A firmware install is writing to your FM-1.",
+      detail: "Closing now interrupts it. The FM-1 stays in update mode, and Resume interrupted install finishes it the next time you open the app.",
+    });
+    if (choice === 1) event.preventDefault();
+  });
   win.webContents.on("will-navigate", (event, url) => {
     try {
       const target = new URL(url);

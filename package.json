@@ -9,7 +9,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node ci/verify.mjs",
+    "test": "node ci/verify.mjs && node ci/flash-tests.mjs",
     "audit:firmwares": "node ci/audit-firmwares.mjs",
     "sync:firmwares": "node ci/sync-open-firmwares.mjs",
     "dist": "electron-builder",

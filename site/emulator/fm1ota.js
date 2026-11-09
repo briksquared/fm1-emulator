@@ -10,6 +10,27 @@ const HS_QUERY = [0xf0, 0x00, 0x32, 0x45, 0x00, 0x00, 0x00, 0x40, 0x7f, 0xf7]
 const UPGRADE = [0xf0, 0x22, 0x24, 0x35, 0x7f, 0xf7]
 const MAXDATA = 512
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+// Every wait in the update, in ms. Tests pass shorter ones; the defaults are the ones the
+// protocol was proven with on hardware.
+export const TIMING = {
+  settle: 2000,          // after UPGRADE, before the first read request is expected
+  loaderBoot: 3000,      // after staging, before looking for the update loader
+  rebootBoot: 3000,      // after the write, before looking for the new firmware
+  stageIdle: 8000,       // staging gives up after this long without a request
+  writeIdle: 180000,     // the write gives up after this long without a request
+  loaderWait: 30000,     // how long the update loader may take to appear
+  returnWait: 40000,     // how long the new firmware may take to appear
+  poll: 1000,            // read / re-scan interval
+  openTimeout: 5000,     // a port that does not open within this is treated as busy
+  handshake: 1000,       // identity reply window per attempt
+  packetGap: 10,         // pause before each data response
+  backoff: 250,          // first retry delay for a failed open or send (doubles each time)
+  retries: 3,
+}
+const within = (promise, ms) => {
+  let tm
+  return Promise.race([promise, new Promise((_, no) => { tm = setTimeout(() => no(new Error('timeout')), ms) })]).finally(() => clearTimeout(tm))
+}
 const IS_OTA = (id) => /^ota-/i.test(id.model)
 // Names emitted by known FM-1 firmware USB MIDI descriptors — tried first as a fast path.
 export const isCandidatePort = (name) => /fm-1|felucca|ota|composite|sinco|usb-midi|hortator/i.test(name || '')
@@ -38,6 +59,7 @@ export const isKnownOtherGear = (name) => /motu|fireface|\brme\b|babyface|scarle
 //   noloader    - the update loader never appeared after staging
 //   noreturn    - the device never re-enumerated after the write (power-cycle it)
 //   mismatch    - the write finished but the device reports a different identity (detail: reported id)
+//   inupdate    - the unit is already in update mode (an earlier install was interrupted): resume it
 // `detail` carries extra context (e.g. the identity the device reported, or the ports probed).
 function fail(code, msg, detail = '') {
   const e = new Error(msg)
@@ -138,6 +160,16 @@ class Link {
   drain() {
     this.q.length = 0
   }
+  // a send that fails while the port is still present is retried with backoff (a busy USB
+  // stack); false once the port is gone or every retry failed
+  async sendRetry(bytes, t) {
+    for (let i = 0; i < t.retries; i++) {
+      if (this.send(bytes)) return true
+      if (this.lost) return false
+      await sleep(t.backoff * 2 ** i)
+    }
+    return false
+  }
   async read(ms) {
     if (!this.q.length) {
       let tm
@@ -164,11 +196,12 @@ class Link {
   }
 }
 
-async function handshake(link, tries = 3) {
+async function handshake(link, tries, t) {
   link.drain()
-  for (let t = 0; t < tries; t++) {
-    if (!link.send(HS_QUERY)) return null
-    const end = Date.now() + 1000
+  for (let n = 0; n < tries; n++) {
+    if (n) await sleep(t.backoff * 2 ** (n - 1))
+    if (!(await link.sendRetry(HS_QUERY, t))) return null
+    const end = Date.now() + t.handshake
     while (Date.now() < end) {
       const p = await link.read(end - Date.now())
       if (!p) break
@@ -180,9 +213,25 @@ async function handshake(link, tries = 3) {
 }
 
 export class Updater {
-  constructor(access, log) {
+  constructor(access, log, options = {}) {
     this.access = access
     this.log = log || (() => {})
+    this.t = { ...TIMING, ...(options.timing || {}) }
+  }
+
+  // open both ports, retrying with backoff; an open that never settles counts as a failure
+  async open(input, output) {
+    const t = this.t
+    for (let i = 0; i < t.retries; i++) {
+      try {
+        await within(Promise.all([input.open(), output.open()]), t.openTimeout)
+        return true
+      } catch (_) {
+        if (input.state === 'disconnected' || output.state === 'disconnected') return false
+        await sleep(t.backoff * 2 ** i)
+      }
+    }
+    return false
   }
 
   // every in/out pair that answers the handshake. Candidate-named ports are tried first; if none
@@ -209,14 +258,11 @@ export class Updater {
         output = same.length === 1 ? same[0] : (outs.length === 1 ? outs[0] : null)
       }
       if (!output) { diag?.push(`${input.name}: no matching MIDI output`); continue }
-      try {
-        await input.open()
-        await output.open()
-      } catch (_) {
+      if (!(await this.open(input, output))) {
         diag?.push(`${input.name}: port busy (another app has it open?)`); continue
       }
       const link = new Link(input, output)
-      const id = await handshake(link, 2)
+      const id = await handshake(link, 2, this.t)
       if (id && (!filter || filter(id))) return { link, id, name: input.name }
       diag?.push(`${input.name}: ${id ? `identified as ${id.text}, not the expected one` : 'no FM-1 response'}`)
       link.close()
@@ -229,7 +275,7 @@ export class Updater {
     while (Date.now() < end) {
       const dev = await this.find(filter)
       if (dev) return dev
-      await sleep(1000)
+      await sleep(this.t.poll)
     }
     return null
   }
@@ -240,7 +286,7 @@ export class Updater {
     let served = 0,
       last = Date.now()
     for (;;) {
-      const pkt = await link.read(1000)
+      const pkt = await link.read(this.t.poll)
       if (!pkt) {
         if (link.lost) return { served, finished: false, lost: true }
         if (Date.now() - last > idleMs) return { served, finished: false }
@@ -250,13 +296,13 @@ export class Updater {
       if (!r) continue
       last = Date.now()
       if (r.addr === 0xe0000000 || r.addr === 0xf0000000) {
-        link.send(response(r.addr, [...new TextEncoder().encode('success'), 0]))
-        if (r.addr === finishAddr) return { served, finished: true }
+        const ok = await link.sendRetry(response(r.addr, [...new TextEncoder().encode('success'), 0]), this.t)
+        if (r.addr === finishAddr) return { served, finished: ok, lost: !ok }
         continue
       }
       if (r.len > MAXDATA || r.addr + r.len > image.length) throw fail('badreq', `bad request ${r.addr.toString(16)}+${r.len}`)
-      await sleep(10)
-      if (!link.send(response(r.addr, Array.from(image.subarray(r.addr, r.addr + r.len)), r.fl))) {
+      if (this.t.packetGap) await sleep(this.t.packetGap)
+      if (!(await link.sendRetry(response(r.addr, Array.from(image.subarray(r.addr, r.addr + r.len)), r.fl), this.t))) {
         return { served, finished: false, lost: true }
       }
       served++
@@ -276,22 +322,27 @@ export class Updater {
       throw fail('noport', `No FM-1-like USB-MIDI port found. The only MIDI devices visible are other gear: ${other.map((i) => i.name).join(', ')}. Connect the FM-1 with a USB data cable. If it is running a firmware with no USB-MIDI update port, use download mode (hold OCT- and OCT+ for 5 seconds) + Device Lab / M-Flasher. Back up the whole flash first.`, other.map((i) => i.name).join(', '))
     }
     const diag = []
-    const dev = await this.find((id) => !IS_OTA(id), diag)
+    const dev = await this.find(null, diag)
     if (!dev) {
       const busy = diag.filter((d) => /port busy/.test(d))
       if (busy.length) throw fail('busy', `An FM-1 USB-MIDI port is present but could not be opened — another app (a DAW, a MIDI tool, or another copy of this app) is holding it. Close that app and press Install again. Details: ${busy.join('; ')}.`, busy.join('; '))
       throw fail('notfound', `No device answered the FM-1 identity handshake. Use a USB data cable and the right mode, or put the unit in download mode (hold OCT- and OCT+ for 5 seconds) + Device Lab / M-Flasher. Ports probed — ${diag.join('; ') || '(none)'}. Back up the whole flash first.`, diag.join('; '))
     }
+    if (IS_OTA(dev.id)) {
+      dev.link.close()
+      throw fail('inupdate', `The FM-1 is already in update mode (${dev.id.text}): an earlier install did not finish. Press Resume interrupted install to finish it, or roll back to the previous firmware.`, dev.id.text)
+    }
     const [model] = product.split('_')
     if (dev.id.model !== model) {
       dev.link.close()
-      throw fail('model', `the device is ${dev.id.text}, the package is for ${product}`)
+      throw fail('model', `the device is ${dev.id.text}, the package is for ${product}`, dev.id.text)
     }
+    const t = this.t
     step('start', dev.id.text)
-    dev.link.send(UPGRADE)
-    await sleep(2000)
-    const s1 = await this.serve(dev.link, image, 0xe0000000, 8000, (n) => step('verify', n))
-    dev.link.close()
+    if (!(await dev.link.sendRetry(UPGRADE, t))) { dev.link.close(); throw fail('lost', 'the device was disconnected before the install started: nothing was written') }
+    await sleep(t.settle)
+    let s1
+    try { s1 = await this.serve(dev.link, image, 0xe0000000, t.stageIdle, (n) => step('stage', n)) } finally { dev.link.close() }
     if (!s1.finished) {
       // Never got a single read request back: the device answered identity but did
       // not enter update mode — most likely a firmware without in-app OTA. Point at
@@ -300,14 +351,21 @@ export class Updater {
       throw fail(s1.lost ? 'lost' : 'stopped', `the device ${s1.lost ? 'was disconnected' : 'stopped'} after ${s1.served} requests: nothing was written`)
     }
     step('loader')
-    await sleep(3000)
-    const ota = await this.waitFor(IS_OTA, 30000)
-    if (!ota) throw fail('noloader', 'the update loader did not appear. Replug the USB cable and press Install again: the device stays in update mode until it is finished.')
+    await sleep(t.loaderBoot)
+    const ota = await this.waitFor(IS_OTA, t.loaderWait)
+    if (!ota) throw fail('noloader', 'the update loader did not appear. Replug the USB cable and press Resume interrupted install: the device stays in update mode until it is finished.')
+    return this.complete(ota, image, product, step)
+  }
+
+  // write through the loader, then wait for the new firmware and check that it reports the
+  // package's identity (the protocol has no read-back, so this is the post-write check)
+  async complete(ota, image, product, step) {
+    const t = this.t
     const s2 = await this.write(ota, image, step)
-    if (!s2.finished) throw fail(s2.lost ? 'lost' : 'stopped', `the loader ${s2.lost ? 'was disconnected' : 'stopped'} after ${s2.served} requests. Replug and press Install again to resume.`)
+    if (!s2.finished) throw fail(s2.lost ? 'lost' : 'stopped', `the loader ${s2.lost ? 'was disconnected' : 'stopped'} after ${s2.served} requests. Replug and press Resume interrupted install.`)
     step('reboot')
-    await sleep(3000)
-    const back = await this.waitFor((id) => !IS_OTA(id), 40000)
+    await sleep(t.rebootBoot)
+    const back = await this.waitFor((id) => !IS_OTA(id), t.returnWait)
     if (!back) throw fail('noreturn', 'the device did not come back: power-cycle it')
     back.link.close()
     if (back.id.text !== product) throw fail('mismatch', `installed, but the device reports ${back.id.text}`, back.id.text)
@@ -317,18 +375,18 @@ export class Updater {
 
   // step 2 with the loader found by find()/waitFor()
   async write(ota, image, step) {
-    ota.link.send(UPGRADE)
-    await sleep(2000)
-    const s2 = await this.serve(ota.link, image, 0xf0000000, 180000, (n) => step('write', n))
-    ota.link.close()
-    return s2
+    if (!(await ota.link.sendRetry(UPGRADE, this.t))) { ota.link.close(); return { served: 0, finished: false, lost: true } }
+    await sleep(this.t.settle)
+    try { return await this.serve(ota.link, image, 0xf0000000, this.t.writeIdle, (n) => step('write', n)) } finally { ota.link.close() }
   }
 
-  // resume: the device is already in update mode (loader) -> true when the write finished
-  async resume(image, onStep) {
+  // resume: the device is already in update mode (loader). The loader writes whichever image it
+  // is served, so this also rolls back when given the previous package. Resolves to the identity
+  // the device reports afterwards, or null when no unit in update mode was found.
+  async resume(image, product, onStep) {
     const ota = await this.find(IS_OTA)
-    if (!ota) return false
-    return (await this.write(ota, image, onStep || (() => {}))).finished
+    if (!ota) return null
+    return this.complete(ota, image, product, onStep || (() => {}))
   }
 
   // Non-destructive connection probe for a status / connect UI. Finds any FM-1 (running firmware

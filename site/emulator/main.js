@@ -78,7 +78,7 @@ const fitPanel = () => document.documentElement.style.setProperty("--above",
 }
 fitPanel();
 
-let node = null, running = null;
+let node = null, engine = null, worker = null, running = null;   // engine: where the machine runs (a worker or the worklet's port)
 let frame = null;            // the latest LCD + LEDs from the audio thread
 const down = new Uint8Array(64);           // keys and buttons held (FM-1: matrix ids 0..40; SMK-37: keys 0..36, buttons 37..54)
 const encClicks = new Int32Array(8);
@@ -439,7 +439,7 @@ window.FM1 = { applySkin: fm1ApplySkin, SKIN_ORDER, SKIN_DEFAULT, panelCanvas: c
   midi: (bytes) => { try { midiMessage({ data: bytes }); } catch (e) {} },     // inject MIDI into the device (after Start)
   midiInput: (bytes) => { try { hwMessage({ data: bytes }); } catch (e) {} },   // feed the input chain, through any processor
   setInputProcessor: (fn) => { inputProcessor = fn; },                          // transform hardware MIDI (scale/chord/arp)
-  audio: (samples) => { try { node && node.port.postMessage({ type: "audio", samples }); } catch (e) {} }, // line-in over USB audio
+  audio: (samples) => { try { engine && engine.postMessage({ type: "audio", samples }); } catch (e) {} }, // line-in over USB audio
   hasAudioIn: () => !!window.FM1._audioIn,                                     // the booted firmware takes USB line-in
   _audioIn: false,
   context: () => ac,                                                          // the 44.1 kHz AudioContext (null before Start)
@@ -458,7 +458,7 @@ try { fm1ApplySkin({ ...SKIN_DEFAULT, ...JSON.parse(localStorage.getItem("fm1.sk
 if (typeof window.initCustomize === "function") window.initCustomize(window.FM1);
 
 // ---------------------------------------------------------------- input to the machine
-const send = (m) => node && node.port.postMessage(m);
+const send = (m) => engine && engine.postMessage(m);
 function setKey(id, on) {
   if (down[id] === (on ? 1 : 0)) return;
   down[id] = on ? 1 : 0;
@@ -815,7 +815,7 @@ const perf = {
     const loads = this.loads.map((l) => Math.round(100 * l)), jit = this.jit;
     return [
       `FM-1 emulator report (${location.origin}${location.pathname})`,
-      `firmware: ${fw.id} ${fw.version || ""} · clock ${mhz} MHz · JIT ${params.get("jit") === "1" ? "on" : "off"}`,
+      `firmware: ${fw.id} ${fw.version || ""} · clock ${mhz} MHz · JIT ${jitOn() ? "on" : "off"}`,
       `browser: ${navigator.userAgent}`,
       `cores: ${navigator.hardwareConcurrency ?? "?"} · memory: ${navigator.deviceMemory ?? "?"} GB`,
       `audio: ${ac ? `${ac.sampleRate} Hz, buffer "${latency}", base latency ${r(1000 * (ac.baseLatency ?? NaN), 1)} ms, ` +
@@ -826,6 +826,7 @@ const perf = {
       `jit: ${jit ? `${jit.regions} regions compiled, ${jit.failed} failed${jit.error ? ` (${jit.error})` : ""} · ` +
         `compiling took ${r(jit.compileMs)} ms, the longest ${r(jit.compileMaxMs, 1)} ms` : "?"}`,
       `emulated: ${frame ? r(frame.ms / 1000, 1) : "?"} s · short audio quanta: ${frame?.short ?? "?"}`,
+      `engine: ${worker ? `worker, audio queue ${stream?.queued ?? "?"} frames, ${stream?.underruns ?? "?"} dry quanta` : "audio thread"}`,
     ].join("\n");
   },
 };
@@ -860,9 +861,7 @@ async function setLatency(l) {
     await bootQueue;
     await flushRunning(true);
     // A larger buffer needs a new audio context: rebuild the graph, boot again.
-    node.port.onmessage = null;
-    node.disconnect();
-    node = null;
+    stopAudioGraph();
     running = null;
     await ac.close();
     ac = null;
@@ -887,6 +886,7 @@ async function setLatency(l) {
 }
 
 // ---------------------------------------------------------------- audio: start on a click
+let stream = null;                         // the audio queue's health (worker engine only)
 let ac = null, last = null, bootSeq = 0, booting = 0, bufferChanging = false;
 
 let bootQueue = Promise.resolve(), requestId = 0;
@@ -940,12 +940,12 @@ async function flushRunning(pause = false) {
   const response = new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       snapshotWaiters.delete(request);
-      node?.port.postMessage({ type: "cancel-snapshot", request });
+      engine?.postMessage({ type: "cancel-snapshot", request });
       reject(new Error("flash snapshot timed out"));
     }, 10000);
     snapshotWaiters.set(request, { seq: session.seq, resolve, reject, timer });
   });
-  node.port.postMessage({ type: "snapshot", seq: session.seq, request, pause });
+  engine.postMessage({ type: "snapshot", seq: session.seq, request, pause });
   await response;
   // A storage failure leaves the snapshot in memory, available for export and retry.
   await session.pending?.catch(() => {});
@@ -992,17 +992,15 @@ function boot(options = {}) {
         const timer = setTimeout(() => {
           bootWaiters.delete(seq);
           running = null;
-          node?.port.postMessage({ type: "cancel-boot", seq });
+          engine?.postMessage({ type: "cancel-boot", seq });
           reject(new Error("firmware boot timed out"));
         }, 30000);
         bootWaiters.set(seq, { resolve, reject, timer });
       });
       window.FM1Loader?.stage("initializing virtual hardware");
-      node.port.postMessage({ type: "boot", seq, wasm: wasm.slice(0), package: got.bytes.slice().buffer,
+      engine.postMessage({ type: "boot", seq, wasm: wasm.slice(0), package: got.bytes.slice().buffer,
         sectors: packSectors(sectors).buffer, syx: importedBank ? importedBank.slice().buffer : null,
-        // The JIT can stall the audio thread on newer firmware. Keep the stable
-        // interpreter as the default; ?jit=1 remains available for testing.
-        mhz: clock, jit: params.get("jit") === "1",
+        mhz: clock, jit: jitOn(),
         // (?ahead=0: each quantum emulates only for its own frames, as before the even pace)
         ahead: params.has("ahead") ? Number(params.get("ahead")) : undefined });
       status.textContent = `booting ${f.name}…`;
@@ -1013,7 +1011,7 @@ function boot(options = {}) {
     } catch (error) {
       if (bank === importedBank) bank = null;
       booting = 0;
-      node?.port.postMessage({ type: "resume" });
+      engine?.postMessage({ type: "resume" });
       if (seq === bootSeq) {
         window.FM1Loader?.fail(error instanceof NeedFile ? "package required" : "boot error");
         showFirmware();
@@ -1028,23 +1026,55 @@ function boot(options = {}) {
   return bootQueue;
 }
 
-// the audio graph: a context with the chosen buffer, the emulator's worklet node in it
+// the audio graph: a context with the chosen buffer, the emulator's output node in it.
+// The machine runs in a worker (engine.js) that streams to a light reader in the audio thread
+// (stream-worklet.js), so a slow stretch of emulation is absorbed by a short queue instead of
+// being a gap in the sound. ?engine=worklet runs it in the audio thread itself, as before.
+const STREAM_PREFILL = { interactive: 2048, balanced: 3072, playback: 4096 };
+// The JIT compiles hot code while it runs, which can take longer than one audio quantum: in the
+// audio thread that is a gap, so there the interpreter stays the default (?jit=1 opts in). The
+// worker's queue absorbs the compiles, and the interpreter alone cannot keep up with busier
+// firmware at the default clock, so with the worker the JIT is on (?jit=0 turns it off).
+function jitOn() {
+  return worker ? params.get("jit") !== "0" : params.get("jit") === "1";
+}
+function stopAudioGraph() {
+  if (engine) engine.onmessage = null;
+  worker?.terminate();
+  worker = null;
+  engine = null;
+  node?.disconnect();
+  node = null;
+}
 async function startAudio() {
   // "interactive"/"playback" are the browser hints; a number (e.g. 0.3) asks for an even larger buffer
   const hint = ["interactive", "balanced", "playback"].includes(latency) ? latency : (Number(latency) || "playback");
   ac = new AudioContext({ sampleRate: 44100, latencyHint: hint });
   try {
-    await ac.audioWorklet.addModule("worklet.js?v=28");
-    node = new AudioWorkletNode(ac, "fm1", { numberOfInputs: 0, outputChannelCount: [2] });
+    if (params.get("engine") !== "worklet" && typeof Worker === "function") {
+      await ac.audioWorklet.addModule("stream-worklet.js?v=1");
+      const prefill = STREAM_PREFILL[latency] || 8192;
+      node = new AudioWorkletNode(ac, "fm1-stream", { numberOfInputs: 0, outputChannelCount: [2], processorOptions: { prefill } });
+      worker = new Worker("engine.js?v=1", { type: "module" });
+      worker.onerror = (e) => { status.textContent = `the emulator worker failed: ${e.message || "unknown error"}`; };
+      const channel = new MessageChannel();
+      worker.postMessage({ type: "engine-init", sampleRate: ac.sampleRate, audio: channel.port1 }, [channel.port1]);
+      node.port.postMessage({ type: "engine", port: channel.port2 }, [channel.port2]);
+      node.port.onmessage = (e) => { if (e.data?.type === "stream") stream = e.data; };
+      engine = worker;
+    } else {
+      await ac.audioWorklet.addModule("worklet.js?v=29");
+      node = new AudioWorkletNode(ac, "fm1", { numberOfInputs: 0, outputChannelCount: [2] });
+      engine = node.port;
+    }
     node.connect(ac.destination);
-    node.port.onmessage = onWorklet;
+    engine.onmessage = onWorklet;
     perf.reset();
     // Boot now waits for a worklet acknowledgement; let its thread run even on browsers
     // that create an AudioContext suspended until the Start gesture is resumed explicitly.
     await ac.resume();
   } catch (error) {
-    node?.disconnect();
-    node = null;
+    stopAudioGraph();
     await ac.close().catch(() => {});
     ac = null;
     throw error;

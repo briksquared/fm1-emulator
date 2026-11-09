@@ -94,7 +94,7 @@ function build(side) {
         <li>Stuck or unsure? <b>Back up flash first</b> — a backup can always be restored, so a flash is never a dead end.</li>
         <li>No in-app connection? <b>M-Flasher · download mode</b>: hold <b>OCT− + OCT+</b> for 5 seconds (or power on holding <b>REC</b>, or use M-Flasher's <b>DOWNLOAD MODE</b> button), then write.</li>
         <li>Install interrupted? Reconnect with a USB <b>data</b> cable and <b>Resume interrupted install</b> — the unit stays in update mode until it finishes. The app remembers which firmware it was writing, and <b>Roll back</b> writes the one you had before instead.</li>
-        <li>Use a direct USB data cable and port (not charge-only, not a hub). Never flash an SMK-37 package on an FM-1.</li>
+        <li>Use a USB data cable (not charge-only), plugged straight into the computer. Never flash an SMK-37 package on an FM-1.</li>
       </ol>
     </details>`;
   side.appendChild(box);

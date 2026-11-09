@@ -2,7 +2,7 @@
 // Serves the static emulator over a FIXED custom origin (fm1://app) so localStorage — favorites,
 // customize, stickers, the last firmware — lives in the app's own profile and persists every launch,
 // regardless of any dev-server port. Fully offline: the emulator, firmware archive and fw/ are bundled.
-const { app, BrowserWindow, Menu, protocol, shell, ipcMain, session } = require("electron");
+const { app, BrowserWindow, Menu, protocol, screen, shell, ipcMain, session } = require("electron");
 const updates = require("./updater");
 const path = require("path");
 const fs = require("fs");
@@ -64,9 +64,18 @@ protocol.registerSchemesAsPrivileged([
   { scheme: "fm1", privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } },
 ]);
 
+// Open at most as large as the screen's work area (the taskbar/dock excluded). A fixed
+// 1300x900 window, or a 640 px minimum height, is taller than a 1366x768 screen at 125% or
+// 150% scaling (614 or 512 px), which put the bottom of the window off screen.
+function windowBounds() {
+  const area = screen.getPrimaryDisplay().workAreaSize;
+  const minWidth = Math.min(800, area.width), minHeight = Math.min(520, area.height);
+  return { width: Math.max(minWidth, Math.min(1300, area.width)), height: Math.max(minHeight, Math.min(900, area.height)), minWidth, minHeight };
+}
+
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1300, height: 900, minWidth: 900, minHeight: 640,
+    ...windowBounds(),
     backgroundColor: "#0b0c0e", title: "FM-1 Emulator", autoHideMenuBar: true,
     icon: path.join(__dirname, "icon.png"),
     webPreferences: {

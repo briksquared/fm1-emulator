@@ -310,3 +310,12 @@ section.box[aria-labelledby="h-play-from"],
 #about:empty { display: none; }
 #about b { display: block; color: var(--ink); font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
 select { padding: 6px 8px; font-size: 12.5px; }
+
+/* ===== Layout: nothing clipped =====
+   deck.js lays the rig out at a fixed width and zooms it to fit the window (width and height);
+   inside that, the panel only follows its column, so the viewport-height cap above does not
+   shrink it a second time. Flex/grid children may shrink below their content's width. */
+.deck.fm1-fitted canvas { max-width: 100%; }
+.player > *, .side > *, .box { min-width: 0; }
+header.site .wrap { min-width: 0; row-gap: 6px; }
+

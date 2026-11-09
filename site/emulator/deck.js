@@ -410,17 +410,27 @@
     function fit() {
       if (fitting) return; fitting = true;
       try {
-        if (document.fullscreenElement === deck) { deck.style.width = ""; deck.style.flex = ""; deck.style.zoom = ""; bay.style.maxWidth = ""; rigZoom = 1; draw(); return; }
+        if (document.fullscreenElement === deck) { deck.style.width = ""; deck.style.flex = ""; deck.style.zoom = ""; bay.style.maxWidth = ""; deck.classList.remove("fm1-fitted"); rigZoom = 1; draw(); return; }
         // measure the width the deck naturally gets (its flex share, beside the sidebar or full-width
         // when the sidebar stacks), by briefly dropping the fixed width + zoom, then scale to fit it.
         deck.style.width = ""; deck.style.flex = ""; deck.style.zoom = ""; bay.style.maxWidth = "";
         const avail = deck.clientWidth || RIG_W;
+        const top = deck.getBoundingClientRect().top + scrollY;   // the page above the deck, in its own place in the row
         // scale the rig UP to fill the space it's given (capped so the upscaled panel doesn't get soft),
         // not just down — so the machine grows to fill a wide center column instead of sitting native-size.
         // A user-set size (the Size slider) wins over auto-fit so the player controls the machine size.
-        rigZoom = (userZoom != null) ? userZoom : Math.min(3.2, avail / RIG_W);
+        deck.classList.add("fm1-fitted");
         deck.style.width = RIG_W + "px";
         deck.style.flex = "0 0 auto";
+        // Auto-fit also keeps the machine itself (title row + panel) inside the window's height:
+        // scaling by width alone pushed the bottom of the panel below the window on wide or
+        // short windows. The devices under it may still scroll into view.
+        let byHeight = Infinity;
+        if (userZoom == null && innerHeight > 0) {
+          const panel = stage.offsetTop + stage.offsetHeight;                // deck px at zoom 1 (offsetParent: the deck)
+          if (panel > 0) byHeight = Math.max(0, innerHeight - top - 14) / panel;
+        }
+        rigZoom = (userZoom != null) ? userZoom : Math.max(0.4, Math.min(3.2, avail / RIG_W, byHeight));
         deck.style.zoom = rigZoom === 1 ? "" : String(rigZoom);
         bay.style.maxWidth = RIG_W + "px";
         draw();

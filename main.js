@@ -7,6 +7,23 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 
+// Hardware acceleration made the full window turn black after Start on a real
+// Windows installation. Keep the reliable renderer by default; the override
+// remains available for graphics diagnostics.
+const softwareRendering = process.env.FM1_SOFTWARE_RENDERING !== "0";
+if (softwareRendering) app.disableHardwareAcceleration();
+// Automated checks can use an isolated profile so they never contend with a
+// user's running installed copy or alter its favorites and saved firmware.
+if (process.env.FM1_SELFTEST_PROFILE) app.setPath("userData", path.resolve(process.env.FM1_SELFTEST_PROFILE));
+
+function desktopLog(event, details) {
+  try {
+    const dir = path.join(app.getPath("userData"), "logs");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.appendFileSync(path.join(dir, "desktop.log"), `${new Date().toISOString()} ${event} ${JSON.stringify(details)}\n`);
+  } catch { /* a logging failure must not stop the app */ }
+}
+
 // Packaged: the site/ tree lives in resources. Dev (npm start): the same site/ beside this file.
 const DEV_SITE = path.join(__dirname, "site");
 const ROOT = app.isPackaged ? path.join(process.resourcesPath, "site") : (fs.existsSync(DEV_SITE) ? DEV_SITE : path.join(__dirname, ".."));
@@ -55,7 +72,45 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
     },
   });
-  win.loadURL("fm1://app/emulator/index.html");
+  let recovering = false;
+  function showRecovery(reason) {
+    if (win.isDestroyed() || recovering) return;
+    recovering = true;
+    const safe = String(reason).replace(/[&<>\"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    const html = `<!doctype html><meta charset="utf-8"><title>FM-1 Emulator recovery</title><body style="background:#17191e;color:#f0f1f5;font:18px system-ui;padding:64px;max-width:700px"><h1>The emulator window stopped</h1><p>${safe}</p><p>Your saved settings and firmware files are still in place.</p><a style="display:inline-block;background:#ff5b00;color:#fff;padding:14px 22px;border-radius:9px;text-decoration:none" href="fm1://app/emulator/index.html">Reload FM-1 Emulator</a></body>`;
+    win.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html)).catch(error => desktopLog("recovery-load-failed", String(error)));
+  }
+  win.webContents.on("render-process-gone", (_event, details) => {
+    desktopLog("renderer-gone", details);
+    if (details.reason !== "clean-exit") showRecovery("The desktop renderer closed unexpectedly. Reload the emulator to continue.");
+  });
+  win.webContents.on("did-fail-load", (_event, code, description, url, mainFrame) => {
+    desktopLog("load-failed", { code, description, url, mainFrame });
+    if (mainFrame && code !== -3) showRecovery("The app page could not load: " + description);
+  });
+  win.webContents.on("did-finish-load", () => {
+    const url = win.webContents.getURL();
+    if (url.startsWith("fm1://app/")) recovering = false;
+    desktopLog("page-loaded", { url });
+  });
+  win.webContents.on("unresponsive", () => desktopLog("renderer-unresponsive", {}));
+  win.webContents.on("will-navigate", (event, url) => {
+    try {
+      const target = new URL(url);
+      if (target.protocol === "fm1:" && target.hostname === "app") return;
+      event.preventDefault();
+      if (target.protocol === "https:" || target.protocol === "http:") shell.openExternal(url);
+    } catch { event.preventDefault(); }
+  });
+  const testParams = new URLSearchParams();
+  if (process.env.FM1_SELFTEST && process.env.FM1_SELFTEST_FW) testParams.set("fw", process.env.FM1_SELFTEST_FW);
+  if (process.env.FM1_SELFTEST && process.env.FM1_SELFTEST_CLOCK) testParams.set("mhz", process.env.FM1_SELFTEST_CLOCK);
+  if (process.env.FM1_SELFTEST && process.env.FM1_SELFTEST_JIT) testParams.set("jit", process.env.FM1_SELFTEST_JIT);
+  const testQuery = testParams.size ? "?" + testParams : "";
+  win.loadURL("fm1://app/emulator/index.html" + testQuery).catch(error => {
+    desktopLog("initial-load-failed", String(error));
+    showRecovery("The app could not open its local page.");
+  });
   // open external links (Resources, source repos) in the real browser, not inside the app
   win.webContents.setWindowOpenHandler(({ url }) => {
     try {
@@ -84,6 +139,20 @@ function runSelfTest(win, mode) {
                flashInLeft:!!L?.querySelector('.install-box'), saveInLeft:!!L?.querySelector('.save-box'),
                threeInaRow: L&&deck&&R ? (L.getBoundingClientRect().left<deck.getBoundingClientRect().left && deck.getBoundingClientRect().left<R.getBoundingClientRect().left && Math.abs(L.getBoundingClientRect().top-R.getBoundingClientRect().top)<60) : false,
                pageScrolls: document.documentElement.scrollHeight>innerHeight+2, scrollH: document.documentElement.scrollHeight }; })()`
+        : mode === "search"
+        ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&(document.getElementById('fw')?.options.length||0)>=259) break; await sleep(200); }
+             const q=document.getElementById('fw-search'), results=document.getElementById('fw-search-results');
+             const run=async value=>{q.value=value;q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(80);return [...results.querySelectorAll('.fw-search-hit')].map(b=>b.dataset.id);};
+             const aurora=await run('twochannels aurora'), accent=await run('coqui'), version=await run('0.9.1 FM-1_4747');
+             q.value='';q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(40);
+             return {fwCount:document.getElementById('fw')?.options.length,aurora,accent,version,cleared:results.hidden}; })()`
+        : mode === "updates"
+        ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+             for(let i=0;i<80;i++){ if(document.getElementById('scan-open-source')) break; await sleep(200); }
+             const button=document.getElementById('scan-open-source'), status=document.getElementById('open-source-status');
+             button.click(); for(let i=0;i<120&&button.classList.contains('scanning');i++) await sleep(250);
+             return {finished:!button.classList.contains('scanning'),error:status.dataset.error==='true',status:status.textContent}; })()`
         : mode === "read"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms)); for(let i=0;i<60;i++){ if((document.getElementById('fw')?.options.length||0)>1) break; await sleep(250); } return { fav: (()=>{try{return localStorage.getItem('fm1.favs.v1')}catch(e){return 'ERR:'+e}})(), marker: (()=>{try{return localStorage.getItem('fm1.__selftest')}catch(e){return 'ERR'}})(), fwCount: document.getElementById('fw')?.options.length }; })()`
         : mode === "filefail"
@@ -126,15 +195,20 @@ function runSelfTest(win, mode) {
              out.hasFavApi=!!window.FM1Fav; out.hasGallery=!!document.getElementById('gal-btn'); out.hasLoader=!!window.FM1Loader;
              out.hasDeviceLab=!!document.getElementById('inst-device-lab'); out.hasRecovery=!!document.getElementById('inst-recovery');
              const s=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Start'); out.hasStart=!!s; s&&s.click();
-             await sleep(3500);
+             for(let i=0;i<60&&!window.FM1?.running?.();i++) await sleep(250);
              out.running=window.FM1?.running?.() === true;
+             out.runningFirmware=window.FM1?.runningFirmware?.()||null; out.status=document.getElementById('status')?.textContent;
              try{ window.FM1Fav&&window.FM1Fav.toggle('felucca'); }catch(e){ out.favErr=String(e); }
              try{ localStorage.setItem('fm1.__selftest','persisted'); }catch(e){ out.lsErr=String(e); }
              out.favNow=(()=>{try{return localStorage.getItem('fm1.favs.v1')}catch{return 'ERR'}})();
              return out; })()`;
       const res = await win.webContents.executeJavaScript(js, true);
       console.log("SELFTEST_RESULT " + JSON.stringify(res));
-      const passed = mode === "read"
+      const passed = mode === "search"
+        ? Number(res.fwCount) === 259 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
+        : mode === "updates"
+        ? res.finished && !res.error && /^(Up to date|Found \d+ new)/.test(res.status)
+        : mode === "read"
         ? res.marker === "persisted" && Number(res.fwCount) > 1
         : mode === "filefail"
           ? res.rejected && res.selectionPreserved
@@ -172,6 +246,7 @@ if (!app.requestSingleInstanceLock()) {
     if (existing) { if (existing.isMinimized()) existing.restore(); existing.focus(); }
   });
   app.whenReady().then(() => {
+  desktopLog("startup", { softwareRendering, gpuCompositing: app.getGPUFeatureStatus().gpu_compositing });
   // The installer uses Web MIDI SysEx.  Electron otherwise treats this as an
   // ungranted browser permission, so scope it to our local, packaged origin.
   const permitDeviceAccess = (_webContents, permission, callback, details) => {

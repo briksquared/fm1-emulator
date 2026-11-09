@@ -43,7 +43,9 @@ Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 
 ## Features
 
-- **115 open-source firmwares bundled** — runs fully offline
+- **259 verified open-source firmwares bundled** — newest first, unique, and fully offline
+- **Search every firmware** — match names, IDs, versions, authors, licenses, product identities, and descriptions
+- **One-button update radar** — scans for newly published open-license FM-1 packages and downloads one only when you select it
 - **Load your own** — drag any `.fwsc` onto the window
 - **Play** with the computer keyboard, mouse, or a USB MIDI controller
 - **Customize** panel colors and add image decals; decorate the case with stickers
@@ -65,9 +67,12 @@ See **[Hardware flashing & recovery](docs/Recovery.md)**.
 
 ## Firmware & licensing
 
-Only firmwares published under a clear open-source license are bundled (all 115 are GPL-3.0),
-redistributed unchanged with credit — see [THIRD-PARTY.md](THIRD-PARTY.md). The M-VAVE stock
-firmware and firmwares without a stated license are not bundled; load any `.fwsc` yourself to run it.
+Only firmwares published under a clear redistributable open-source license, with available source
+and a passing emulator boot audit, are bundled. The 259 packages use GPL, MPL, or another compatible
+open license and are redistributed unchanged with credit — see [THIRD-PARTY.md](THIRD-PARTY.md) and
+the exact hashes in [FIRMWARE-SOURCES.json](FIRMWARE-SOURCES.json). Packages with missing or
+unverifiable licensing, restricted media, a wrong-device identity, or a failed boot check stay out.
+The M-VAVE stock firmware is not bundled; load your own `.fwsc` to run it.
 
 ## Build from source
 
@@ -82,6 +87,11 @@ npm run dist:win     # or dist:mac / dist:linux to package
 ```
 
 Release builds for all three platforms are produced by GitHub Actions on each tag.
+
+Maintainers can refresh the open Firmware Hub set with `npm run sync:firmwares`; the command verifies
+every SHA-256 hash and FM-1 product identity and removes superseded package files.
+Run `npm run audit:firmwares -- --out <directory>` to boot every package in an isolated emulator,
+check for CPU halts or blank LCDs, and write a machine-readable report plus LCD captures.
 
 ## Credits
 

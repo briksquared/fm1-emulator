@@ -29,6 +29,34 @@ jobs:
           node-version: "20"
           cache: "npm"
       - run: npm ci
+      - name: Verify firmware catalog and stability patch
+        run: npm test
+      - name: Exercise all-firmware search (Windows and macOS)
+        if: matrix.os != 'ubuntu-latest'
+        run: npm start
+        env:
+          FM1_SELFTEST: search
+          FM1_SOFTWARE_RENDERING: "1"
+      - name: Exercise all-firmware search (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: xvfb-run -a npm start
+        env:
+          FM1_SELFTEST: search
+          FM1_SOFTWARE_RENDERING: "1"
+      - name: Boot AURORA in the full app (Windows and macOS)
+        if: matrix.os != 'ubuntu-latest'
+        run: npm start
+        env:
+          FM1_SELFTEST: boot
+          FM1_SELFTEST_FW: aurora
+          FM1_SOFTWARE_RENDERING: "1"
+      - name: Boot AURORA in the full app (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: xvfb-run -a npm start
+        env:
+          FM1_SELFTEST: boot
+          FM1_SELFTEST_FW: aurora
+          FM1_SOFTWARE_RENDERING: "1"
       - name: Build
         run: ${{ matrix.cmd }}
         env:

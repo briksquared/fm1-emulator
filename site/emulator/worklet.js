@@ -1,3 +1,4 @@
+import { applyPackageResources } from "./package-resources.js?v=1";
 // The emulator in the audio thread: each 128-frame quantum runs the machine until its I2S
 // DMA has produced 128 frames, so the audio device paces the emulation; and also, for an even
 // amount of work per quantum, its share of emulated time while the queue holds less than one
@@ -113,8 +114,9 @@ class Fm1 extends AudioWorkletProcessor {
     this.jit = { regions: 0, failed: 0, error: "", bytes: 0, tableSlots: 0, compileMs: 0, compileMaxMs: 0 };
     x = (await WebAssembly.instantiate(this.module, { env: jitImports(() => x, this.jit) })).exports;
     if (token !== this.bootToken) return;
-    // hot code compiled to WebAssembly, a few blocks per quantum at most (?jit=0: interpreter only)
-    x.fm1_jit(m.jit === false ? 0 : 1, 16);
+    // Interpreter by default; a missing message field must not silently turn
+    // the JIT back on after a firmware switch.
+    x.fm1_jit(m.jit === true ? 1 : 0, 16);
     const ahead = x.fm1_ahead ? m.ahead ?? AHEAD_FRAMES : 0;
     x.fm1_ahead?.(ahead);               // (?ahead=0: each quantum runs for its own frames only)
     // the whole update package (.fwsc): the machine unpacks it, gets the flash chip and the
@@ -128,6 +130,7 @@ class Fm1 extends AudioWorkletProcessor {
     if (x.fm1_boot_fwsc(pkg, m.package.byteLength, 0, 0, m.mhz) !== 0) {
       throw new Error("not an FM-1 update package (or a DX7 bank it cannot use)");
     }
+    applyPackageResources(x, m.package);
     if (m.sectors?.byteLength && x.fm1_flash_restore(copy(m.sectors), m.sectors.byteLength) !== 0) {
       throw new Error("invalid saved flash sectors");
     }

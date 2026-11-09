@@ -5,7 +5,7 @@ import { productOf, logicalImage } from "./fm1pkg.js";
 
 const params = new URLSearchParams(location.search);
 let cat = { firmwares: [] };
-try { cat = await (await fetch("firmwares.json?v=54")).json(); } catch {}
+try { cat = await (await fetch("firmwares.json?v=62")).json(); } catch {}
 
 // prefer the right column (saves / MIDI), falling back to any sidebar on older single-column layouts
 const side = document.querySelector(".side.side-right") || document.querySelector(".side.bar") || document.querySelector(".side");

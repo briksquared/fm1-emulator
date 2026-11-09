@@ -5,6 +5,8 @@
 // computer (M-VAVE's own: their server does not let other pages fetch it).
 import { fetchPackage } from "./fwsc.js";
 import { SaveStore, packageHash, changedSectors, packSectors, exportSave, importSave } from "./persistence.js";
+import { productOf } from "./fm1pkg.js";
+import { mergeCatalog, scanOpenFirmwareUpdates } from "./catalog-updates.js?v=1";
 
 const CLOCKS = [60, 80, 100, 120, 160, 200, 240];
 // The device this page is for: the FM-1 (index.html) or the SMK-37 (smk37/index.html, <html
@@ -20,7 +22,12 @@ const params = new URLSearchParams(location.search);
 const stored = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } };
 
-const catalog = await (await fetch("firmwares.json?v=54")).json();
+const bundledCatalog = await (await fetch("firmwares.json?v=62")).json();
+const updateKey = "fm1.open-source-catalog.v1";
+let rememberedCatalog = [];
+try { rememberedCatalog = JSON.parse(stored(updateKey) || "[]"); } catch { /* discard malformed local data */ }
+const catalog = mergeCatalog(bundledCatalog, rememberedCatalog);
+window.FM1Catalog = catalog;
 const byId = new Map(catalog.firmwares.map((f) => [f.id, f]));
 // searchable text per firmware (name + author + description), so search finds by what it does
 const fwSearchText = Object.fromEntries(catalog.firmwares.map((f) => [f.id, `${f.name} ${f.version || ""} ${f.author || ""} ${f.about || ""}`.toLowerCase()]));
@@ -71,7 +78,7 @@ const fitPanel = () => document.documentElement.style.setProperty("--above",
 }
 fitPanel();
 
-let node = null;
+let node = null, running = null;
 let frame = null;            // the latest LCD + LEDs from the audio thread
 const down = new Uint8Array(64);           // keys and buttons held (FM-1: matrix ids 0..40; SMK-37: keys 0..36, buttons 37..54)
 const encClicks = new Int32Array(8);
@@ -181,6 +188,7 @@ async function packageOf(f) {
   // that runs), the catalog wins: fall through and fetch the new one.
   if (kept && (!kept.url || f.byo || kept.url === f.package)) {
     const got = { bytes: kept.package, url: kept.url };
+    await verifyPackage(f, got.bytes);
     packages.set(f.id, got);
     return got;
   }
@@ -190,13 +198,21 @@ async function packageOf(f) {
     try { bytes = await saveStore.get("packages", f.id); } catch (error) { saveFailure(error); }
     if (!bytes) throw new NeedFile();
     const got = { bytes, url: null };
+    await verifyPackage(f, got.bytes);
     packages.set(f.id, got);
     return got;
   }
   const got = await fetchPackage(f);
+  await verifyPackage(f, got.bytes);
   packages.set(f.id, got);
   noteVersion(f, got.version);
   return got;
+}
+async function verifyPackage(f, bytes) {
+  if (f.sha256 && await packageHash(bytes) !== String(f.sha256).toLowerCase())
+    throw new Error(`${f.name}: downloaded package checksum does not match the catalog`);
+  if (f.product && productOf(bytes) !== f.product)
+    throw new Error(`${f.name}: downloaded package is for a different device`);
 }
 // A package that had gone came as the one the Hub lists now: show the version that runs.
 function noteVersion(f, version) {
@@ -221,7 +237,9 @@ let bank = null;                           // a DX7 32-voice bank for the stock 
 let loadedUrl = null;                      // the package the running machine came from
 
 function showFirmware() {
-  title.textContent = `${DEV.product} · ${fw.name} (emulated)`;
+  title.textContent = running && running.entry !== DEV.key + fw.id
+    ? `${DEV.product} · ${running.record.name} running · ${fw.name} selected`
+    : `${DEV.product} · ${fw.name} (emulated)`;
   for (const [id, card] of cards) {
     card.classList.toggle("on", id === fw.id);
     card.querySelector("button").textContent = id === fw.id ? "Selected" : "Play";
@@ -373,6 +391,18 @@ stage.addEventListener("drop", (e) => {
 
 // ---------------------------------------------------------------- drawing
 function draw() {
+  // Always reschedule. A wasm memory growth can detach a view mid-frame; that
+  // frame may be skipped, but it must never kill the render loop and black out
+  // the panel until the user reloads the app.
+  try {
+    drawFrame();
+  } catch (error) {
+    if (!draw.warned) { console.warn("draw: skipped a frame", error); draw.warned = true; }
+  } finally {
+    requestAnimationFrame(draw);
+  }
+}
+function drawFrame() {
   const mem = () => ui.memory.buffer;
   if (frame) {
     if (frame.lcd) {
@@ -393,7 +423,6 @@ function draw() {
   const p = ui.panel_draw();
   const img = new ImageData(new Uint8ClampedArray(mem(), p, W * H * 4), W, H);
   ctx.putImageData(img, 0, 0);
-  requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
 
@@ -423,6 +452,7 @@ window.FM1 = { applySkin: fm1ApplySkin, SKIN_ORDER, SKIN_DEFAULT, panelCanvas: c
   _usr: false,
   fwText: (id) => fwSearchText[id] || "",                                      // searchable text (name + description) for a firmware
   isSampler: (id) => !!(CAPS[id] && CAPS[id].audioIn),                         // takes USB audio in (a sampler)
+  runningFirmware: () => running ? { id: running.entry.slice(DEV.key.length), name: running.record.name, hash: running.record.hash } : null,
   running: () => !!running };
 try { fm1ApplySkin({ ...SKIN_DEFAULT, ...JSON.parse(localStorage.getItem("fm1.skin") || "{}") }); } catch {}
 if (typeof window.initCustomize === "function") window.initCustomize(window.FM1);
@@ -785,7 +815,7 @@ const perf = {
     const loads = this.loads.map((l) => Math.round(100 * l)), jit = this.jit;
     return [
       `FM-1 emulator report (${location.origin}${location.pathname})`,
-      `firmware: ${fw.id} ${fw.version || ""} · clock ${mhz} MHz · JIT ${params.get("jit") === "0" ? "off" : "on"}`,
+      `firmware: ${fw.id} ${fw.version || ""} · clock ${mhz} MHz · JIT ${params.get("jit") === "1" ? "on" : "off"}`,
       `browser: ${navigator.userAgent}`,
       `cores: ${navigator.hardwareConcurrency ?? "?"} · memory: ${navigator.deviceMemory ?? "?"} GB`,
       `audio: ${ac ? `${ac.sampleRate} Hz, buffer "${latency}", base latency ${r(1000 * (ac.baseLatency ?? NaN), 1)} ms, ` +
@@ -859,7 +889,7 @@ async function setLatency(l) {
 // ---------------------------------------------------------------- audio: start on a click
 let ac = null, last = null, bootSeq = 0, booting = 0, bufferChanging = false;
 
-let bootQueue = Promise.resolve(), running = null, requestId = 0;
+let bootQueue = Promise.resolve(), requestId = 0;
 const sessions = new Map(), bootWaiters = new Map(), snapshotWaiters = new Map();
 
 function sameSectors(a, b) {
@@ -970,7 +1000,9 @@ function boot(options = {}) {
       window.FM1Loader?.stage("initializing virtual hardware");
       node.port.postMessage({ type: "boot", seq, wasm: wasm.slice(0), package: got.bytes.slice().buffer,
         sectors: packSectors(sectors).buffer, syx: importedBank ? importedBank.slice().buffer : null,
-        mhz: clock, jit: params.get("jit") !== "0",
+        // The JIT can stall the audio thread on newer firmware. Keep the stable
+        // interpreter as the default; ?jit=1 remains available for testing.
+        mhz: clock, jit: params.get("jit") === "1",
         // (?ahead=0: each quantum emulates only for its own frames, as before the even pace)
         ahead: params.has("ahead") ? Number(params.get("ahead")) : undefined });
       status.textContent = `booting ${f.name}…`;
@@ -984,8 +1016,10 @@ function boot(options = {}) {
       node?.port.postMessage({ type: "resume" });
       if (seq === bootSeq) {
         window.FM1Loader?.fail(error instanceof NeedFile ? "package required" : "boot error");
+        showFirmware();
+        if (!running) { startBtn.hidden = false; startBtn.disabled = false; }
         status.textContent = error instanceof NeedFile
-        ? `${f.name}: open your ${DEV.stock} to boot it` : `${f.name}: ${error.message}`;
+        ? `${f.name}: open your ${DEV.stock} to boot it` : `${f.name}: ${error.message}${running ? `; ${running.record.name} is still running` : ""}`;
       }
       return false;
     }
@@ -1000,7 +1034,7 @@ async function startAudio() {
   const hint = ["interactive", "balanced", "playback"].includes(latency) ? latency : (Number(latency) || "playback");
   ac = new AudioContext({ sampleRate: 44100, latencyHint: hint });
   try {
-    await ac.audioWorklet.addModule("worklet.js?v=23");
+    await ac.audioWorklet.addModule("worklet.js?v=28");
     node = new AudioWorkletNode(ac, "fm1", { numberOfInputs: 0, outputChannelCount: [2] });
     node.connect(ac.destination);
     node.port.onmessage = onWorklet;
@@ -1055,6 +1089,7 @@ function onWorklet(e) {
     const session = sessions.get(m.seq), waiter = bootWaiters.get(m.seq);
     if (!session || !waiter) return;
     running = session;
+    showFirmware();
     for (const key of sessions.keys()) if (key !== m.seq) sessions.delete(key);
     session.base = m.base;
     session.observedRevision = m.revision;
@@ -1108,6 +1143,9 @@ startBtn.addEventListener("click", async () => {
     if (!startBtn.hidden) startBtn.disabled = false;
   }
 });
+startBtn.dataset.ready = "true";
+startBtn.disabled = false;
+if (status.textContent === "Preparing emulator…") status.textContent = "click Start to boot";
 
 // Persistence controls use the running machine's identity, even while another firmware is selected.
 const action = fn => async () => { try { await fn(); } catch (error) { saveFailure(error); } };
@@ -1178,6 +1216,37 @@ document.getElementById("update-firmware").addEventListener("click", action(asyn
   if (node) await boot();
   else saveMessage("Firmware ready: click Start");
 }));
+const scanOpenSource = document.getElementById("scan-open-source");
+const applyOpenSource = document.getElementById("apply-open-source");
+const openSourceStatus = document.getElementById("open-source-status");
+if (scanOpenSource && applyOpenSource && openSourceStatus) {
+  scanOpenSource.addEventListener("click", async () => {
+    scanOpenSource.disabled = true;
+    scanOpenSource.classList.add("scanning");
+    applyOpenSource.hidden = true;
+    openSourceStatus.dataset.error = "false";
+    openSourceStatus.textContent = "Scanning the live open-source catalog…";
+    try {
+      const result = await scanOpenFirmwareUpdates(bundledCatalog, catalog);
+      store(updateKey, JSON.stringify(result.remember));
+      const found = result.newCount + result.updateCount;
+      openSourceStatus.textContent = found
+        ? `Found ${result.newCount} new and ${result.updateCount} updated open-source firmware${found === 1 ? "" : "s"}. Packages download only when selected.`
+        : `Up to date — checked ${result.checked} open-license FM-1 packages.`;
+      if (found) {
+        applyOpenSource.textContent = `Use ${found} catalog update${found === 1 ? "" : "s"}`;
+        applyOpenSource.hidden = false;
+      }
+    } catch (error) {
+      openSourceStatus.dataset.error = "true";
+      openSourceStatus.textContent = `Update scan failed: ${error.message}`;
+    } finally {
+      scanOpenSource.disabled = false;
+      scanOpenSource.classList.remove("scanning");
+    }
+  });
+  applyOpenSource.addEventListener("click", () => location.reload());
+}
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden" && running) flushRunning().catch(saveFailure);
 });

@@ -9,8 +9,10 @@ Rust→WebAssembly pi32v2 emulation engine and the base player page.
 
 ## Bundled firmware
 The `.fwsc` files under `site/` are the separate work of their authors, redistributed unchanged
-under their own licenses (all GPL-3.0). See [THIRD-PARTY.md](THIRD-PARTY.md) for the per-firmware
-list of authors, licenses, and source repositories.
+under their own GPL, MPL, MIT, or other stated open-source licenses. See
+[THIRD-PARTY.md](THIRD-PARTY.md) for authors and corresponding source,
+[FIRMWARE-SOURCES.json](FIRMWARE-SOURCES.json) for exact package hashes and identities, and
+[LICENSES](LICENSES/) for the license texts shipped with the application.
 
 ## Bundled tools
 **M-Flasher** by Julius Vitkauskas (MIT) is bundled in the Windows build for FM-1 firmware backup,

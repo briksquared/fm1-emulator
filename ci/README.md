@@ -1,27 +1,18 @@
 # Enabling automated builds (CI)
 
-`ci/release.yml` is a ready-to-use GitHub Actions workflow that builds the Windows,
-macOS, and Linux installers and attaches them to a GitHub Release whenever you push a
-version tag (e.g. `v1.0.0`).
+The active workflow is `.github/workflows/release.yml`. It verifies the complete firmware catalog,
+builds the Windows, macOS, and Linux installers, and attaches them to a GitHub Release whenever a
+version tag is pushed.
 
-It lives here instead of `.github/workflows/` because activating a workflow requires the
-`workflow` OAuth scope. To turn it on (one time):
-
-```bash
-gh auth refresh -h github.com -s workflow      # grant the workflow scope (opens browser)
-git mv ci/release.yml .github/workflows/release.yml
-git commit -m "ci: enable multi-OS release workflow"
-git push
-```
-
-Or add it straight from github.com: **Actions → New workflow → set up a workflow yourself**,
-paste the contents of `ci/release.yml`, and commit.
-
-Then cut a release:
+Before cutting a release, run the same local gate:
 
 ```bash
-git tag v1.0.0 && git push --tags
+npm ci
+npm test
+npm run dist:win
 ```
+
+Then tag the already-tested commit, for example `git tag v1.1.0 && git push origin v1.1.0`.
 
 GitHub Actions will build macOS (`.dmg`/`.zip`, Intel + Apple Silicon) and Linux
 (`.AppImage`/`.deb`) and the Windows installer + portable, and attach them all to the release.

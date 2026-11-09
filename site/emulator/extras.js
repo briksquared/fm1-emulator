@@ -7,7 +7,7 @@
     const t = setInterval(() => {
       const sel = document.getElementById("fw");
       const side = document.querySelector(".side.bar") || document.querySelector(".side");
-      if (sel && side) { clearInterval(t); fn(sel, side); }
+      if (sel && side && sel.options.length && window.FM1Catalog && window.FM1) { clearInterval(t); fn(sel, side); }
     }, 120);
     setTimeout(() => clearInterval(t), 8000);
   }
@@ -113,6 +113,16 @@
       #fw-search{width:100%;background:var(--well);border:1px solid var(--line);color:var(--ink);
         border-radius:7px;padding:6px 9px;font:inherit;font-size:12.5px;margin-bottom:6px;outline:none}
       #fw-search:focus{border-color:var(--amber)}
+      #fw-search-status{display:block;margin:-4px 0 1px;color:var(--dim);font-size:10.5px}
+      #fw-search-status:empty{display:none}
+      #fw-search-results{max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--room);padding:4px}
+      #fw-search-results[hidden]{display:none}
+      .fw-search-hit{display:flex!important;width:100%;align-items:baseline;justify-content:space-between;gap:8px;text-align:left;
+        border:0!important;border-radius:5px!important;background:transparent!important;padding:5px 6px!important}
+      .fw-search-hit:hover,.fw-search-hit:focus-visible{background:var(--well)!important}
+      .fw-search-hit strong{font-size:11.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .fw-search-hit span{font-size:9.5px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .fw-search-more{display:block;padding:6px;color:var(--dim);font-size:10px;text-align:center}
       .fw-filters{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 7px}
       .fw-chip{background:var(--well);border:1px solid var(--line);color:var(--dim);border-radius:999px;
         padding:3px 11px;font:600 11.5px 'Space Grotesk',-apple-system,sans-serif;cursor:pointer}
@@ -150,9 +160,15 @@
   function addSearch(fwSel) {
     const label = document.getElementById("fwlabel") || fwSel.closest("label") || fwSel;
     const s = document.createElement("input");
-    s.type = "search"; s.id = "fw-search"; s.placeholder = `Search ${fwSel.options.length} firmwares (name or what it does)…`;
+    s.type = "search"; s.id = "fw-search"; s.placeholder = `Search all ${fwSel.options.length} firmwares…`;
     s.autocomplete = "off";
+    s.setAttribute("aria-label", "Search every firmware by name, author, version, license, ID, or description");
+    s.setAttribute("aria-controls", "fw-search-results");
     label.parentNode.insertBefore(s, label);
+    const searchStatus = document.createElement("span"); searchStatus.id = "fw-search-status"; searchStatus.setAttribute("aria-live", "polite");
+    const results = document.createElement("div"); results.id = "fw-search-results"; results.hidden = true;
+    label.parentNode.insertBefore(searchStatus, label);
+    label.parentNode.insertBefore(results, label);
     // filter chips: samplers (take audio in) and your starred favorites (favorites.js owns the store)
     let samplerOnly = false, favOnly = false;
     const chips = document.createElement("div"); chips.className = "fw-filters";
@@ -163,19 +179,53 @@
     chips.append(samp, fav);
     label.parentNode.insertBefore(chips, label);
     const FM = () => window.FM1;
-    const textOf = (o) => (FM() && FM().fwText ? FM().fwText(o.value) : "") || o.text.toLowerCase();
+    const norm = (value) => String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const allEntries = () => window.FM1Catalog?.firmwares || [];
+    const byId = () => new Map(allEntries().map((entry) => [entry.id, entry]));
+    const textOfEntry = (f) => norm([f.id, f.name, f.version, f.author, f.license, f.kind, f.product, f.about, f.repo].join(" "));
+    const textOf = (o, entries = byId()) => textOfEntry(entries.get(o.value) || { id: o.value, name: o.text });
     const isSamp = (o) => FM() && FM().isSampler && FM().isSampler(o.value);
     const isFav = (o) => window.FM1Fav && window.FM1Fav.has(o.value);
+    const select = (id) => {
+      fwSel.value = id;
+      fwSel.dispatchEvent(new Event("change", { bubbles: true }));
+      s.value = "";
+      apply();
+      fwSel.focus();
+    };
     function apply() {
-      const t = s.value.trim().toLowerCase();
-      let first = null;
+      const terms = norm(s.value).trim().split(/\s+/).filter(Boolean);
+      const entries = byId();
+      const matches = [];
       for (const o of fwSel.options) {
-        const hit = (!t || textOf(o).includes(t)) && (!samplerOnly || isSamp(o)) && (!favOnly || isFav(o));
+        const hay = textOf(o, entries);
+        const hit = terms.every((term) => hay.includes(term)) && (!samplerOnly || isSamp(o)) && (!favOnly || isFav(o));
         o.hidden = !hit;
-        if (hit && !first) first = o;
+        o.disabled = !hit && o.value !== fwSel.value;
+        if (hit) matches.push({ option: o, entry: entries.get(o.value) });
       }
       const inst = document.getElementById("inst-fw");
-      if (inst) for (const o of inst.options) o.hidden = (t && !textOf(o).includes(t)) || (samplerOnly && !isSamp(o)) || (favOnly && !isFav(o));
+      if (inst) for (const o of inst.options) {
+        const hit = terms.every((term) => textOf(o, entries).includes(term)) && (!samplerOnly || isSamp(o)) && (!favOnly || isFav(o));
+        o.hidden = !hit; o.disabled = !hit;
+      }
+      const active = terms.length || samplerOnly || favOnly;
+      results.hidden = !active;
+      results.replaceChildren();
+      searchStatus.textContent = active ? `${matches.length} firmware${matches.length === 1 ? "" : "s"} found` : "";
+      if (!active) return;
+      for (const { option, entry } of matches.slice(0, 80)) {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "fw-search-hit"; button.dataset.id = option.value;
+        const name = document.createElement("strong"); name.textContent = entry?.name || option.text;
+        const meta = document.createElement("span"); meta.textContent = [entry?.version, entry?.author, entry?.license].filter(Boolean).join(" · ");
+        button.append(name, meta); button.addEventListener("click", () => select(option.value)); results.appendChild(button);
+      }
+      if (matches.length > 80) {
+        const more = document.createElement("span"); more.className = "fw-search-more";
+        more.textContent = `${matches.length - 80} more match — add another search word to narrow it down.`;
+        results.appendChild(more);
+      }
     }
     s.addEventListener("input", apply);
     samp.addEventListener("click", () => { samplerOnly = !samplerOnly; samp.classList.toggle("on", samplerOnly); apply(); });
@@ -184,8 +234,11 @@
     s.addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
       const m = [...fwSel.options].find((o) => !o.hidden);
-      if (m) { fwSel.value = m.value; fwSel.dispatchEvent(new Event("change", { bubbles: true })); }
+      if (m) select(m.value);
     });
+    s.addEventListener("keydown", (e) => { if (e.key === "Escape" && s.value) { s.value = ""; apply(); } });
+    new MutationObserver(() => { s.placeholder = `Search all ${fwSel.options.length} firmwares…`; if (s.value || samplerOnly || favOnly) apply(); })
+      .observe(fwSel, { childList: true });
   }
 
   function addResources() {

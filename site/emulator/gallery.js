@@ -1,15 +1,15 @@
 // Firmware browser for the FM-1 emulator: a searchable, category-filtered card gallery over the
-// whole catalog (now ~191). Reads firmwares.json + classify.json directly; clicking a card loads
+// whole public catalog. Reads firmwares.json + classify.json directly; clicking a card loads
 // that firmware. Pure DOM, injected after the page builds.
 (function () {
   "use strict";
-  const V = "52"; // cache version, keep in step with main.js
+  const V = "62"; // cache version, keep in step with main.js
 
   function ready(fn) {
     const t = setInterval(() => {
       const fwSel = document.getElementById("fw");
       const nav = document.querySelector(".sitenav") || document.querySelector("header.site .wrap");
-      if (fwSel && nav) { clearInterval(t); fn(fwSel, nav); }
+      if (fwSel && nav && window.FM1Catalog) { clearInterval(t); fn(fwSel, nav); }
     }, 120);
     setTimeout(() => clearInterval(t), 8000);
   }
@@ -18,7 +18,7 @@
     let cat, capsArr;
     try {
       [cat, capsArr] = await Promise.all([
-        fetch("firmwares.json?v=" + V).then((r) => r.json()),
+        Promise.resolve(window.FM1Catalog),
         fetch("classify.json?v=" + V).then((r) => r.json()).catch(() => []),
       ]);
     } catch { return; }
@@ -80,11 +80,10 @@
     }
 
     function matches(f) {
-      const term = q.value.trim().toLowerCase();
-      if (term) {
-        const hay = (f.name + " " + (f.author || "") + " " + (f.about || "")).toLowerCase();
-        if (!hay.includes(term)) return false;
-      }
+      const norm = (value) => String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const terms = norm(q.value).trim().split(/\s+/).filter(Boolean);
+      const hay = norm([f.id, f.name, f.version, f.author, f.license, f.kind, f.product, f.about, f.repo].join(" "));
+      if (!terms.every((term) => hay.includes(term))) return false;
       const cdef = CATS.find((c) => c.key === activeCat);
       if (cdef && cdef.t && !cdef.t(f, CAPS[f.id])) return false;
       return true;
@@ -124,7 +123,13 @@
     ov.querySelector("#gal-x").onclick = close;
     ov.querySelector("#gal-rand").onclick = () => { const list = fws.filter(matches); if (list.length) load(list[Math.floor(Math.random() * list.length)].id); };
     ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
-    q.addEventListener("input", render);
+    q.addEventListener("input", () => {
+      if (q.value.trim()) {
+        activeCat = "all";
+        chipsWrap.querySelectorAll(".gal-chip").forEach((chip) => chip.classList.toggle("on", chip.dataset.key === "all"));
+      }
+      render();
+    });
     q.addEventListener("keydown", (e) => { if (e.key === "Enter") { const first = fws.filter(matches)[0]; if (first) load(first.id); } });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !ov.hidden) { close(); return; }

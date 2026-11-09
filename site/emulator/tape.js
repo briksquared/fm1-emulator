@@ -157,7 +157,7 @@
   let SAMPLES = { groups: [] };
   const SAMP_FLAT = [];
   ready(async (nav) => {
-    try { SAMPLES = await (await fetch("samples.json?v=23")).json(); } catch {}
+    try { SAMPLES = await (await fetch("samples.json?v=23")).json(); } catch (e) { console.warn("sample list not loaded:", e); }
     const css = document.createElement("style"); css.textContent = `
       #tape-btn{cursor:pointer}
       #tape-pop{position:fixed;z-index:9997;width:300px;max-width:93vw;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);

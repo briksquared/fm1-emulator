@@ -57,7 +57,9 @@ export class FlashJournal {
     try { return JSON.parse(this.storage.getItem(this.key) || "null"); } catch { return null; }
   }
   save(j) {
-    try { this.storage.setItem(this.key, JSON.stringify(j)); } catch {}
+    // (storage full or blocked: the flash still runs, but a crash now could not offer recovery)
+    try { this.storage.setItem(this.key, JSON.stringify(j)); this.unsaved = false; }
+    catch (e) { this.unsaved = true; console.warn("flash journal not saved:", e); }
     return j;
   }
   // a new attempt; the last good install is kept so a later failure can roll back to it

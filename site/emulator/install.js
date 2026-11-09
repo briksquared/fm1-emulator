@@ -1,11 +1,11 @@
 // "Install to FM-1": flash a firmware onto the real device over USB-MIDI (Chrome/Edge), using the
 // community-proven OTA module (foma/Felucca lineage, GPL-3.0). Injects a compact box into the menu.
 import { Updater, isCandidatePort, isKnownOtherGear } from "./fm1ota.js?v=9";
-import { FlashJournal, explain, pendingRecovery, validatePackage } from "./flash-core.js?v=1";
+import { FlashJournal, explain, pendingRecovery, validatePackage } from "./flash-core.js?v=2";
 
 const params = new URLSearchParams(location.search);
 let cat = { firmwares: [] };
-try { cat = await (await fetch("firmwares.json?v=62")).json(); } catch {}
+try { cat = await (await fetch("firmwares.json?v=62")).json(); } catch (e) { console.warn("firmware catalog not loaded:", e); }
 
 // prefer the right column (saves / MIDI), falling back to any sidebar on older single-column layouts
 const side = document.querySelector(".side.side-right") || document.querySelector(".side.bar") || document.querySelector(".side");

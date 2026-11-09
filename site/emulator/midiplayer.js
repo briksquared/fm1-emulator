@@ -12,7 +12,7 @@
   const arp = (name, root, chord) => { let ev = [], t = 0; for (let o = 0; o < 2; o++) for (const c of chord) { ev.push(...N(0, root + c + o * 12, 96, t, 0.22)); t += 0.25; } return pat(name, t, ev); };
   const chords = (name, prog) => { let ev = [], t = 0; for (const ch of prog) { for (const n of ch) ev.push(...N(0, n, 84, t, 1.9)); t += 2; } return pat(name, t, ev); };
   const drum = (name, len, lanes) => { let ev = []; for (const [note, hits] of lanes) hits.forEach((h, i) => { if (h) ev.push(...N(9, note, h === 2 ? 120 : 92, i * 0.25, 0.12)); }); return pat(name, len, ev); };
-  const K = 36, SN = 38, CH = 42, OH = 46, CL = 39, RIM = 37, TOM = 45;
+  const K = 36, SN = 38, CH = 42, OH = 46, CL = 39, RIM = 37;
 
   const LIB = {
     "Scales": [
@@ -148,7 +148,7 @@
     pop.innerHTML = `
       <h3><span class="dot"></span> MIDI Player <span style="margin-left:auto;font-size:10.5px;color:var(--ui-dim,#8c93a0)">→ into the FM-1</span></h3>
       <select id="midi-pat">${opts}</select>
-      <div class="mprow"><button class="play" id="midi-play">▶ Play</button><button id="midi-stop">■ Stop</button><button id="midi-loop" class="loopon">↻ Loop</button><button id="midi-clock" title="Send MIDI clock so the firmware's sequencer / arp follows this tempo">⏱ Clock</button></div>
+      <div class="mprow"><button class="play" id="midi-play">▶ Play</button><button id="midi-stop">■ Stop</button><button id="midi-loop" class="loopon">↻ Loop</button><button id="midi-clock" title="Send MIDI clock so the firmware's sequencer / arp follows this tempo">Clock</button></div>
       <div><div class="lbl"><span>Tempo</span><span id="midi-bpm">120 BPM</span></div><input id="midi-tempo" type="range" min="50" max="200" value="120"></div>
       <div class="mprow"><button id="midi-file">📁 Load a .mid file</button></div>
       <p id="midi-status"></p>
@@ -191,11 +191,11 @@
         clockOn = window.FM1Transport.clockOn();
         clockBtn.classList.toggle("loopon", clockOn);
         if (!ok && next) status("Press Start to boot a firmware first.");
-        else status(clockOn ? `⏱ Clock running · ${bpm} BPM` : "Clock stopped.");
+        else status(clockOn ? `Clock running · ${bpm} BPM` : "Clock stopped.");
         return;
       }
       clockOn = !clockOn; clockBtn.classList.toggle("loopon", clockOn);
-      if (clockOn) { if (!FM() || !FM().running()) { clockOn = false; clockBtn.classList.remove("loopon"); status("Press Start to boot a firmware first."); return; } startClock(); status(`⏱ Clock running · ${bpm} BPM`); }
+      if (clockOn) { if (!FM() || !FM().running()) { clockOn = false; clockBtn.classList.remove("loopon"); status("Press Start to boot a firmware first."); return; } startClock(); status(`Clock running · ${bpm} BPM`); }
       else { stopClock(); status("Clock stopped."); }
     };
     pop.querySelector("#midi-tempo").oninput = (e) => {

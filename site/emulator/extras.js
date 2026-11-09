@@ -34,9 +34,9 @@
     pop.innerHTML = `
       <input id="fsc-search" type="search" placeholder="Search firmwares…" autocomplete="off">
       <select id="fsc-fw" aria-label="Firmware"></select>
-      <button id="fsc-flash" class="primary">⚡ Flash to FM-1</button>
+      <button id="fsc-flash" class="primary">Flash to FM-1</button>
       <p id="fsc-status"></p>
-      <div class="fsc-row"><button id="fsc-cz">🎨 Customize</button><button id="fsc-exit">⛶ Exit</button></div>`;
+      <div class="fsc-row"><button id="fsc-cz">Customize</button><button id="fsc-exit">Exit</button></div>`;
     stage.appendChild(pop);
     const fscFw = pop.querySelector("#fsc-fw");
     for (const o of fwSel.options) fscFw.add(new Option(o.text, o.value));
@@ -66,7 +66,7 @@
   function addQuickActions(fwSel) {
     const search = document.getElementById("fw-search"); if (!search) return;
     const row = document.createElement("div"); row.className = "fw-quick";
-    row.innerHTML = `<button type="button" id="fw-random">🎲 Random</button><button type="button" id="fw-share">🔗 Share</button>`;
+    row.innerHTML = `<button type="button" id="fw-random">Random</button><button type="button" id="fw-share">Share</button>`;
     search.parentNode.insertBefore(row, search.nextSibling);
     row.querySelector("#fw-random").onclick = () => {
       const opts = [...fwSel.options].filter((o) => !o.hidden);
@@ -78,7 +78,7 @@
       const mhz = new URLSearchParams(location.search).get("mhz") || "";
       const url = location.origin + location.pathname + "?fw=" + encodeURIComponent(fwSel.value) + (mhz ? "&mhz=" + mhz : "");
       try { await navigator.clipboard.writeText(url); share.textContent = "✓ Copied"; } catch { share.textContent = "Copy failed"; }
-      setTimeout(() => (share.textContent = "🔗 Share"), 1500);
+      setTimeout(() => (share.textContent = "Share"), 1500);
     };
   }
 
@@ -95,7 +95,7 @@
   function addFullscreen() {
     const dh = document.querySelector(".deck-head"); if (!dh) return;
     const b = document.createElement("button");
-    b.id = "fs-btn"; b.type = "button"; b.textContent = "⛶ Fullscreen";
+    b.id = "fs-btn"; b.type = "button"; b.textContent = "Fullscreen";
     b.onclick = () => {
       // fullscreen the whole machine column so the plugged-in devices (MIDI, Tape) come with it
       const st = document.querySelector(".player .deck") || document.querySelector(".stage"); if (!st) return;

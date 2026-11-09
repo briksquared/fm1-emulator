@@ -283,7 +283,7 @@
 
     // a small Flash button up in the header next to the firmware name: flashes the current firmware
     const flashBtn = el("button", "fm1-flash-btn"); flashBtn.type = "button";
-    flashBtn.innerHTML = "⚡ Flash"; flashBtn.title = "Flash the current firmware to a real FM-1";
+    flashBtn.innerHTML = "Flash"; flashBtn.title = "Flash the current firmware to a real FM-1";
     flashBtn.onclick = () => {
       const inst = document.getElementById("inst-fw"), cur = document.getElementById("fw") && document.getElementById("fw").value;
       const fb = document.getElementById("inst-flash");

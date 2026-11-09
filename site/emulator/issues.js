@@ -88,7 +88,7 @@
           if (act.href) { el.href = act.href; el.target = "_blank"; el.rel = "noopener"; } else el.type = "button";
           if (act.primary) el.className = "primary";
           el.textContent = act.label;
-          if (act.run) el.onclick = async () => { try { await act.run(el); } catch {} if (act.closes !== false) clear(key); };
+          if (act.run) el.onclick = async () => { try { await act.run(el); } catch (e) { console.error("notice action failed", e); } if (act.closes !== false) clear(key); };
           a.appendChild(el);
         }
         sec.appendChild(a);

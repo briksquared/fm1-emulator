@@ -34,7 +34,7 @@
   }
 
   // ---- feeding the line-in: push interleaved stereo in realtime-paced chunks ----
-  let feedTimer = null, feedPos = 0, feedBuf = null, micStop = null, recNodes = null, recChunks = null, feedGen = 0;
+  let feedTimer = null, feedPos = 0, micStop = null, recNodes = null, recChunks = null, feedGen = 0;
   let feedSpeed = 1;                     // tape varispeed: playback rate multiplier (couples pitch + speed)
   let feedReverse = false;               // play the buffer backwards
   const CHUNK = Math.floor(RATE * 0.1); // 100 ms per tick
@@ -44,7 +44,7 @@
   function stopFeed() {
     feedGen++;
     if (feedTimer) { clearInterval(feedTimer); feedTimer = null; }
-    feedBuf = null; feedPos = 0;
+    feedPos = 0;
     if (micStop) { micStop(); micStop = null; }
   }
 
@@ -54,7 +54,7 @@
     stopFeed();
     const gen = feedGen;
     const frames = (buf.length / 2) | 0;
-    feedBuf = buf; feedPos = feedReverse ? frames - 1 : 0;
+    feedPos = feedReverse ? frames - 1 : 0;
     feedTimer = setInterval(() => {
       if (gen !== feedGen) { clearInterval(feedTimer); return; }           // superseded
       if (!FM() || !FM().running()) { stopFeed(); onDone && onDone("Press Start first."); return; }

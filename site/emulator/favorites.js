@@ -13,7 +13,7 @@
     catch { return []; }
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(ids)); } catch (e) { console.warn("favorites: could not save", e); } }
-  function emit() { for (const cb of subs) { try { cb(); } catch {} } }
+  function emit() { for (const cb of subs) { try { cb(); } catch (e) { console.error("favorites listener failed", e); } } }
 
   // public API (extras.js reads this for its filter chip)
   const Fav = window.FM1Fav = {

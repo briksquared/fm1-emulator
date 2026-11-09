@@ -160,13 +160,13 @@
     try { skin = { ...skin, ...JSON.parse(localStorage.getItem(SKIN_KEY) || "{}") }; } catch {}
 
     // button in the top bar (next to the GitHub link); falls back to the body
-    const btn = document.createElement("button"); btn.id = "fm1-cz-btn"; btn.type = "button"; btn.textContent = "🎨 Customize";
+    const btn = document.createElement("button"); btn.id = "fm1-cz-btn"; btn.type = "button"; btn.textContent = "Customize";
     const header = document.querySelector("header.site .wrap");
     if (header) header.appendChild(btn); else document.body.appendChild(btn);
 
     // panel
     const pan = document.createElement("div"); pan.id = "fm1-cz";
-    pan.innerHTML = `<h2>🎨 Customize <button class="close" title="Close">×</button></h2><div class="body"></div>
+    pan.innerHTML = `<h2>Customize <button class="close" title="Close">×</button></h2><div class="body"></div>
       <div class="foot"><button class="reset">Reset</button><button class="apply">Apply</button></div>`;
     document.body.appendChild(pan);
     const outer = pan.querySelector(".body");
@@ -297,7 +297,7 @@
     // power tools: randomize, export/import skin, save panel PNG
     body.insertAdjacentHTML("beforeend", `<div class="sec">Tools</div>`);
     const tools = document.createElement("div"); tools.className = "decal-row"; tools.style.flexWrap = "wrap";
-    tools.innerHTML = `<button class="rnd">🎲 Random</button><button class="exp">Export</button><button class="imp">Import</button><button class="png">Save PNG</button><button class="shr">🔗 Share look</button>`;
+    tools.innerHTML = `<button class="rnd">Random</button><button class="exp">Export</button><button class="imp">Import</button><button class="png">Save PNG</button><button class="shr">Share look</button>`;
     body.appendChild(tools);
     const impFile = document.createElement("input"); impFile.type = "file"; impFile.accept = ".json,application/json"; impFile.hidden = true; body.appendChild(impFile);
     tools.querySelector(".rnd").onclick = () => {
@@ -314,7 +314,16 @@
     tools.querySelector(".imp").onclick = () => impFile.click();
     impFile.onchange = async () => {
       const f = impFile.files[0]; if (!f) return;
-      try { skin = { ...FM1.SKIN_DEFAULT, ...JSON.parse(await f.text()) }; apply(); persist(); rebuildInputs(); sel.value = ""; } catch {}
+      try {
+        const o = JSON.parse(await f.text());
+        if (!o || typeof o !== "object" || Array.isArray(o)) throw new Error("not a saved look");
+        // keep only colour fields the panel knows, so a stray file can't break the skin
+        const clean = {}; for (const [k, v] of Object.entries(o)) if (k in FM1.SKIN_DEFAULT && /^#[0-9a-f]{6}$/i.test(v)) clean[k] = v;
+        if (!Object.keys(clean).length) throw new Error("no colours in it");
+        skin = { ...FM1.SKIN_DEFAULT, ...clean }; apply(); persist(); rebuildInputs(); sel.value = "";
+      } catch (e) {
+        window.FM1Issues?.show("look", { title: "Look not loaded", text: `${f.name}: ${e.message || e}. Pick a file saved with Export.`, level: "error" });
+      } finally { impFile.value = ""; }
     };
     tools.querySelector(".png").onclick = () => {
       const c = FM1.panelCanvas; if (!c) return;
@@ -341,7 +350,7 @@
       u.searchParams.set("look", code);
       try { await navigator.clipboard.writeText(u.toString()); btnEl.textContent = "✓ Link copied"; }
       catch { btnEl.textContent = "Copy failed"; }
-      setTimeout(() => (btnEl.textContent = "🔗 Share look"), 1600);
+      setTimeout(() => (btnEl.textContent = "Share look"), 1600);
     };
 
     // footer + open/close

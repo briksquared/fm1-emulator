@@ -434,9 +434,9 @@
       <div id="k-now" style="min-height:1.3em;font-size:12.5px;font-weight:700;color:#cdd3db;text-align:center;letter-spacing:.3px">—</div>
       <div class="krow"><button class="ob" id="k-octdn">−</button><span class="cap" style="flex:0 0 auto;text-align:center;min-width:34px" id="k-oct">C3</span><button class="ob" id="k-octup">+</button>
         <button id="k-latch" style="flex:1">Latch</button><button id="k-panic" style="flex:1">Panic</button></div>
-      <div class="krow"><button id="k-pcroute" style="flex:1">⌨ Play with computer keys</button></div>
-      <div class="krow"><button id="k-hw" style="flex:1">🎛 Assist hardware MIDI</button><button id="k-labels" style="flex:0 0 auto">🏷 Labels</button></div>
-      <div class="krow"><button id="k-touchvel" style="flex:1">👆 Touch-sensitive keys</button></div>
+      <div class="krow"><button id="k-pcroute" style="flex:1">Play with computer keys</button></div>
+      <div class="krow"><button id="k-hw" style="flex:1">Assist hardware MIDI</button><button id="k-labels" style="flex:0 0 auto">Labels</button></div>
+      <div class="krow"><button id="k-touchvel" style="flex:1">Touch-sensitive keys</button></div>
       <div class="krow"><span class="cap">Scale</span><select id="k-root">${rootOpts}</select><select id="k-scale">${scaleOpts}</select></div>
       <div class="krow"><span class="cap">Chord</span><select id="k-chord">${chordOpts}</select>
         <select id="k-inv" title="Chord inversion"><option value="0">root</option><option value="1">1st inv</option><option value="2">2nd inv</option><option value="3">3rd inv</option></select></div>
@@ -446,7 +446,7 @@
         <span id="k-strum-l" style="flex:0 0 32px;text-align:right;font-size:11px;color:var(--ui-dim,#8c93a0)">off</span></div>
       <div class="krow"><span class="cap">Arp</span><select id="k-arp">${arpOpts}</select><select id="k-rate">${rateOpts}</select>
         <select id="k-octs" title="Arp octave range"><option value="1">×1</option><option value="2">×2</option><option value="3">×3</option></select></div>
-      <div class="krow"><button id="k-pads" style="flex:1">▦ Scale-degree chord pads</button></div>
+      <div class="krow"><button id="k-pads" style="flex:1">Scale-degree chord pads</button></div>
       <div id="k-padwrap" class="padrow" style="display:none"></div>
       <div class="krow" id="k-progrow" style="display:none"><span class="cap" style="flex:0 0 auto">Prog</span>
         <button id="k-prog-rec" title="Arm: tap pads to record a progression" style="flex:1">● Rec</button>

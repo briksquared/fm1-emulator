@@ -16,7 +16,7 @@
   const listeners = new Set();
   function emit(type, detail) {
     const d = Object.assign({ bpm, beatsPerBar, metroOn, clockOn }, detail || {});
-    listeners.forEach((fn) => { try { fn(type, d); } catch {} });
+    listeners.forEach((fn) => { try { fn(type, d); } catch (e) { console.error("transport listener failed", e); } });
     try { window.dispatchEvent(new CustomEvent("fm1-transport", { detail: { type, ...d } })); } catch {}
   }
   function persist() {
@@ -44,7 +44,6 @@
     const ac = FM() && FM().context && FM().context();
     if (!ac || !metroOn) return;
     clickRunning = true;
-    const beatDur = 60 / bpm;
     let beat = 0, nextTime = ac.currentTime + 0.08;
     clickTimer = setInterval(() => {
       if (!clickRunning || !metroOn) { stopMetro(); return; }
@@ -156,8 +155,8 @@
       <label class="t-lab" style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ui-text2,#cfd4da)">
         <select id="tp-meter"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>/bar
       </label>
-      <button type="button" id="tp-metro" title="Audible metronome click">🔔 Click</button>
-      <button type="button" id="tp-clock" title="Send MIDI clock (0xF8) so the firmware sequencer / arp follows this tempo">⏱ Clock</button>
+      <button type="button" id="tp-metro" title="Audible metronome click">Click</button>
+      <button type="button" id="tp-clock" title="Send MIDI clock (0xF8) so the firmware sequencer / arp follows this tempo">Clock</button>
       <span class="t-hint">Shared with Rec + MIDI</span>`;
     const header = document.querySelector("header.site");
     if (header && header.parentNode) header.parentNode.insertBefore(barEl, header.nextSibling);

@@ -96,7 +96,7 @@ canvas { display: block; width: 100%; height: auto; touch-action: none; user-sel
 .player .deck:fullscreen .fm1-bay,
 .player .deck:fullscreen .hint { width: 100%; max-width: 980px; }
 .player .deck:fullscreen canvas { max-width: min(94vw, calc((100svh - 300px) * var(--aspect, 1.56))); margin: 0 auto; }
-.player .deck:fullscreen #perfwarn, .player .deck:fullscreen .rotate { display: none; }
+.player .deck:fullscreen .rotate { display: none; }
 
 /* under the synth: one line of the essentials, then the way into the guide */
 .hint { margin: 0; color: var(--dim); font-size: 11px; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
@@ -105,14 +105,6 @@ canvas { display: block; width: 100%; height: auto; touch-action: none; user-sel
 .touch { display: none; }
 @media (hover: none) and (pointer: coarse) { .hint .keyb { display: none; } .hint .touch { display: inline; } }
 
-/* the device can't keep up: what happens and the fix, above the synth */
-#perfwarn { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between;
-            border: 1px solid var(--amber); border-radius: 10px; background: color-mix(in srgb, var(--amber) 14%, var(--card)); padding: 9px 12px; }
-#perfwarn[hidden] { display: none; }
-#perfwarn p { margin: 0; flex: 1 1 320px; min-width: 0; }
-#perfwarn .acts { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 14px; }
-#perfwarn button.primary { background: var(--amber); border-color: var(--amber); color: var(--ui-on-accent, #2a1a03); font-weight: 600; }
-#perfwarn button[hidden] { display: none; }
 
 /* flanking the synth: flash to the FM-1 on the left, firmware/save/MIDI on the right
    (both stack below the machine on a narrow screen). Two columns means no scrolling. */
@@ -161,9 +153,9 @@ select:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
 select option { background: var(--well); color: var(--ink); }
 select option:checked, select option:hover { background: var(--amber); color: var(--ui-on-accent, #15120e); }
 /* the page's buttons, and file pickers that look like them */
-.box button, #perfwarn button, .file { font: inherit; font-size: 14px; color: var(--ink); background: var(--well);
+.box button, .file { font: inherit; font-size: 14px; color: var(--ink); background: var(--well);
   border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
-.box button:hover, #perfwarn button:hover, .file:hover { border-color: var(--faint); }
+.box button:hover, .file:hover { border-color: var(--faint); }
 .file { position: relative; }
 .file:focus-within { outline: 2px solid var(--amber); outline-offset: 1px; }
 .file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -351,32 +343,31 @@ header.site { position: relative; z-index: 5; background: linear-gradient(180deg
                      0 22px 40px -24px rgba(0,0,0,.95), 0 3px 8px rgba(0,0,0,.5); }
 
 /* keycaps: buttons, file pickers and selects */
-.box button, #perfwarn button, .file, .box select, #fw-search {
+.box button, .file, .box select, #fw-search {
   background: linear-gradient(180deg, var(--cap-top), var(--cap-bot)); border: 1px solid var(--cap-edge);
   border-bottom-color: var(--cap-shade); border-radius: 7px; box-shadow: var(--raised);
   transition: border-color .12s, box-shadow .12s, transform .05s, filter .12s; }
-.box button:hover, #perfwarn button:hover, .file:hover, .box select:hover {
+.box button:hover, .file:hover, .box select:hover {
   border-color: var(--ui-line-hi, #4a4b52); border-bottom-color: var(--cap-shade); filter: brightness(1.12); }
-.box button:active, #perfwarn button:active, .file:active {
+.box button:active, .file:active {
   transform: translateY(1px); box-shadow: var(--pressed); filter: brightness(.95); }
 .box button[disabled], .box button:disabled { filter: saturate(.6) brightness(.8); transform: none; box-shadow: var(--raised); }
 #fw-search { box-shadow: inset 0 1px 3px rgba(0,0,0,.6); background: linear-gradient(180deg, var(--ui-surface, #17181b), var(--ui-surface2, #1d1e21)); }
 #fw-search:focus { border-color: var(--amber); outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,.6), 0 0 0 2px color-mix(in srgb, var(--amber) 25%, transparent); }
 
 /* the accent controls: lit, glossy caps */
-#start, #perfwarn button.primary, .fm1-flash-btn {
+#start, .fm1-flash-btn {
   background: linear-gradient(180deg, var(--amber-hi) 0%, var(--amber) 55%, var(--amber-lo, #dc4a00) 100%);
   border: 1px solid var(--amber-edge, #b83e00); color: var(--ui-on-accent, #2a1a03);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.18), 0 6px 14px -6px color-mix(in srgb, var(--amber) 55%, transparent), 0 2px 4px rgba(0,0,0,.5);
   transition: transform .05s, box-shadow .12s, filter .12s; }
-#start:hover, #perfwarn button.primary:hover, .fm1-flash-btn:hover { filter: brightness(1.08); }
-#start:active, #perfwarn button.primary:active, .fm1-flash-btn:active {
+#start:hover, .fm1-flash-btn:hover { filter: brightness(1.08); }
+#start:active, .fm1-flash-btn:active {
   transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.5); }
 #start { text-shadow: 0 1px 0 rgba(255,255,255,.25); }
 
-#perfwarn { background: linear-gradient(180deg, color-mix(in srgb, var(--amber) 16%, var(--card)), color-mix(in srgb, var(--amber) 10%, var(--card))); box-shadow: var(--panel); }
 .hint span { background: linear-gradient(180deg, var(--ui-cap-top, #222327), var(--ui-cap-bot, #1b1c1f)); box-shadow: var(--raised); }
 kbd { background: linear-gradient(180deg, var(--ui-cap-top, #2c2d31), var(--ui-cap-bot, #212225)); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 1px 1px rgba(0,0,0,.6); }
 @media (prefers-reduced-motion: reduce) {
-  .box button, #perfwarn button, .file, #start, .fm1-flash-btn, .sitenav a { transition: none; }
+  .box button, .file, #start, .fm1-flash-btn, .sitenav a { transition: none; }
 }

@@ -160,7 +160,7 @@
       <h3><span class="dot"></span> MIDI Recorder</h3>
       <div class="rrow"><button class="rec" id="rec-go">● Record</button><button id="rec-stop" disabled>■ Stop</button></div>
       <div><div class="lbl"><span>Tempo <span style="opacity:.55">(shared)</span></span><span id="rec-bpm-l">120 BPM</span></div><input id="rec-bpm" type="range" min="40" max="240" value="120"></div>
-      <div class="rrow"><button id="rec-click" style="flex:0 0 auto">🔔 Click</button>
+      <div class="rrow"><button id="rec-click" style="flex:0 0 auto">Click</button>
         <label class="mini">Count-in <select id="rec-ci"><option value="0">off</option><option value="1">1 bar</option><option value="2">2 bars</option></select></label>
         <label class="mini"><select id="rec-beats"><option>2</option><option>3</option><option selected>4</option><option>6</option></select>/bar</label></div>
       <div class="rrow">

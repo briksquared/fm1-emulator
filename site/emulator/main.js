@@ -6,6 +6,7 @@
 import { fetchPackage } from "./fwsc.js";
 import { SaveStore, packageHash, changedSectors, packSectors, exportSave, importSave } from "./persistence.js";
 import { productOf } from "./fm1pkg.js";
+import { judgeSecond } from "./perf-judge.js?v=1";
 import { CATALOG_ORIGIN, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } from "./catalog-updates.js?v=2";
 
 const CLOCKS = [60, 80, 100, 120, 160, 200, 240];
@@ -665,7 +666,10 @@ function midiMessage(e) {
 // hardware MIDI can run through an input processor (the Keys module's scale/chord/arp) before it
 // reaches the synth; the processor returns true when it has handled and re-injected the message.
 function hwMessage(e) {
-  if (inputProcessor) { try { if (inputProcessor(Array.from(e.data))) return; } catch (err) {} }
+  if (inputProcessor) {
+    try { if (inputProcessor(Array.from(e.data))) return; }
+    catch (err) { if (!hwMessage.warned) { hwMessage.warned = true; console.error("MIDI input processor failed; passing input through", err); } }
+  }
   midiMessage(e);
 }
 // listen to the wanted inputs only; the list follows devices coming and going
@@ -765,24 +769,14 @@ const perf = {
       this.stamp = ts;
     }
     this.drift = drift;
-    // Seconds that say nothing about this device keeping up: the audio clock stopped (an output
-    // device change, Bluetooth reconnecting, sleep, a suspended context) or the page was hidden.
-    // They used to count as "late" and brought up the buffer warning, which no buffer fixes.
     const now = performance.now(), gap = this.lastSecond ? now - this.lastSecond : 1000;
     this.lastSecond = now;
-    const stalled = ac?.state !== "running" || document.hidden || gap > 1600 || Math.abs(drift) > 0.5;
-    // The worker engine: the audio thread keeps time and plays silence when the emulator is late,
-    // so the clock stays steady either way; the real measure is the quanta that ran dry.
-    const dry = worker && stream ? stream.underruns : null;
-    const newDry = dry != null && this.dryAt != null ? dry - this.dryAt : 0;
-    if (dry != null) this.dryAt = dry;
-    if (++this.secs <= 3 || m.halted) return;      // (the first seconds: booting, compiling)
-    if (stalled) { this.bad = 0; return; }
-    const over = this.load() > 0.95;
-    const late = worker ? newDry >= 3 : drift > 0.02;
-    if (late) this.drops++;
-    this.bad = over || late ? this.bad + 1 : 0;
-    if (this.bad >= 3 && !this.shown && !this.dismissed) this.warn(over);
+    const j = judgeSecond(this, {
+      state: ac?.state, hidden: document.hidden, gap, drift, halted: m.halted, load: this.load(),
+      worker: !!worker, dry: worker && stream ? stream.underruns : null,
+    });
+    if (j.late) this.drops++;
+    if (j.warn && !this.shown && !this.dismissed) this.warn(j.over);
   },
   // A lower clock that brings the load down to ~80%, if one does. The cost of emulating a
   // second is a fixed part (about a quarter at the clocks offered: the peripherals, the audio, the
@@ -1210,7 +1204,7 @@ startBtn.addEventListener("click", async () => {
     await ac.resume();
     startBtn.hidden = true;
     // a phone on its side: the synth fills the screen, so bring all of it into view
-    if (matchMedia("(orientation: landscape) and (max-height: 560px)").matches) canvas.scrollIntoView({ block: "center" });
+    if (matchMedia("(orientation: landscape) and (max-height: 560px) and (pointer: coarse)").matches) canvas.scrollIntoView({ block: "center" });
   } catch (error) {
     status.textContent = `Could not start audio: ${error.message || error}`;
     issue.show("audio", { title: "No audio", text: `${status.textContent}. Check that an output device is connected, then press Start again.`, level: "error" });

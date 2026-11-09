@@ -316,7 +316,9 @@ if (!app.requestSingleInstanceLock()) {
   });
   protocol.handle("fm1", async (req) => {
     const u = new URL(req.url);
-    let p = decodeURIComponent(u.pathname || "/");
+    let p;
+    try { p = decodeURIComponent(u.pathname || "/"); }
+    catch { return new Response("bad request", { status: 400 }); }   // a malformed %-escape
     if (p === "/" || p === "") p = "/emulator/index.html";
     const file = path.normalize(path.join(ROOT, p));
     if (!isInsideRoot(file)) return new Response("forbidden", { status: 403 });

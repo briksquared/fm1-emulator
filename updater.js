@@ -39,9 +39,9 @@ function installKind() {
 }
 const canSelfInstall = () => ["nsis", "appimage"].includes(installKind());
 
-const window = () => BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0] || null;
+const appWindow = () => BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0] || null;
 function message(options) {
-  const win = window();
+  const win = appWindow();
   return win ? dialog.showMessageBox(win, options) : dialog.showMessageBox(options);
 }
 
@@ -91,7 +91,7 @@ async function checkForUpdates({ interactive = false, log = () => {} } = {}) {
       buttons: ["Download", "Release notes", "Later"], defaultId: 0, cancelId: 2 });
     if (response === 1) { shell.openExternal(page); return; }
     if (response !== 0) return;
-    const win = window();
+    const win = appWindow();
     const progress = (p) => { if (win && !win.isDestroyed()) win.setProgressBar(Math.max(0, Math.min(1, p.percent / 100))); };
     u.on("download-progress", progress);
     try {

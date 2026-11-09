@@ -319,3 +319,57 @@ select { padding: 6px 8px; font-size: 12.5px; }
 .player > *, .side > *, .box { min-width: 0; }
 header.site .wrap { min-width: 0; row-gap: 6px; }
 
+/* ===== Hardware finish: a matte enclosure, raised controls, pressed states =====
+   Only gradients and box-shadows (no blur filters), so it stays cheap with software rendering. */
+:root {
+  --cap-top: #2d2e33; --cap-bot: #212226; --cap-edge: #3b3c42; --cap-shade: #16171a;
+  --raised: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.55);
+  --pressed: inset 0 2px 4px rgba(0,0,0,.65), inset 0 0 0 1px rgba(0,0,0,.35);
+  --panel: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 24px -14px rgba(0,0,0,.9), 0 2px 4px rgba(0,0,0,.5);
+}
+header.site { position: relative; z-index: 5; background: linear-gradient(180deg, #141518, #0a0a0c);
+              box-shadow: inset 0 -1px 0 rgba(255,255,255,.03), 0 6px 16px -10px rgba(0,0,0,.9); }
+.logo { background: linear-gradient(180deg, var(--amber-hi), var(--amber) 60%, #d94800);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1px 2px rgba(0,0,0,.6); }
+.sitenav a { transition: background-color .12s, color .12s; }
+.sitenav a:hover { background: linear-gradient(180deg, #232428, #1b1c1f); box-shadow: var(--raised); }
+.sitenav a:active { box-shadow: var(--pressed); }
+
+/* the panels beside and under the machine: a slightly raised, satin face */
+.box { background: linear-gradient(180deg, #222327 0%, #1a1b1e 100%); border-color: #2d2e32; box-shadow: var(--panel); }
+#about { background: linear-gradient(180deg, #1f2023, #18191c); box-shadow: inset 0 1px 2px rgba(0,0,0,.5); }
+
+/* the machine sits in a recessed bay */
+.stage { background: radial-gradient(130% 80% at 50% 0%, #141518 0%, #060607 65%); border-color: #2a2b2f;
+         box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 0 0 1px rgba(0,0,0,.6),
+                     0 22px 40px -24px rgba(0,0,0,.95), 0 3px 8px rgba(0,0,0,.5); }
+
+/* keycaps: buttons, file pickers and selects */
+.box button, #perfwarn button, .file, .box select, #fw-search {
+  background: linear-gradient(180deg, var(--cap-top), var(--cap-bot)); border: 1px solid var(--cap-edge);
+  border-bottom-color: var(--cap-shade); border-radius: 7px; box-shadow: var(--raised);
+  transition: border-color .12s, box-shadow .12s, transform .05s, filter .12s; }
+.box button:hover, #perfwarn button:hover, .file:hover, .box select:hover {
+  border-color: #4a4b52; border-bottom-color: var(--cap-shade); filter: brightness(1.12); }
+.box button:active, #perfwarn button:active, .file:active {
+  transform: translateY(1px); box-shadow: var(--pressed); filter: brightness(.95); }
+.box button[disabled], .box button:disabled { filter: saturate(.6) brightness(.8); transform: none; box-shadow: var(--raised); }
+#fw-search { box-shadow: inset 0 1px 3px rgba(0,0,0,.6); background: linear-gradient(180deg, #17181b, #1d1e21); }
+#fw-search:focus { border-color: var(--amber); outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,.6), 0 0 0 2px rgba(250,84,0,.25); }
+
+/* the orange controls: lit, glossy caps */
+#start, #perfwarn button.primary, .fm1-flash-btn {
+  background: linear-gradient(180deg, #ff8a3a 0%, var(--amber) 55%, #dc4a00 100%); border: 1px solid #b83e00;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.18), 0 6px 14px -6px rgba(250,84,0,.55), 0 2px 4px rgba(0,0,0,.5);
+  transition: transform .05s, box-shadow .12s, filter .12s; }
+#start:hover, #perfwarn button.primary:hover, .fm1-flash-btn:hover { filter: brightness(1.08); }
+#start:active, #perfwarn button.primary:active, .fm1-flash-btn:active {
+  transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.5); }
+#start { text-shadow: 0 1px 0 rgba(255,255,255,.25); }
+
+#perfwarn { background: linear-gradient(180deg, #2f2417, #241b11); box-shadow: var(--panel); }
+.hint span { background: linear-gradient(180deg, #222327, #1b1c1f); box-shadow: var(--raised); }
+kbd { background: linear-gradient(180deg, #2c2d31, #212225); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 1px 1px rgba(0,0,0,.6); }
+@media (prefers-reduced-motion: reduce) {
+  .box button, #perfwarn button, .file, #start, .fm1-flash-btn, .sitenav a { transition: none; }
+}

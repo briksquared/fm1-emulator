@@ -45,11 +45,29 @@ Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 
 - **259 verified open-source firmwares bundled** — newest first, unique, and fully offline
 - **Search every firmware** — match names, IDs, versions, authors, licenses, product identities, and descriptions
-- **One-button update radar** — scans for newly published open-license FM-1 packages and downloads one only when you select it
+- **One-button firmware radar** — scans for newly published open-license FM-1 packages and downloads one only when you select it
 - **Load your own** — drag any `.fwsc` onto the window
-- **Play** with the computer keyboard, mouse, or a USB MIDI controller
+- **Play** with the computer keyboard, mouse, a USB MIDI controller, or your real FM-1
 - **Customize** panel colors and add image decals; decorate the case with stickers
 - **Firmware recovery (Windows)** — back up, restore, and reinstall your FM-1; a flash is never a dead end
+
+## Control it with your real FM-1
+
+Plug your FM-1 into the computer over USB and pick it under **MIDI in** (the desktop app selects
+a connected FM-1, M-VAVE or SMK-37 input by itself the first time). Everything the hardware sends
+then goes into the emulated FM-1's MIDI IN, the same as a cable into a real one:
+
+- **Notes** from the keys play the emulated firmware.
+- **Controllers, pitch bend and MIDI clock / start / stop** are passed through unchanged; what they
+  do is up to the firmware running in the emulator (see each firmware's *Plays MIDI* and
+  *Clock-sync* tags).
+- **Channel** next to MIDI in moves every note and controller to one channel, for firmwares that
+  listen on a fixed one (M-VAVE's own firmware: channel 2).
+
+What reaches the emulator is whatever the firmware on your physical FM-1 sends over USB: knob moves
+arrive only if that firmware sends them as MIDI controllers, and they are not mirrored onto the
+emulated knobs. SysEx is not passed through. Safari has no Web MIDI; the desktop app and Chrome,
+Edge and Firefox do.
 
 ## Recovery & safety
 

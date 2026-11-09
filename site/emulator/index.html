@@ -115,7 +115,7 @@
 
       <section class="box" aria-labelledby="h-play-from">
         <h2 class="eyebrow" id="h-play-from">Play from</h2>
-        <label id="midiin">MIDI in <span class="sel"><span id="midiact" aria-hidden="true"></span><select id="midi" aria-label="MIDI input"><option value="">off</option><option value="*">all inputs</option></select></span></label>
+        <label id="midiin" title="Plug in your FM-1 over USB and pick it here to play the emulator from its keys">MIDI in <span class="sel"><span id="midiact" aria-hidden="true"></span><select id="midi" aria-label="MIDI input"><option value="">off</option><option value="*">all inputs</option></select></span></label>
         <label id="midichl" title="Played notes and controllers go to this channel (M-VAVE's firmware listens on 2, Felucca's parts on 1–4)">Channel
           <select id="midich" aria-label="MIDI channel"><option value="0">as sent</option></select></label>
       </section>
@@ -238,6 +238,11 @@
           <li>Choose it under <b>MIDI in</b>, or choose “all inputs”.</li>
           <li>Allow MIDI access when the browser asks. It only asks once you pick an input.</li>
         </ol>
+        <p><b>Your real FM-1</b> works the same way: plug it in over USB and pick it here (the desktop app picks a
+          connected FM-1 by itself the first time). Its notes play the emulator; controllers, pitch bend and MIDI
+          clock / start / stop reach the emulated firmware unchanged, so what they do depends on that firmware.
+          Knob moves arrive only if the firmware on your FM-1 sends them as MIDI, and they do not turn the
+          on-screen knobs.</p>
         <p>The dot next to the list lights up amber while messages arrive. The page remembers the input and connects
           it again on Start next time; devices plugged in later appear in the list.</p>
         <p><b>Channel</b> “as sent” passes every message on unchanged. A number from 1 to 16 moves every note and

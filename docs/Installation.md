@@ -67,6 +67,24 @@ The Linux builds are unsigned (normal for Linux — there's no Gatekeeper), so t
 
   (`--no-sandbox` disables one Chromium security layer — fine for a local, offline tool.)
 
+## Control it with your real FM-1
+
+Plug your FM-1 into the computer over USB and pick it under **MIDI in** (the desktop app selects
+a connected FM-1, M-VAVE or SMK-37 input by itself the first time). Everything the hardware sends
+then goes into the emulated FM-1's MIDI IN, the same as a cable into a real one:
+
+- **Notes** from the keys play the emulated firmware.
+- **Controllers, pitch bend and MIDI clock / start / stop** are passed through unchanged; what they
+  do is up to the firmware running in the emulator (see each firmware's *Plays MIDI* and
+  *Clock-sync* tags).
+- **Channel** next to MIDI in moves every note and controller to one channel, for firmwares that
+  listen on a fixed one (M-VAVE's own firmware: channel 2).
+
+What reaches the emulator is whatever the firmware on your physical FM-1 sends over USB: knob moves
+arrive only if that firmware sends them as MIDI controllers, and they are not mirrored onto the
+emulated knobs. SysEx is not passed through. Safari has no Web MIDI; the desktop app and Chrome,
+Edge and Firefox do.
+
 ## Upgrading
 
 The app checks GitHub Releases for a newer version shortly after it starts, and **Help → Check

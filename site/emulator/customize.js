@@ -48,10 +48,10 @@
     "FM-1 White / Green": { ...WHITE, key_top: "#78b73a", key_bot: "#4a7420", key_line: "#a2db6a", key_lit: "#eaf8d6", amber: "#4a7420", knob_glow: "#78b73a" },
     "FM-1 White / Grey": { ...WHITE, key_top: "#8a8f98", key_bot: "#565a62", key_line: "#b4b9c2", key_lit: "#eef1f5", amber: "#565a62", knob_glow: "#8a8f98" },
     "FM-1 White / Blue": { ...WHITE, key_top: "#2f5fbf", key_bot: "#1a3a7a", key_line: "#6a92e0", key_lit: "#dde8ff", amber: "#1a3a7a", knob_glow: "#2f5fbf" },
-    // --- the house looks ---
+    // --- the house looks (default public skin is anthracite / mono; orange stays optional) ---
+    "Anthracite keys": { body_top: "#141414", key_top: "#3a3a3a", key_bot: "#1c1c1c", key_line: "#6e6e6e", key_lit: "#e8e8e8", amber: "#d8d8d8", knob_glow: "#d8d8d8" },
     "Electro Orange": { body_top: "#141414", key_top: "#fa5400", key_bot: "#b23c00", key_line: "#ff8a3a", key_lit: "#ffd0a0", amber: "#fa5400", knob_glow: "#fa5400", green: "#62d36e" },
-    "Anthracite keys": { body_top: "#141414", key_top: "#3b3c40", key_bot: "#26272b", key_line: "#6a6c74", key_lit: "#fa5400", amber: "#fa5400", knob_glow: "#fa5400" },
-    "Blackout": { room: "#000000", body_top: "#0c0c0c", body_bot: "#050505", tray: "#0a0a0a", key_top: "#2a2826", key_bot: "#161514", key_line: "#4a443e", key_lit: "#ff7a1a", amber: "#ff7a1a", knob_glow: "#ff7a1a" },
+    "Blackout": { room: "#000000", body_top: "#0c0c0c", body_bot: "#050505", tray: "#0a0a0a", key_top: "#2a2826", key_bot: "#161514", key_line: "#4a443e", key_lit: "#e8e8e8", amber: "#d0d0d0", knob_glow: "#d0d0d0" },
     // --- neon / synth ---
     "Nike Volt": { body_top: "#101210", key_top: "#d7ff2e", key_bot: "#8aa800", key_line: "#e9ff7a", key_lit: "#f6ffcf", amber: "#d7ff2e", knob_glow: "#d7ff2e", green: "#d7ff2e" },
     "Miami": { room: "#07090e", body_top: "#121318", body_bot: "#0a0b0f", key_top: "#ff2d95", key_bot: "#a0186a", key_line: "#ff7ac0", key_lit: "#ffd0ea", amber: "#22e0d6", knob_glow: "#ff2d95", green: "#22e0d6", bezel_a: "#0a0f14", bezel_b: "#070b0f" },
@@ -76,7 +76,7 @@
   // how the presets are grouped in the dropdown (names must match PRESETS keys)
   const GROUPS = [
     ["FM-1 hardware colours", ["FM-1 Black", "FM-1 Orange", "FM-1 Green", "FM-1 Navy", "FM-1 Purple", "FM-1 Grey", "FM-1 Brown", "FM-1 Pink", "FM-1 White / Green", "FM-1 White / Grey", "FM-1 White / Blue"]],
-    ["House looks", ["Electro Orange", "Anthracite keys", "Blackout"]],
+    ["House looks", ["Anthracite keys", "Electro Orange", "Blackout"]],
     ["Neon / synth", ["Nike Volt", "Miami", "Vaporwave", "Sunset", "Infrared"]],
     ["Jewel tones", ["Crimson", "Cobalt", "Emerald", "Lagoon", "Amethyst", "Stealth Green", "Ice"]],
     ["Luxe / light", ["Gold on Black", "Royal", "Carbon", "Bone (light shell)"]],
@@ -87,11 +87,11 @@
     const el = document.createElement("style");
     el.id = "fm1-cz-style";
     el.textContent = `
-      #fm1-cz-btn{background:var(--amber,#fa5400);color:var(--ui-on-accent,#180a02);border:0;border-radius:999px;padding:6px 13px;
-        font:600 13px/1 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer;white-space:nowrap}
+      #fm1-cz-btn{background:var(--amber,#d8d8d8);color:var(--ui-on-accent,#111111);border:0;border-radius:999px;padding:4px 10px;
+        font:600 11.5px/1 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer;white-space:nowrap}
       #fm1-cz .cz-tabs{display:flex;gap:6px;margin:2px 0 12px}
       #fm1-cz .cz-tab{flex:1;background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text2,#aeb4bd);border-radius:8px;padding:7px;font:600 13px/1 inherit;cursor:pointer}
-      #fm1-cz .cz-tab.on{background:var(--amber,#fa5400);color:var(--ui-on-accent,#180a02);border-color:transparent}
+      #fm1-cz .cz-tab.on{background:var(--amber,#d8d8d8);color:var(--ui-on-accent,#111111);border-color:transparent}
       #fm1-cz .cz-sw{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 2px}
       #fm1-cz .cz-note{color:var(--ui-dim,#8c93a0);margin:4px 0 8px}
       #fm1-cz .cz-themes{display:grid;grid-template-columns:1fr 1fr;gap:7px}
@@ -122,7 +122,7 @@
       #fm1-cz .decal-row button{flex:1;background:var(--ui-surface,#17181b);color:var(--ui-text,#e9edf2);border:1px solid var(--ui-line,#2a2c31);border-radius:8px;padding:7px;cursor:pointer}
       #fm1-cz .foot{position:absolute;bottom:0;left:0;right:0;display:flex;gap:8px;padding:12px 16px;background:var(--ui-pop,#0c0d0f);border-top:1px solid var(--ui-line,#1e1f22)}
       #fm1-cz .foot button{flex:1;border:0;border-radius:9px;padding:11px;font:600 14px/1 inherit;cursor:pointer}
-      #fm1-cz .apply{background:#62d36e;color:#07130d}
+      #fm1-cz .apply{background:var(--amber,#d8d8d8);color:var(--ui-on-accent,#111)}
       #fm1-cz .reset{background:var(--ui-line,#232428);color:var(--ui-text,#e9edf2)}
     `;
     document.head.appendChild(el);

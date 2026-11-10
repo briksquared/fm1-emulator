@@ -2,22 +2,24 @@
 // Serves the static emulator over a FIXED custom origin (fm1://app) so localStorage — favorites,
 // customize, stickers, the last firmware — lives in the app's own profile and persists every launch,
 // regardless of any dev-server port. Fully offline: the emulator, firmware archive and fw/ are bundled.
-const { app, BrowserWindow, Menu, dialog, protocol, screen, shell, ipcMain, session } = require("electron");
+const { app, BrowserWindow, Menu, protocol, screen, shell, ipcMain, session } = require("electron");
 const updates = require("./updater");
 const path = require("path");
 const fs = require("fs");
-const { spawn } = require("child_process");
+const { spawn, execFile } = require("child_process");
 
 // Hardware acceleration made the full window turn black after Start on a real
 // Windows installation. Keep the reliable renderer by default; the override
 // remains available for graphics diagnostics.
 const softwareRendering = process.env.FM1_SOFTWARE_RENDERING !== "0";
 if (softwareRendering) app.disableHardwareAcceleration();
+// Windows: WinRT MIDI is opt-in (FM1_WINRT_MIDI=1). Default Chromium MIDI keeps USB
+// SysEx handshakes reliable; WinRT sometimes exposes a mute "FM-1" SoftwareDevice.
+if (process.platform === "win32" && process.env.FM1_WINRT_MIDI === "1") {
+  app.commandLine.appendSwitch("enable-features", "MidiManagerWinrt");
+}
 // Automated checks can use an isolated profile so they never contend with a
 // user's running installed copy or alter its favorites and saved firmware.
-// The installer's shortcuts carry the appId as their AppUserModelID. The window must use the
-// same one, or Windows groups it apart from a pinned shortcut and keeps the pin's old icon.
-if (process.platform === "win32") app.setAppUserModelId("com.briksquared.fm1emulator");
 if (process.env.FM1_SELFTEST_PROFILE) app.setPath("userData", path.resolve(process.env.FM1_SELFTEST_PROFILE));
 
 function desktopLog(event, details) {
@@ -33,16 +35,61 @@ const DEV_SITE = path.join(__dirname, "site");
 const ROOT = app.isPackaged ? path.join(process.resourcesPath, "site") : (fs.existsSync(DEV_SITE) ? DEV_SITE : path.join(__dirname, ".."));
 
 // The emulator can still use its browser/Web-MIDI installer, but the desktop app
-// also hands recovery work to M-Flasher.  Keep this allow-listed: renderer code
-// never supplies a command or a path to execute.
+// also hands recovery work to the bundled flash recovery tool. Keep this allow-listed:
+// renderer code never supplies a command or a path to execute. Windows builds ship the
+// tool under resources/M-Flasher; the vendor/ copy is used in development.
+function isPeExecutable(file) {
+  try {
+    const fd = fs.openSync(file, "r");
+    const buf = Buffer.alloc(2);
+    fs.readSync(fd, buf, 0, 2, 0);
+    fs.closeSync(fd);
+    return buf[0] === 0x4d && buf[1] === 0x5a; // MZ
+  } catch { return false; }
+}
 function mFlasherPath() {
-  // M-Flasher is a Windows-only third-party tool, bundled with the Windows build (resources/M-Flasher).
-  // From a source checkout it is used from vendor/; anywhere else the UI offers a download link.
   const candidates = [
     path.join(process.resourcesPath, "M-Flasher", "M-Flasher.exe"),
     path.join(__dirname, "vendor", "M-Flasher", "M-Flasher.exe"),
   ];
-  return candidates.find((file) => file && fs.existsSync(file)) || null;
+  return candidates.find((file) => file && fs.existsSync(file) && isPeExecutable(file)) || null;
+}
+
+// USB ids from the FM-1 recovery notes: 4C4A:C755 running firmware,
+// 4D4A:4155 stock update loader, 4C4A:8057 the chip's ROM download mode ("WL82 UBOOT1.00").
+const USB_MODES = { "4C4A:C755": "running", "4D4A:4155": "update", "4C4A:8057": "download" };
+function usbCheck() {
+  if (process.platform !== "win32") return Promise.resolve({ ok: false, unsupported: true, devices: [] });
+  const script = "Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match '^USB\\\\VID_(4C4A|4D4A)&PID_[0-9A-F]{4}' } | " +
+    "ForEach-Object { [pscustomobject]@{ id = ($_.InstanceId -replace '^USB\\\\VID_([0-9A-F]{4})&PID_([0-9A-F]{4}).*$', '$1:$2'); cls = [string]$_.Class; status = [string]$_.Status } } | ConvertTo-Json -Compress";
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      try { desktopLog("usb-check", { ok: !!result.ok, count: (result.devices || []).length, modes: (result.devices || []).map((d) => d.mode) }); } catch { /* ignore */ }
+      resolve(result);
+    };
+    const watchdog = setTimeout(() => finish({ ok: false, message: "Windows USB check timed out.", devices: [] }), 16000);
+    execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script],
+      { timeout: 15000, windowsHide: true, maxBuffer: 256 * 1024 }, (error, stdout) => {
+        clearTimeout(watchdog);
+        if (error) { finish({ ok: false, message: "Windows did not answer the USB check.", devices: [] }); return; }
+        let list = [];
+        try { const v = JSON.parse(String(stdout || "").trim() || "[]"); list = Array.isArray(v) ? v : (v ? [v] : []); } catch { list = []; }
+        const seen = new Set();
+        const devices = [];
+        for (const d of list) {
+          if (!d || !/^[0-9A-F]{4}:[0-9A-F]{4}$/i.test(d.id || "")) continue;
+          const id = String(d.id).toUpperCase();
+          if (seen.has(id)) continue;
+          seen.add(id);
+          devices.push({ id, mode: USB_MODES[id] || "other", cls: String(d.cls || "").slice(0, 32), status: String(d.status || "").slice(0, 16) });
+          if (devices.length >= 16) break;
+        }
+        finish({ ok: true, devices });
+      });
+  });
 }
 
 function isInsideRoot(file) {
@@ -64,9 +111,8 @@ protocol.registerSchemesAsPrivileged([
   { scheme: "fm1", privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } },
 ]);
 
-// Open at most as large as the screen's work area (the taskbar/dock excluded). A fixed
-// 1300x900 window, or a 640 px minimum height, is taller than a 1366x768 screen at 125% or
-// 150% scaling (614 or 512 px), which put the bottom of the window off screen.
+// Open at most as large as the screen's work area (the taskbar excluded). A fixed 1300x900
+// window, or a 640 px minimum height, is taller than a 1366x768 screen at 125% or 150% scaling.
 function windowBounds() {
   const area = screen.getPrimaryDisplay().workAreaSize;
   const minWidth = Math.min(800, area.width), minHeight = Math.min(520, area.height);
@@ -107,18 +153,6 @@ function createWindow() {
     desktopLog("page-loaded", { url });
   });
   win.webContents.on("unresponsive", () => desktopLog("renderer-unresponsive", {}));
-  // the page blocks unloading only while a firmware install is writing to a real FM-1
-  win.webContents.on("will-prevent-unload", (event) => {
-    const choice = dialog.showMessageBoxSync(win, {
-      type: "warning",
-      buttons: ["Keep the install running", "Close anyway"],
-      defaultId: 0,
-      cancelId: 0,
-      message: "A firmware install is writing to your FM-1.",
-      detail: "Closing now interrupts it. The FM-1 stays in update mode, and Resume interrupted install finishes it the next time you open the app.",
-    });
-    if (choice === 1) event.preventDefault();
-  });
   win.webContents.on("will-navigate", (event, url) => {
     try {
       const target = new URL(url);
@@ -147,38 +181,6 @@ function createWindow() {
   return win;
 }
 
-// FM1_SELFTEST=typing: real key presses (not synthetic DOM events). Letters that are also note
-// keys must type into text fields; the same keys from the page must still play; a focused slider
-// keeps its arrow keys.
-async function typingSelfTest(win) {
-  const wc = win.webContents, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const js = (code) => wc.executeJavaScript(`(async()=>{ const $=s=>document.querySelector(s); ${code} })()`, true);
-  const press = async (k, hold = false) => {
-    wc.sendInputEvent({ type: "keyDown", keyCode: k });
-    if (k.length === 1) wc.sendInputEvent({ type: "char", keyCode: k });
-    if (!hold) { await sleep(30); wc.sendInputEvent({ type: "keyUp", keyCode: k }); }
-    await sleep(40);
-  };
-  const type = async (text) => { for (const c of text) await press(c); };
-  for (let i = 0; i < 80; i++) { if (await js(`return !!($('#gal-side') && window.FM1 && window.FM1Keys && !$('#start').disabled)`)) break; await sleep(250); }
-  await js(`$('#start').click()`);
-  for (let i = 0; i < 60; i++) { if (await js(`return window.FM1.running()`)) break; await sleep(250); }
-  win.focus(); wc.focus();
-  await js(`$('#fw-search').focus()`); await type("aws");
-  const sideTyped = await js(`const v=$('#fw-search').value; $('#fw-search').value=''; $('#fw-search').dispatchEvent(new Event('input')); $('#fw-search').blur(); return v`);
-  await js(`$('#gal-side').click()`); await sleep(400); await js(`$('#gal-q').focus()`); await type("dr");
-  const galleryTyped = await js(`const v=$('#gal-q').value; $('#gal-q').value=''; return v`);
-  await press("Escape"); await sleep(200);
-  await js(`window.FM1Keys.routePc(false); document.activeElement && document.activeElement.blur()`);
-  await press("a", true); const heldFromPage = await js(`return window.FM1.heldKeys()`);
-  wc.sendInputEvent({ type: "keyUp", keyCode: "a" }); await sleep(80);
-  const releasedAfter = await js(`return window.FM1.heldKeys()`);
-  const sliderBefore = await js(`const r=document.querySelector('input[type=range]'); r.focus(); return Number(r.value)`);
-  await press("Right");
-  const slider = await js(`const r=document.querySelector('input[type=range]'); const v=Number(r.value); r.blur(); window.FM1Keys.routePc(true); return v`);
-  return { sideTyped, galleryTyped, heldFromPage, releasedAfter, sliderBefore, slider };
-}
-
 // Automated end-to-end check (set FM1_SELFTEST=write|read). Proves assets load, a firmware boots,
 // and that localStorage survives a full app restart — logs one JSON line, then quits.
 function runSelfTest(win, mode) {
@@ -188,30 +190,50 @@ function runSelfTest(win, mode) {
     try {
       const js = mode === "layout"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<60;i++){ const s=document.getElementById('fw'); if(s&&s.options.length>1&&document.querySelector('.future-install')) break; await sleep(250); }
-             const st=document.getElementById('start'); st&&st.click(); await sleep(3500);
-             const r=el=>el?(b=>({x:Math.round(b.left),w:Math.round(b.width),h:Math.round(b.height),top:Math.round(b.top),bottom:Math.round(b.bottom)}))(el.getBoundingClientRect()):null;
-             const L=document.querySelector('.side-left'),deck=document.querySelector('.deck'),R=document.querySelector('.side-right'),cv=window.FM1&&window.FM1.panelCanvas;
-             const lb=L&&L.getBoundingClientRect(),db=deck&&deck.getBoundingClientRect(),rb=R&&R.getBoundingClientRect(),cb=cv&&cv.getBoundingClientRect();
-             return { vw:innerWidth, vh:innerHeight, left:r(L), deck:r(deck), right:r(R), canvas:r(cv),
-               flashInRight:!!R?.querySelector('.future-install'), firmwareInLeft:!!L?.querySelector('#fw'),
-               threeInaRow: lb&&db&&rb ? (lb.right<=db.left+1 && db.right<=rb.left+1 && Math.abs(lb.top-rb.top)<60) : false,
-               machineInView: !!cb && cb.top>=0 && cb.bottom<=innerHeight+1 && cb.left>=0 && cb.right<=innerWidth+1,
-               noSideScroll: document.documentElement.scrollWidth<=innerWidth+1 }; })()`
+             for(let i=0;i<60;i++){ const s=document.getElementById('fw'); if(s&&s.options.length>1) break; await sleep(250); }
+             const st=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Start'); st&&st.click(); await sleep(3500);
+             const r=el=>el?(b=>({x:Math.round(b.left),w:Math.round(b.width),h:Math.round(b.height),top:Math.round(b.top)}))(el.getBoundingClientRect()):null;
+             const L=document.getElementById('side-left'),deck=document.querySelector('.deck'),R=document.querySelector('.side.bar');
+             return { vw:innerWidth, vh:innerHeight, left:r(L), deck:r(deck), right:r(R),
+               flashInLeft:!!L?.querySelector('.install-box'), saveInLeft:!!L?.querySelector('.save-box'),
+               threeInaRow: L&&deck&&R ? (L.getBoundingClientRect().left<deck.getBoundingClientRect().left && deck.getBoundingClientRect().left<R.getBoundingClientRect().left && Math.abs(L.getBoundingClientRect().top-R.getBoundingClientRect().top)<60) : false,
+               pageScrolls: document.documentElement.scrollHeight>innerHeight+2, scrollH: document.documentElement.scrollHeight }; })()`
         : mode === "search"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&(document.getElementById('fw')?.options.length||0)>=259) break; await sleep(200); }
+             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&document.getElementById('fw-search-results')&&window.FM1?.fwText&&(document.getElementById('fw')?.options.length||0)>=257) break; await sleep(200); }
              const q=document.getElementById('fw-search'), results=document.getElementById('fw-search-results');
-             const run=async value=>{q.value=value;q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(80);return [...results.querySelectorAll('.fw-search-hit')].map(b=>b.dataset.id);};
+             if(!q||!results) return {fwCount:document.getElementById('fw')?.options.length,aurora:[],accent:[],version:[],cleared:true,missing:true};
+             const run=async value=>{q.value=value;q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(80);return [...results.querySelectorAll('.fw-search-hit[data-id]')].map(b=>b.dataset.id);};
              const aurora=await run('twochannels aurora'), accent=await run('coqui'), version=await run('0.9.1 FM-1_4747');
              q.value='';q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(40);
              return {fwCount:document.getElementById('fw')?.options.length,aurora,accent,version,cleared:results.hidden}; })()`
+        : mode === "install"
+        ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+             for(let i=0;i<80;i++){ if(document.getElementById('inst-flash')&&document.getElementById('inst-recovery')) break; await sleep(200); }
+             const box=document.querySelector('.future-install');
+             return {
+               hasBox:!!box, hasFlash:!!document.getElementById('inst-flash'),
+               hasResume:!!document.getElementById('inst-resume'),
+               hasRecovery:!!document.getElementById('inst-recovery'),
+               hasRollback:!!document.getElementById('inst-rollback'),
+               hasCopy:!!document.getElementById('inst-copy'),
+               hasTriage:!!document.getElementById('inst-triage-check'),
+               hasDeviceLab:!!document.getElementById('inst-device-lab'),
+               hasDesktopBridge:!!window.FM1Desktop?.usbCheck && !!window.FM1Desktop?.openFlasher && !!window.FM1Desktop?.checkUpdates,
+               hasUpdatesBtn:!!document.getElementById('app-upd-btn'),
+               hasDeadNav:!!document.querySelector('.sitenav a[href="#firmwares"], .sitenav a[href="#guide"], .sitenav a[href="#plugin"]'),
+               topWraps: (()=>{ const w=document.querySelector('header.site .wrap'); if(!w) return true; const kids=[...w.children].filter(el=>el.getClientRects().length); if(kids.length<2) return false; const tops=kids.map(el=>Math.round(el.getBoundingClientRect().top)); return Math.max(...tops)-Math.min(...tops)>18; })()
+             }; })()`
         : mode === "updates"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<80;i++){ const b=document.getElementById('scan-open-source'); if(b&&!b.disabled) break; await sleep(200); }
-             const button=document.getElementById('scan-open-source'), status=document.getElementById('open-source-status');
+             for(let i=0;i<80;i++){ if(document.getElementById('firmware-radar-scan')&&!document.getElementById('firmware-radar-scan').disabled) break; await sleep(200); }
+             const button=document.getElementById('firmware-radar-scan'), status=document.getElementById('firmware-radar-status');
+             const list=document.getElementById('firmware-radar-list'), meta=document.getElementById('firmware-radar-meta');
              button.click(); for(let i=0;i<120&&button.classList.contains('scanning');i++) await sleep(250);
-             return {finished:!button.classList.contains('scanning'),error:status.dataset.error==='true',status:status.textContent}; })()`
+             return {finished:!button.classList.contains('scanning'),error:status.dataset.error==='true',status:status.textContent,
+               hasList:!!list, listVisible:!list?.hidden, hasMeta:!!meta, rowCount:list?.querySelectorAll('li[data-id]').length||0,
+               hasFilters:!!document.getElementById('firmware-radar-filters'),
+               hasDiscard:!!document.getElementById('firmware-radar-discard')}; })()`
         : mode === "read"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms)); for(let i=0;i<60;i++){ if((document.getElementById('fw')?.options.length||0)>1) break; await sleep(250); } return { fav: (()=>{try{return localStorage.getItem('fm1.favs.v1')}catch(e){return 'ERR:'+e}})(), marker: (()=>{try{return localStorage.getItem('fm1.__selftest')}catch(e){return 'ERR'}})(), fwCount: document.getElementById('fw')?.options.length }; })()`
         : mode === "filefail"
@@ -261,12 +283,18 @@ function runSelfTest(win, mode) {
              try{ localStorage.setItem('fm1.__selftest','persisted'); }catch(e){ out.lsErr=String(e); }
              out.favNow=(()=>{try{return localStorage.getItem('fm1.favs.v1')}catch{return 'ERR'}})();
              return out; })()`;
-      const res = mode === "typing" ? await typingSelfTest(win) : await win.webContents.executeJavaScript(js, true);
+      const res = await win.webContents.executeJavaScript(js, true);
       console.log("SELFTEST_RESULT " + JSON.stringify(res));
       const passed = mode === "search"
-        ? Number(res.fwCount) === 259 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
+        ? Number(res.fwCount) === 257 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
+        : mode === "install"
+        ? res.hasBox && res.hasFlash && res.hasResume && res.hasRecovery && res.hasRollback
+          && res.hasCopy && res.hasTriage && res.hasDeviceLab && res.hasDesktopBridge
+          && res.hasUpdatesBtn && !res.hasDeadNav && !res.topWraps
         : mode === "updates"
-        ? res.finished && !res.error && /^(Up to date|Found \d+ new)/.test(res.status)
+        ? res.finished && !res.error && res.hasList && res.hasFilters && res.hasDiscard
+          && /^(Up to date|Found )/.test(res.status)
+          && (res.rowCount === 0 || res.listVisible)
         : mode === "read"
         ? res.marker === "persisted" && Number(res.fwCount) > 1
         : mode === "filefail"
@@ -277,10 +305,8 @@ function runSelfTest(win, mode) {
           ? res.initial && res.recovered && res.running
         : mode === "ports"
           ? !res.error && Array.isArray(res.inputs) && Array.isArray(res.outputs)
-        : mode === "typing"
-          ? res.sideTyped === "aws" && res.galleryTyped === "dr" && res.heldFromPage.length === 1 && res.releasedAfter.length === 0 && res.slider > res.sliderBefore
         : mode === "layout"
-          ? res.flashInRight && res.firmwareInLeft && res.threeInaRow && res.machineInView && res.noSideScroll
+          ? res.flashInLeft && res.saveInLeft && res.threeInaRow && !res.pageScrolls
           : Number(res.fwCount) > 1 && res.hasFavApi && res.hasGallery && res.hasLoader &&
             res.hasDeviceLab && res.hasRecovery && res.hasStart && res.running;
       if (!passed) {
@@ -297,20 +323,6 @@ function runSelfTest(win, mode) {
   });
 }
 
-// The standard menus plus "Check for App Updates…" (the desktop app itself, from GitHub
-// Releases; firmware updates are the page's own update radar).
-function appMenu() {
-  const check = { label: "Check for App Updates…", click: () => updates.checkForUpdates({ interactive: true, log: desktopLog }) };
-  const releases = { label: "Release Notes", click: () => shell.openExternal(updates.RELEASES) };
-  const mac = process.platform === "darwin";
-  return Menu.buildFromTemplate([
-    ...(mac ? [{ label: app.name, submenu: [{ role: "about" }, check, { type: "separator" }, { role: "services" },
-      { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { role: "quit" }] }] : []),
-    { role: "fileMenu" }, { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" },
-    { role: "help", submenu: [...(mac ? [] : [check]), releases] },
-  ]);
-}
-
 // Single-instance: clicking the icon again focuses the existing window instead of
 // spawning a second one (second windows never pick up new files and look "stuck").
 if (!app.requestSingleInstanceLock()) {
@@ -324,36 +336,80 @@ if (!app.requestSingleInstanceLock()) {
   desktopLog("startup", { softwareRendering, gpuCompositing: app.getGPUFeatureStatus().gpu_compositing });
   // The installer uses Web MIDI SysEx.  Electron otherwise treats this as an
   // ungranted browser permission, so scope it to our local, packaged origin.
-  // (a check passes the bare origin, "fm1://app"; a request the page's URL)
-  const ours = (url) => /^fm1:\/\/app(?:\/|$)/.test(String(url || ""));
+  // Mic is denied by default. Tape arms a one-shot allow only after the user confirms Feed.
+  let allowMicOnce = false;
+  const ours = (url) => String(url || "").startsWith("fm1://app");
   const permitDeviceAccess = (_webContents, permission, callback, details) => {
-    callback((permission === "midi" || permission === "midiSysex") && ours(details?.requestingUrl));
+    const origin = details?.requestingUrl || "";
+    if ((permission === "midi" || permission === "midiSysex") && ours(origin)) { callback(true); return; }
+    if ((permission === "media" || permission === "microphone" || permission === "audioCapture") && allowMicOnce && ours(origin)) {
+      allowMicOnce = false;
+      callback(true);
+      return;
+    }
+    callback(false);
   };
   session.defaultSession.setPermissionRequestHandler(permitDeviceAccess);
-  session.defaultSession.setPermissionCheckHandler((_webContents, permission, requestingOrigin) =>
-    (permission === "midi" || permission === "midiSysex") && ours(requestingOrigin));
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission, requestingOrigin) => {
+    if ((permission === "midi" || permission === "midiSysex") && ours(requestingOrigin)) return true;
+    if ((permission === "media" || permission === "microphone" || permission === "audioCapture") && allowMicOnce && ours(requestingOrigin)) return true;
+    return false;
+  });
+  ipcMain.handle("fm1:allow-mic-once", async () => { allowMicOnce = true; return { ok: true }; });
   ipcMain.handle("fm1:open-flasher", async () => {
-    const executable = mFlasherPath();
-    if (!executable) {
+    if (process.platform !== "win32") {
       return {
         ok: false,
-        message: "M-Flasher is not installed. Download its Windows ZIP, extract it, then open M-Flasher.exe.",
-        download: "https://github.com/jvitkauskas/m-flasher/releases/latest",
+        message: "The flash recovery tool is Windows-only. On this system use the in-app USB-MIDI installer, or run the desktop app on Windows for low-level recovery.",
+      };
+    }
+    const executable = mFlasherPath();
+    if (!executable) {
+      desktopLog("m-flasher-missing", {});
+      return {
+        ok: false,
+        message: "The flash recovery tool is not available. Reinstall the Windows desktop app.",
       };
     }
     return new Promise((resolve) => {
       try {
-        const child = spawn(executable, [], { detached: true, stdio: "ignore", windowsHide: false });
-        child.once("error", (error) => resolve({ ok: false, message: `Could not open M-Flasher: ${error.message}` }));
-        child.once("spawn", () => { child.unref(); resolve({ ok: true, path: executable }); });
-      } catch (error) { resolve({ ok: false, message: `Could not open M-Flasher: ${error.message}` }); }
+        const child = spawn(executable, [], { detached: true, stdio: "ignore", windowsHide: false, windowsVerbatimArguments: false });
+        child.once("error", (error) => {
+          desktopLog("m-flasher-spawn-error", { message: String(error && error.message || error) });
+          resolve({ ok: false, message: `Could not open flash recovery tool: ${error.message}` });
+        });
+        child.once("spawn", () => {
+          child.unref();
+          desktopLog("m-flasher-opened", {});
+          // Never echo the absolute path back to the renderer (troubleshooting text forbids paths).
+          resolve({ ok: true });
+        });
+      } catch (error) {
+        desktopLog("m-flasher-spawn-error", { message: String(error && error.message || error) });
+        resolve({ ok: false, message: `Could not open flash recovery tool: ${error.message}` });
+      }
     });
   });
+  ipcMain.handle("fm1:usb-check", async () => usbCheck());
+  ipcMain.handle("fm1:check-updates", async () => {
+    await updates.checkForUpdates({ interactive: true, log: desktopLog });
+    return { ok: true };
+  });
+  // The standard menus plus "Check for App Updates…" (this desktop app itself, from GitHub Releases).
+  const check = { label: "Check for App Updates…", click: () => updates.checkForUpdates({ interactive: true, log: desktopLog }) };
+  const releases = { label: "Release Notes", click: () => shell.openExternal(updates.RELEASES) };
+  const mac = process.platform === "darwin";
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    ...(mac ? [{ label: app.name, submenu: [{ role: "about" }, check, { type: "separator" }, { role: "services" },
+      { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { role: "quit" }] }] : []),
+    { role: "fileMenu" }, { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" },
+    { role: "help", submenu: [...(mac ? [] : [check]), releases] },
+  ]));
+  // Quiet startup check after the window has settled (matches private build cadence).
+  setTimeout(() => updates.checkForUpdates({ log: desktopLog }).catch(() => {}), 15000);
   protocol.handle("fm1", async (req) => {
     const u = new URL(req.url);
-    let p;
-    try { p = decodeURIComponent(u.pathname || "/"); }
-    catch { return new Response("bad request", { status: 400 }); }   // a malformed %-escape
+    let p = decodeURIComponent(u.pathname || "/");
     if (p === "/" || p === "") p = "/emulator/index.html";
     const file = path.normalize(path.join(ROOT, p));
     if (!isInsideRoot(file)) return new Response("forbidden", { status: 403 });
@@ -365,12 +421,8 @@ if (!app.requestSingleInstanceLock()) {
       return new Response("not found", { status: 404 });
     }
   });
-  Menu.setApplicationMenu(appMenu());
   const win = createWindow();
   if (process.env.FM1_SELFTEST) runSelfTest(win, process.env.FM1_SELFTEST);
-  // a quiet check shortly after launch: it only speaks up when a newer release exists
-  else if (app.isPackaged && process.env.FM1_NO_UPDATE_CHECK !== "1")
-    setTimeout(() => updates.checkForUpdates({ log: desktopLog }), 15000);
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
   });
 }

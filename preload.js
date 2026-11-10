@@ -4,4 +4,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("FM1Desktop", {
   openFlasher: () => ipcRenderer.invoke("fm1:open-flasher"),
+  usbCheck: () => ipcRenderer.invoke("fm1:usb-check"),
+  checkUpdates: () => ipcRenderer.invoke("fm1:check-updates"),
+  // One-shot: Tape → Mic → Feed confirm arms mic permission for the next prompt only.
+  allowMicOnce: () => ipcRenderer.invoke("fm1:allow-mic-once"),
 });

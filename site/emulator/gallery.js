@@ -1,46 +1,91 @@
 // Firmware browser for the FM-1 emulator: a searchable, category-filtered card gallery over the
-// whole public catalog. Reads firmwares.json + classify.json directly; clicking a card loads
+// whole catalog (now ~191). Reads firmwares.json + classify.json directly; clicking a card loads
 // that firmware. Pure DOM, injected after the page builds.
 (function () {
   "use strict";
-  const V = "62"; // cache version, keep in step with main.js
+  // The page's merged list (this build's firmwares plus any radar finds), once main.js has it.
+  const pageCatalog = () => new Promise((resolve) => {
+    const t0 = Date.now();
+    (function wait() {
+      if (window.FM1Catalog) return resolve(window.FM1Catalog);
+      if (Date.now() - t0 > 6000) return resolve(null);
+      setTimeout(wait, 50);
+    })();
+  });
+  const V = "61"; // catalog cache version, keep in step with main.js
+  const ICONS = {
+    synth: '<path d="M2 12c3 0 3-8 6-8s3 16 6 16 3-8 6-8"/>',
+    groove: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    drums: '<circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/><path d="M3 4h18M3 9h18M6 15V9m12 6V4"/>',
+    chords: '<path d="M5 19V5l11-2v14"/><circle cx="3" cy="19" r="2"/><circle cx="14" cy="17" r="2"/><path d="M18 6h4m-2-2v4"/>',
+    tracker: '<path d="M5 3v18m7-18v18m7-18v18M2 8h20M2 16h20"/>',
+    dev: '<path d="m8 5-5 7 5 7m8-14 5 7-5 7m-3-16-3 18"/>',
+    other: '<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/>',
+  };
+  function cardIcon(f) {
+    const kind = Array.isArray(f.kind) ? f.kind[0] : f.kind;
+    return `<span class="gal-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[kind] || ICONS.other}</svg></span>`;
+  }
 
   function ready(fn) {
     const t = setInterval(() => {
       const fwSel = document.getElementById("fw");
       const nav = document.querySelector(".sitenav") || document.querySelector("header.site .wrap");
-      if (fwSel && nav && window.FM1Catalog) { clearInterval(t); fn(fwSel, nav); }
+      if (fwSel && nav) { clearInterval(t); fn(fwSel, nav); }
     }, 120);
     setTimeout(() => clearInterval(t), 8000);
   }
 
   ready(async (fwSel, nav) => {
-    let cat, capsArr;
+    let cat, capsArr, healthDoc;
     try {
-      [cat, capsArr] = await Promise.all([
-        Promise.resolve(window.FM1Catalog),
+      [cat, capsArr, healthDoc] = await Promise.all([
+        pageCatalog().then((c) => c || fetch("firmwares.json?v=" + V).then((r) => r.json())),
         fetch("classify.json?v=" + V).then((r) => r.json()).catch(() => []),
+        fetch("boot-health.json?v=" + V).then((r) => r.json()).catch(() => null),
       ]);
     } catch { return; }
     const CAPS = Object.fromEntries((capsArr || []).map((c) => [c.id, c]));
+    // Boot health is optional: with no boot-health.json the gallery behaves
+    // exactly as before rather than claiming every firmware is fine.
+    const HEALTH = (healthDoc && healthDoc.entries) || {};
+    // Labels state what was measured, not a verdict on the firmware: the check
+    // is headless, and a heavy firmware can be fine interactively.
+    const HEALTH_LABEL = { halts: "Halts here", blank: "No screen in test", slow: "Too slow to test", error: "Audit error" };
+    const health = (f) => HEALTH[f.id] || null;
+    const healthy = (f) => { const h = health(f); return !h || h.status === "ok" || h.status === "slow"; };
     const fws = cat.firmwares.filter((f) => f.id && f.id !== "local" && f.package);
-    injectStyles();
 
-    // the firmwares booted most recently, newest first
-    const RKEY = "fm1.recent";
-    let recent = [];
-    try { const a = JSON.parse(localStorage.getItem(RKEY) || "[]"); if (Array.isArray(a)) recent = a.filter((x) => typeof x === "string"); } catch { /* unreadable: start empty */ }
-    fwSel.addEventListener("change", () => {
-      const id = fwSel.value;
-      if (!id || id === "local" || !fws.some((f) => f.id === id)) return;
-      recent = [id, ...recent.filter((x) => x !== id)].slice(0, 12);
-      try { localStorage.setItem(RKEY, JSON.stringify(recent)); } catch { /* storage full: keep it for this session */ }
-    });
+    // Recently played: most-recent-first list of firmware ids, in localStorage.
+    // Recorded on any #fw change, so URL loads and other modules count too.
+    const RECENT_KEY = "fm1.recent.v1", RECENT_MAX = 24;
+    const known = new Set(fws.map((f) => f.id));
+    function loadRecent() {
+      try {
+        const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+        return Array.isArray(a) ? a.filter((id) => typeof id === "string" && known.has(id)) : [];
+      } catch { return []; }
+    }
+    function recordRecent(id) {
+      if (!id || !known.has(id)) return loadRecent();
+      const list = loadRecent().filter((x) => x !== id);
+      list.unshift(id);
+      while (list.length > RECENT_MAX) list.pop();
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch (e) { console.warn("recent: could not save", e); }
+      return list;
+    }
+    const recentRank = () => { const m = new Map(); loadRecent().forEach((id, i) => m.set(id, i)); return m; };
+    fwSel.addEventListener("change", () => recordRecent(fwSel.value));
+    if (fwSel.value) recordRecent(fwSel.value);   // the firmware booted at page load
+    window.FM1Recent = { list: loadRecent, record: recordRecent, _key: RECENT_KEY };
+
+    injectStyles();
 
     const CATS = [
       { key: "all", label: "All" },
-      { key: "recent", label: "Recent", t: (f) => recent.includes(f.id) },
+      { key: "recent", label: "Recent", t: (f) => recentRank().has(f.id) },
       { key: "fav", label: "★ Favorites", t: (f) => favIds().includes(f.id) },
+      { key: "noted", label: "Noted", t: (f) => !!(window.FM1Notes && window.FM1Notes.has(f.id)) },
       { key: "sampler", label: "Samplers", t: (f, c) => c && c.audioIn },
       { key: "banks", label: "DX7 banks", t: (f, c) => c && c.banks },
       { key: "seq", label: "Sequencer", t: (f, c) => c && c.feats && (c.feats.includes("sequencer") || c.feats.includes("looper")) },
@@ -48,6 +93,11 @@
       { key: "mpe", label: "MPE", t: (f, c) => c && c.feats && c.feats.includes("mpe") },
       { key: "game", label: "Games & fun", t: (f) => /\b(doom|nes|game|boy|cat|zombie|fart|trump|reggae|dino|coin|karaoke|quest|sky|witch|bongo|arcade|pet)\b/i.test(f.name + " " + (f.about || "")) },
     ];
+    // Only offer the boot-health filters when there is data behind them.
+    if (Object.keys(HEALTH).length) {
+      CATS.push({ key: "runs", label: "Runs here", t: (f) => { const h = health(f); return h && h.status === "ok"; } });
+      CATS.push({ key: "issues", label: "Known issues", t: (f) => !healthy(f) });
+    }
     // favorites: the sidebar's star (favorites.js) and these cards share one list
     const favIds = () => { try { return window.FM1Fav ? window.FM1Fav.ids() : []; } catch { return []; } };
     const capList = (f) => {
@@ -90,16 +140,18 @@
       const chip = document.createElement("button");
       chip.className = "gal-chip" + (cdef.key === "all" ? " on" : "");
       chip.innerHTML = `${esc(cdef.label)} <span class="gal-chip-n">${n}</span>`; chip.dataset.key = cdef.key;
-      if (cdef.key === "recent" || cdef.key === "fav") chip.hidden = !n;
+      if (cdef.key === "recent" || cdef.key === "fav") chip.style.display = n ? "" : "none";
       chip.onclick = () => { activeCat = cdef.key; chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x === chip)); render(); };
       chipsWrap.appendChild(chip);
     }
 
     function matches(f) {
-      const norm = (value) => String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      const terms = norm(q.value).trim().split(/\s+/).filter(Boolean);
-      const hay = norm([f.id, f.name, f.version, f.author, f.license, f.kind, f.product, f.about, f.repo].join(" "));
-      if (!terms.every((term) => hay.includes(term))) return false;
+      const term = q.value.trim().toLowerCase();
+      if (term) {
+        const note = (window.FM1Notes && window.FM1Notes.get(f.id)) || "";
+        const hay = (f.name + " " + (f.author || "") + " " + (f.about || "") + " " + (f.product || "") + " " + note).toLowerCase();
+        if (!hay.includes(term)) return false;
+      }
       const cdef = CATS.find((c) => c.key === activeCat);
       if (cdef && cdef.t && !cdef.t(f, CAPS[f.id])) return false;
       return true;
@@ -113,9 +165,34 @@
 
     function render() {
       const cur = fwSel.value;
-      const list = fws.filter(matches);
-      if (activeCat === "recent") list.sort((a, b) => recent.indexOf(a.id) - recent.indexOf(b.id));
-      if (activeCat === "fav") { const order = favIds(); list.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); }
+      // Keep the Recent chip's count live, and hide it until something has been
+      // played — a "Recent 0" chip before you have loaded anything is just noise.
+      const rank = recentRank();
+      const recentChip = chipsWrap.querySelector('[data-key="recent"]');
+      if (recentChip) {
+        recentChip.style.display = rank.size ? "" : "none";
+        const nEl = recentChip.querySelector(".gal-chip-n");
+        if (nEl) nEl.textContent = rank.size;
+        if (!rank.size && activeCat === "recent") {
+          activeCat = "all";
+          chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x.dataset.key === "all"));
+        }
+      }
+      // The Noted chip's count is live too, and it hides until you've written one.
+      const noteCount = (window.FM1Notes && window.FM1Notes.count && window.FM1Notes.count()) || 0;
+      const notedChip = chipsWrap.querySelector('[data-key="noted"]');
+      if (notedChip) {
+        notedChip.style.display = noteCount ? "" : "none";
+        const nEl = notedChip.querySelector(".gal-chip-n");
+        if (nEl) nEl.textContent = noteCount;
+        if (!noteCount && activeCat === "noted") {
+          activeCat = "all";
+          chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x.dataset.key === "all"));
+        }
+      }
+      let list = fws.filter(matches);
+      if (activeCat === "recent") list = list.slice().sort((a, b) => rank.get(a.id) - rank.get(b.id));
+      if (activeCat === "fav") { const order = favIds(); list = list.slice().sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); }
       countEl.textContent = list.length + " of " + fws.length;
       grid.replaceChildren();
       if (!list.length) { const e = document.createElement("p"); e.className = "gal-empty"; e.textContent = "Nothing matches — try a different word or category."; grid.appendChild(e); return; }
@@ -124,14 +201,21 @@
       for (const f of list) {
         const item = document.createElement("div"); item.className = "gal-item";
         const card = document.createElement("button");
-        card.className = "gal-card" + (f.id === cur ? " cur" : "");
+        const h = health(f);
+        const bad = h && h.status !== "ok" && h.status !== "slow";
+        card.className = "gal-card" + (f.id === cur ? " cur" : "") + (bad ? " bad" : "");
         card.onclick = () => load(f.id);
+        if (h && h.note) card.title = HEALTH_LABEL[h.status] + " — " + h.note;
         const caps = capList(f).map((t) => `<span class="gal-cap">${t}</span>`).join("");
+        const flag = h && h.status !== "ok"
+          ? `<span class="gal-health ${h.status}">${esc(HEALTH_LABEL[h.status] || h.status)}</span>` : "";
+        const noted = window.FM1Notes && window.FM1Notes.has(f.id);
+        if (noted) card.title = (card.title ? card.title + " · " : "") + "Your note: " + window.FM1Notes.get(f.id).slice(0, 80);
         card.innerHTML =
-          `<span class="gal-name">${esc(f.name)}${f.version ? ` <em>${esc(f.version)}</em>` : ""}</span>` +
+          `<span class="gal-title">${cardIcon(f)}<span class="gal-name">${esc(f.name)}${f.version ? ` <em>${esc(f.version)}</em>` : ""}</span>${noted ? '<span class="gal-noted" title="You noted this">📝</span>' : ""}</span>` +
           `<span class="gal-by">${esc(f.author || "")}</span>` +
           `<span class="gal-about">${esc((f.about || "").slice(0, 110))}</span>` +
-          `<span class="gal-caps">${caps}</span>`;
+          `<span class="gal-caps">${flag}${caps}</span>`;
         item.appendChild(card);
         if (window.FM1Fav) {
           const on = favs.includes(f.id);
@@ -150,10 +234,11 @@
     }
 
     function refreshRecent() {
-      for (const [key, ids] of [["recent", recent], ["fav", favIds()]]) {
+      // (the Recent and Noted chips keep their own counts in render)
+      for (const [key, ids] of [["fav", favIds()]]) {
         const chip = chipsWrap.querySelector(`.gal-chip[data-key="${key}"]`);
         const n = fws.filter((f) => ids.includes(f.id)).length;
-        if (chip) { chip.hidden = !n; chip.querySelector(".gal-chip-n").textContent = n; }
+        if (chip) { chip.style.display = n ? "" : "none"; chip.querySelector(".gal-chip-n").textContent = n; }
         if (!n && activeCat === key) { activeCat = "all"; chipsWrap.querySelectorAll(".gal-chip").forEach((x) => x.classList.toggle("on", x.dataset.key === "all")); }
       }
     }
@@ -165,13 +250,7 @@
     ov.querySelector("#gal-x").onclick = close;
     ov.querySelector("#gal-rand").onclick = () => { const list = fws.filter(matches); if (list.length) load(list[Math.floor(Math.random() * list.length)].id); };
     ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
-    q.addEventListener("input", () => {
-      if (q.value.trim()) {
-        activeCat = "all";
-        chipsWrap.querySelectorAll(".gal-chip").forEach((chip) => chip.classList.toggle("on", chip.dataset.key === "all"));
-      }
-      render();
-    });
+    q.addEventListener("input", render);
     q.addEventListener("keydown", (e) => { if (e.key === "Enter") { const first = fws.filter(matches)[0]; if (first) load(first.id); } });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !ov.hidden) { close(); return; }
@@ -191,7 +270,9 @@
         const b = document.createElement("button");
         b.id = "gal-side"; b.type = "button"; b.textContent = `Browse all ${fws.length}`;
         b.onclick = open;
-        search.parentNode.insertBefore(b, search.nextSibling);
+        // Place after the whole search wrap (input + results), not between them.
+        const anchor = document.getElementById("fw-search-wrap") || search;
+        anchor.parentNode.insertBefore(b, anchor.nextSibling);
       }, 150);
       setTimeout(() => clearInterval(t), 8000);
     })();
@@ -237,13 +318,24 @@
       .gal-star:hover,.gal-star:focus-visible{color:var(--amber-ink,var(--amber));border-color:var(--ui-line,#2a2c31);outline:none}
       .gal-star.on{color:var(--amber-ink,var(--amber))}
       .gal-card.cur{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
+      .gal-title{display:flex;align-items:center;gap:9px;min-height:32px}
+      .gal-icon{width:29px;height:29px;flex:none;display:grid;place-items:center;color:var(--amber-hi);background:color-mix(in srgb,var(--amber) 14%,var(--ui-surface,#141518));border:1px solid color-mix(in srgb,var(--amber) 35%,var(--ui-line,#2a2c31));border-radius:8px}
+      .gal-icon svg{width:18px;height:18px}
       .gal-name{font:700 14px 'Space Grotesk',-apple-system,sans-serif;color:var(--ui-text,#f2f4f7)}
       .gal-name em{font-style:normal;color:var(--ui-dim,#8c93a0);font-weight:500;font-size:12px}
+      .gal-noted{margin-left:auto;flex:none;font-size:13px;line-height:1;opacity:.9;filter:saturate(.9)}
       .gal-by{font-size:11.5px;color:var(--amber-hi)}
       .gal-about{font-size:11.5px;color:var(--ui-dim,#9aa0ab);line-height:1.35;margin-top:2px;min-height:2.4em}
       .gal-caps{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
       .gal-cap{font:600 10px 'Space Mono',monospace;color:var(--ui-text2,#cdd2d8);background:var(--ui-surface,#1e2024);border:1px solid var(--ui-line,#2c2f35);
         border-radius:5px;padding:1px 6px}
+      /* Boot health: a firmware that will not run here is dimmed but still
+         loadable — the check is headless, so it is a warning, not a verdict. */
+      .gal-health{font:600 10px 'Space Mono',monospace;border-radius:5px;padding:1px 6px}
+      .gal-health.halts,.gal-health.blank,.gal-health.error{color:#ffc9c9;background:#331a1c;border:1px solid #5d2a2e}
+      .gal-health.slow{color:#ffe2b3;background:#31271a;border:1px solid #5c4526}
+      .gal-card.bad{opacity:.62}
+      .gal-card.bad:hover,.gal-card.bad:focus{opacity:1}
       .gal-empty{grid-column:1/-1;color:var(--ui-dim,#8c93a0);text-align:center;padding:30px 0}
       @media (max-width:520px){ .gal-box{max-height:94vh} .gal-grid{grid-template-columns:1fr 1fr;padding:10px} }
     `;

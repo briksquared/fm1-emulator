@@ -27,12 +27,18 @@ export async function validatePackage(bytes, expected = {}) {
   let product;
   try { product = productOf(bytes); } catch (e) { throw bad("badpackage", `This is not an FM-1 firmware package: ${e.message}.`); }
   if (expected.product && expected.product !== product) throw bad("badpackage", `The package identifies as ${product}, the catalog says ${expected.product}.`);
-  try { packageLayout(bytes); } catch (e) { throw bad("layout", `This file is not laid out like an FM-1 firmware package: ${e.message}. Nothing was written.`); }
+  // Only FM-1 packages — never SMK-37 / other M-VAVE models — may be offered to the updater.
+  // Catalog products use 1–10 digits (e.g. FM-1_4747 and FM-1_82012900). Cap keeps non-FM junk out.
+  if (!/^FM-1_\d{1,10}$/i.test(product)) throw bad("badpackage", `This package is for ${product}, not an FM-1. Nothing was written.`);
+  let layout;
+  try { layout = packageLayout(bytes); } catch (e) { throw bad("layout", `This file is not laid out like an FM-1 firmware package: ${e.message}. Nothing was written.`); }
   const hash = await sha256(bytes);
   if (expected.sha256 && expected.sha256.toLowerCase() !== hash) throw bad("checksum", "The downloaded package does not match its published checksum, so it was not written. Download it again.");
   const image = logicalImage(bytes);
   if (!image.length) throw bad("badpackage", "The package has no firmware image.");
-  return { product, sha256: hash, image, size: bytes.length };
+  // Image must stay inside the safe flash map even after logical unwrap.
+  if (image.length > FLASH.keySector) throw bad("layout", "This package's flash image would reach the unit's chip key sector. Nothing was written.");
+  return { product, sha256: hash, image, size: bytes.length, layout };
 }
 
 // ---------------------------------------------------------------- flash layout
@@ -110,13 +116,30 @@ const NEXT = {
 };
 export const JOURNAL_KEY = "fm1.flash-journal.v1";
 
+const JOURNAL_STATUSES = new Set(["running", "failed", "done", "idle"]);
+// An interrupted write older than this is still offered (the loader may still be waiting),
+// but the UI can warn that the record is stale.
+export const JOURNAL_STALE_MS = 24 * 60 * 60 * 1000;
+export function journalAgeMs(j, now = Date.now()) {
+  const t = Number(j?.updated || j?.started || 0);
+  return t > 0 ? Math.max(0, now - t) : 0;
+}
+
 export class FlashJournal {
   constructor(storage, key = JOURNAL_KEY) {
     this.storage = storage;
     this.key = key;
   }
   read() {
-    try { return JSON.parse(this.storage.getItem(this.key) || "null"); } catch { return null; }
+    try {
+      const j = JSON.parse(this.storage.getItem(this.key) || "null");
+      if (!j || typeof j !== "object" || Array.isArray(j)) return null;
+      if (j.status != null && !JOURNAL_STATUSES.has(j.status)) return null;
+      if ((j.status === "running" || j.status === "failed") && (!j.phase || !PHASES.includes(j.phase))) return null;
+      if (j.sha256 != null && (typeof j.sha256 !== "string" || (j.sha256 && !/^[a-f0-9]{64}$/i.test(j.sha256)))) return null;
+      if (j.product != null && (typeof j.product !== "string" || (j.product && !/^(ota-)?FM-1_\d{1,10}$/i.test(j.product)))) return null;
+      return j;
+    } catch { return null; }
   }
   save(j) {
     // (storage full or blocked: the flash still runs, but a crash now could not offer recovery)
@@ -126,13 +149,23 @@ export class FlashJournal {
   }
   // a new attempt; the last good install is kept so a later failure can roll back to it
   begin({ fwId = null, name, product, sha256, previous = null, resume = false }) {
+    if (!sha256 || !/^[a-f0-9]{64}$/i.test(sha256)) throw new Error("install journal: package sha256 required before writing");
+    if (product && !/^(ota-)?FM-1_\d{1,10}$/i.test(product)) throw new Error("install journal: refusing non-FM-1 product");
     const prior = this.read();
     return this.save({
-      fwId, name, product, sha256, previous, resume,
-      phase: "checked", status: "running", code: null, served: 0,
+      fwId, name, product, sha256: sha256.toLowerCase(), previous, resume,
+      phase: "checked", status: "running", code: null, served: 0, badreq: 0,
       started: Date.now(), updated: Date.now(),
       lastGood: prior?.status === "done" ? { fwId: prior.fwId, name: prior.name, product: prior.product, sha256: prior.sha256 } : prior?.lastGood || null,
     });
+  }
+  // Count protocol "asked outside the image" failures for this attempt. After the limit the UI
+  // must refuse another Finish of the same package and push Roll back / Advanced recovery.
+  bumpBadreq() {
+    const j = this.read();
+    if (!j || (j.status !== "running" && j.status !== "failed")) return null;
+    const badreq = (Number(j.badreq) || 0) + 1;
+    return this.save({ ...j, badreq, status: "failed", code: "badreq", updated: Date.now() });
   }
   advance(phase, extra = {}) {
     const j = this.read();
@@ -159,7 +192,7 @@ export class FlashJournal {
 // an install.
 export const LOG_KEY = "fm1.flash-log.v1";
 export const LOG_MAX = 50;
-export const LOG_STEPS = ["check", "confirm", "cancel", "start", "stage", "loader", "write", "reboot", "done", "fail", "usb-check", "m-flasher", "copy-info"];
+export const LOG_STEPS = ["check", "confirm", "cancel", "start", "stage", "loader", "write", "reboot", "done", "fail", "usb-check", "recovery", "copy-info"];
 const tidy = (v, n) => (v == null ? null : String(v).replace(/[^\w .:+#()/-]/g, "").slice(0, n) || null);
 export class FlashLog {
   constructor(storage, key = LOG_KEY, max = LOG_MAX) {
@@ -178,7 +211,7 @@ export class FlashLog {
       t: new Date().toISOString(),
       step: LOG_STEPS.includes(step) ? step : "other",
       code: /^[a-z]{1,24}$/.test(code || "") ? code : (code ? "other" : null),
-      product: /^(ota-)?FM-1_\d{1,4}$/i.test(product || "") ? product : null,
+      product: /^(ota-)?FM-1_\d{1,10}$/i.test(product || "") ? product : null,
       mode: ["install", "resume", "rollback"].includes(mode) ? mode : null,
     };
     for (const k of Object.keys(e)) if (e[k] == null) delete e[k];
@@ -213,40 +246,71 @@ export function troubleshootingText({ journal = null, log = [], seen = null, usb
 //  - from the loader on, the unit stays in update mode until a whole image is written: resume
 //    with the same package, or roll back by writing the last good one through the loader
 //  - after the write, only the restart is outstanding: power-cycle and scan
-export function pendingRecovery(j) {
+// How many times the same interrupted package may throw badreq before we refuse another Finish.
+export const BADREQ_LIMIT = 2;
+
+export function pendingRecovery(j, { now = Date.now(), staleMs = JOURNAL_STALE_MS } = {}) {
   if (!j || (j.status !== "running" && j.status !== "failed")) return null;
   const at = PHASES.indexOf(j.phase);
   if (at < 0 || j.phase === "done") return null;
-  if (at < PHASES.indexOf("loader")) return { kind: "retry", journal: j };
-  if (j.phase === "rebooting") return { kind: "restart", journal: j };
-  return { kind: "resume", journal: j, rollback: j.lastGood && j.lastGood.sha256 !== j.sha256 ? j.lastGood : null };
+  const stale = journalAgeMs(j, now) >= staleMs;
+  const badreq = Number(j.badreq) || 0;
+  const badreqBlocked = badreq >= BADREQ_LIMIT;
+  const rollback = j.lastGood && j.lastGood.sha256 && j.lastGood.sha256 !== j.sha256 ? j.lastGood : null;
+  if (at < PHASES.indexOf("loader")) return { kind: "retry", journal: j, stale, badreq, badreqBlocked, rollback };
+  if (j.phase === "rebooting") return { kind: "restart", journal: j, stale, badreq, badreqBlocked, rollback };
+  return {
+    kind: "resume",
+    journal: j,
+    rollback,
+    stale,
+    badreq,
+    badreqBlocked,
+  };
+}
+
+/** What the confirm dialog must force the user to acknowledge before a destructive write. */
+export function writeSafetyFlags(j, { hasVaultLastGood = false, journalUnsaved = false } = {}) {
+  const lastGood = j?.status === "done"
+    ? { fwId: j.fwId, name: j.name, product: j.product, sha256: j.sha256 }
+    : j?.lastGood || null;
+  return {
+    hasRollbackTarget: !!(lastGood && lastGood.sha256),
+    rollbackReady: !!(lastGood && lastGood.sha256 && hasVaultLastGood),
+    // `unsaved` lives on the FlashJournal instance, not the persisted record — pass it in.
+    journalUnsaved: !!journalUnsaved,
+  };
 }
 
 // ---------------------------------------------------------------- messages
 // Every updater/validation code: what happened, and the one next step.
 export const HELP = {
   badpackage: ["That file is not a firmware for this unit.", "Pick a firmware from the list, or a .fwsc made for the FM-1."],
-  checksum: ["The package failed its checksum, so nothing was written.", "Check the internet connection and press Deploy again."],
+  checksum: ["The package failed its checksum, so nothing was written.", "Check the internet connection and press Install again."],
   layout: ["This file is not laid out like an FM-1 firmware package, so nothing was written.", "Pick a firmware from the list, or a .fwsc made for the FM-1 (not an SMK-37 or other model)."],
   midiaccess: ["This browser cannot reach USB-MIDI.", "Use the FM-1 Emulator desktop app, or Chrome or Edge."],
-  midiperm: ["MIDI access was not allowed.", "Allow MIDI (with SysEx) for this page, then press Deploy again."],
+  midiperm: ["MIDI access was not allowed.", "Allow MIDI (with SysEx) for this page, then press Install again."],
   nomidi: ["No USB-MIDI device is visible.", "Connect the FM-1 with a USB data cable (charge-only cables do not work), then press SCAN."],
-  noport: ["The FM-1 is not among the connected MIDI devices.", "Connect it with a USB data cable. If its firmware has no USB-MIDI update port, use download mode with M-Flasher (Recovery options)."],
+  noport: ["The FM-1 is not among the connected MIDI devices.", "Connect it with a USB data cable. If the screen is black or it still is not found, open Screen black or not found? below."],
   busy: ["Another app is holding the FM-1's MIDI port.", "Close DAWs and MIDI tools (and other copies of this app), then press SCAN."],
-  notfound: ["Nothing answered as an FM-1.", "Check the cable, then press SCAN. If the unit does not respond, use download mode with M-Flasher (Recovery options)."],
+  notfound: ["Nothing answered as an FM-1.", "Check the cable, then press Check connection. If it still does not answer, open Screen black or not found? below."],
   model: ["The connected unit is a different product than this package is for.", "Pick a package made for the connected unit. Nothing was written."],
-  inupdate: ["The FM-1 is waiting in update mode from an earlier install.", "Press Resume interrupted install, or Roll back to put the previous firmware back."],
-  downloadmode: ["The running firmware does not take updates over USB-MIDI. Nothing was written.", "Use download mode with M-Flasher (Recovery options) to flash this unit."],
-  stopped: ["The FM-1 stopped answering during the install.", "Replug the USB cable and press Resume interrupted install."],
-  lost: ["The FM-1 was disconnected during the install.", "Do not switch it off. Reconnect it, press SCAN, and if it shows update mode press Resume interrupted install. If it was switched off or its battery ran out, it may not come back in update mode."],
-  badreq: ["The FM-1 asked for data outside the package, so the install stopped.", "Press Resume interrupted install with the same firmware; if it happens again, roll back."],
-  noloader: ["The update loader did not appear after staging.", "Replug the USB cable and press Resume interrupted install."],
+  inupdate: ["The FM-1 is waiting in update mode from an earlier install.", "Press Finish interrupted install with the same firmware, or Roll back to put the previous firmware back."],
+  downloadmode: ["The running firmware does not take updates over USB-MIDI. Nothing was written.", "This app cannot install on this unit. See Advanced recovery under Recovery and help for what a separate tool can do."],
+  stopped: ["The FM-1 stopped answering during the install.", "Do not switch it off. Replug the USB cable, press Check connection, and if it shows update mode press Finish interrupted install."],
+  lost: ["The FM-1 was disconnected during the install.", "Do not switch it off. Reconnect the cable, press Check connection, and if it shows update mode press Finish interrupted install. If it was switched off or its battery ran out, it may not return to update mode: open Screen black or not found?"],
+  badreq: ["The FM-1 asked for data outside the package, so the install stopped.", "Do not switch it off. Try Finish interrupted install once with the same firmware; if it stops the same way, do not keep retrying: use Roll back, or see Advanced recovery."],
+  badreqlimit: ["The same package failed the same way twice (bad request outside the image).", "Do not Finish that package again. Use Roll back if offered, or Advanced recovery. Keep the FM-1 powered."],
+  noloader: ["The update loader did not appear after the first step. Nothing was written to the firmware area yet.", "Replug the USB cable, press Check connection, and if it shows update mode press Finish interrupted install; if it shows the old firmware, press Install again."],
   noreturn: ["The firmware was written but the FM-1 did not restart on its own.", "Power-cycle the FM-1, then press SCAN to check the new firmware."],
-  mismatch: ["The FM-1 restarted with a different firmware than the one written.", "Press Deploy again with the same firmware, or roll back."],
-  sourcemismatch: ["This is not the package the interrupted install was writing.", "Resume with the same firmware, or use Roll back."],
+  mismatch: ["The FM-1 restarted with a different firmware than the one written.", "It is running, so it can still be updated. Press Install once more with the same firmware; if it happens again, stop and check that the package is the one you meant."],
+  sourcemismatch: ["This is not the package the interrupted install was writing.", "Finish with the same firmware, or use Roll back."],
+  vaultmissing: ["This device no longer has a copy of that firmware package, so Finish / Roll back cannot run safely.", "Re-select the same .fwsc (or the same list entry), then try again. Prefer a full flash restore from Advanced recovery if you have a backup."],
+  norollback: ["There is no previous in-app install to roll back to on this computer.", "Restore from a full flash backup (Advanced recovery) if you made one, or install a known-good catalog firmware once the unit answers again."],
+  unsavedjournal: ["This browser blocked saving the install journal, so a crash may not offer Finish interrupted install.", "Cancel unless you can keep this window open until the FM-1 restarts, or use the desktop app."],
 };
 export function explain(error) {
   const code = (error && error.code) || "error";
-  const [what, next] = HELP[code] || [(error && error.message) || String(error), "Open Recovery options below."];
+  const [what, next] = HELP[code] || [(error && error.message) || String(error), "Open Recovery and help below."];
   return { code, what, next, detail: (error && error.message) || "" };
 }

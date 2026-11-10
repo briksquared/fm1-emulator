@@ -100,8 +100,28 @@
     const gen = feedGen;
     const ac = FM()?.context();
     if (!ac) { onDone && onDone("Press Start first."); return; }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false } });
-    if (gen !== feedGen) { stream.getTracks().forEach(t => t.stop()); return; }   // stopped during the permission prompt
+    // Mic is opt-in only: never open it because a tab was selected or the app launched.
+    const ok = window.confirm(
+      "Use this computer’s microphone to feed audio into the FM-1?\n\n" +
+      "Nothing is uploaded. Audio stays on this computer and stops when you press Stop or close Tape.\n\n" +
+      "Cancel keeps the mic off."
+    );
+    if (!ok) { onDone && onDone("Mic left off."); return; }
+    try {
+      if (window.FM1Desktop && typeof window.FM1Desktop.allowMicOnce === "function") {
+        await window.FM1Desktop.allowMicOnce();
+      }
+    } catch { /* browser path */ }
+    if (gen !== feedGen) return;
+    if (!navigator.mediaDevices?.getUserMedia) { onDone && onDone("This browser cannot open the microphone."); return; }
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false } });
+    } catch (e) {
+      onDone && onDone(`Mic was not allowed: ${(e && e.message) || e}`);
+      return;
+    }
+    if (gen !== feedGen) { stream.getTracks().forEach((t) => t.stop()); return; }   // stopped during the permission prompt
     const src = ac.createMediaStreamSource(stream);
     const sp = ac.createScriptProcessor(2048, 2, 1);
     src.connect(sp); const sink = ac.createGain(); sink.gain.value = 0; sp.connect(sink); sink.connect(ac.destination);
@@ -112,7 +132,7 @@
       for (let i = 0; i < l.length; i++) { out[i * 2] = l[i]; out[i * 2 + 1] = r[i]; }
       FM()?.audio(out);
     };
-    micStop = () => { try { sp.disconnect(); src.disconnect(); sink.disconnect(); stream.getTracks().forEach(t => t.stop()); } catch {} };
+    micStop = () => { try { sp.disconnect(); src.disconnect(); sink.disconnect(); stream.getTracks().forEach((t) => t.stop()); } catch {} };
   }
 
   // ---- recording the FM-1's output to a WAV ----
@@ -170,7 +190,7 @@
         background:linear-gradient(160deg,#202225,#121316 70%);border:1px solid #2c2e33;overflow:hidden;box-shadow:inset 0 1px 0 #3a3d44,inset 0 -10px 20px rgba(0,0,0,.5)}
       .cass .label{position:absolute;left:12px;right:12px;top:10px;height:30px;border-radius:4px;
         background:linear-gradient(#f4f1e8,#d9d4c4);box-shadow:0 1px 2px rgba(0,0,0,.4)}
-      .cass .label b{position:absolute;left:8px;top:6px;font:700 11px Georgia,serif;color:var(--amber-lo,#b23c00)}
+      .cass .label b{position:absolute;left:8px;top:6px;font:700 11px Georgia,serif;color:var(--amber-lo,#888)}
       .cass .label i{position:absolute;right:8px;top:7px;font:italic 10px Georgia,serif;color:#555}
       .cass .win{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;width:150px;height:40px;border-radius:6px;
         background:var(--ui-pop,#0c0d0f);border:1px solid #000;box-shadow:inset 0 2px 6px #000;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
@@ -201,7 +221,7 @@
       #tape-pop .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ui-dim,#8c93a0);margin-bottom:2px}
       #tape-status{margin:0;font-size:11.5px;color:var(--ui-text2,#cfd4da);min-height:1em}
       #tape-badge{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--ui-line,#2a2c31);color:var(--ui-dim,#8c93a0)}
-      #tape-badge.ok{border-color:#2f6b35;color:#62d36e}
+      #tape-badge.ok{border-color:var(--green,#c0c0c0);color:var(--green,#c0c0c0)}
       #tape-pop a.dl{color:var(--amber-ink, var(--amber));font-size:11.5px}`;
     document.head.appendChild(css);
 
@@ -266,7 +286,7 @@
       pop.querySelectorAll("#tape-src button").forEach(x => x.classList.toggle("on", x === b));
       sel.style.display = src === "lib" ? "" : "none";
       if (src === "file") { fileIn.click(); }
-      status(src === "mic" ? "Mic — press Feed (grants mic access)." : src === "file" ? "Pick a file…" : "");
+      status(src === "mic" ? "Mic — press Feed, then confirm. Mic stays off until you agree." : src === "file" ? "Pick a file…" : "");
     };
     fileIn.onchange = () => { pickedFile = fileIn.files[0] || null; if (pickedFile) status(`Loaded ${pickedFile.name} — press Feed.`); };
 
@@ -307,9 +327,21 @@
     speedSlider.ondblclick = () => { speedSlider.value = 0; applySpeed(); };
     applySpeed();
 
-    const place = () => { const r = btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 312)) + "px"; };
-    btn.onclick = (e) => { e.preventDefault(); pop.classList.toggle("open"); if (pop.classList.contains("open")) place(); };
+    const place = () => { const r = (window.FM1PopAnchor && window.FM1PopAnchor(btn)) || btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 312)) + "px"; };
+    const closeTape = () => {
+      if (!pop.classList.contains("open")) return;
+      pop.classList.remove("open");
+      // Closing Tape always releases the mic — never leave it running in the background.
+      if (micStop) { stopFeed(); spin(false); status("Stopped — mic released."); }
+    };
+    btn.onclick = (e) => {
+      e.preventDefault();
+      if (pop.classList.contains("open")) closeTape();
+      else { pop.classList.add("open"); place(); }
+    };
     window.addEventListener("resize", () => { if (pop.classList.contains("open")) place(); });
-    document.addEventListener("click", (e) => { if (e.target !== btn && !pop.contains(e.target)) pop.classList.remove("open"); });
+    document.addEventListener("click", (e) => {
+      if (e.target !== btn && !pop.contains(e.target)) closeTape();
+    });
   });
 })();

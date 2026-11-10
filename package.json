@@ -1,18 +1,19 @@
 {
   "name": "fm1-emulator",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "An offline desktop emulator for the M-VAVE FM-1 — run FM-1 firmware with no hardware.",
   "author": "briksquared",
   "license": "MIT",
   "homepage": "https://github.com/briksquared/fm1-emulator",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/briksquared/fm1-emulator.git"
-  },
+  "repository": { "type": "git", "url": "https://github.com/briksquared/fm1-emulator.git" },
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node ci/verify.mjs && node ci/flash-tests.mjs && node ci/perf-tests.mjs && node ci/theme-tests.mjs && node ci/radar-tests.mjs && node ci/updater-tests.mjs",
+    "test": "node ci/verify.mjs",
+    "test:radar": "node ci/test-radar.mjs",
+    "test:flash": "node ci/test-flash.mjs",
+    "test:flash:all": "node ci/test-flash-all.mjs",
+    "test:midi": "node ci/test-midi-bridge.mjs",
     "audit:firmwares": "node ci/audit-firmwares.mjs",
     "sync:firmwares": "node ci/sync-open-firmwares.mjs",
     "dist": "electron-builder",
@@ -30,97 +31,36 @@
   "build": {
     "appId": "com.briksquared.fm1emulator",
     "productName": "FM-1 Emulator",
-    "directories": {
-      "output": "dist",
-      "buildResources": "build"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "updater.js",
-      "package.json",
-      "icon.png",
-      "icon.ico",
-      "LICENSE",
-      "LICENSES/**/*",
-      "NOTICE.md",
-      "THIRD-PARTY.md",
-      "FIRMWARE-SOURCES.json",
-      "DISCLAIMER.md"
-    ],
-    "extraResources": [
-      {
-        "from": "site",
-        "to": "site"
-      }
-    ],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "updater.js", "package.json", "icon.png", "icon.ico", "LICENSE", "LICENSES/**/*", "NOTICE.md", "THIRD-PARTY.md", "FIRMWARE-SOURCES.json", "DISCLAIMER.md"],
+    "extraResources": [{ "from": "site", "to": "site" }],
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
       ],
       "icon": "icon.ico",
-      "extraResources": [
-        {
-          "from": "vendor/M-Flasher",
-          "to": "M-Flasher"
-        }
-      ]
+      "extraResources": [{ "from": "vendor/M-Flasher", "to": "M-Flasher" }]
     },
     "nsis": {
-      "guid": "79b50ff1-604f-59d5-b1fb-36e19b956082",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "FM-1 Emulator",
       "artifactName": "FM-1-Emulator-Setup-${version}.${ext}"
     },
-    "portable": {
-      "artifactName": "FM-1-Emulator-${version}-portable.${ext}"
-    },
+    "portable": { "artifactName": "FM-1-Emulator-${version}-portable.${ext}" },
     "afterPack": "build/after-pack.js",
     "mac": {
       "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
       ],
-      "artifactName": "FM-1-Emulator-${version}-${arch}-mac.${ext}",
       "category": "public.app-category.music",
       "icon": "build/icon.png"
     },
-    "dmg": {
-      "artifactName": "FM-1-Emulator-${version}-${arch}.${ext}"
-    },
+    "dmg": { "artifactName": "FM-1-Emulator-${version}-${arch}.${ext}" },
     "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
+      "target": ["AppImage", "deb"],
       "category": "Audio",
       "icon": "build/icon.png",
       "maintainer": "briksquared",

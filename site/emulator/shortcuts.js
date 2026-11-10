@@ -65,10 +65,20 @@
         ${row(["I"], "Details of the selected firmware")}
         ${row(["M"], "Add or remove the selected firmware from favorites")}
         ${row(["[", "]"], "Previous / next firmware")}
-        ${row(["?"], "This list")}${row(["Esc"], "Close a dialog")}
+        ${row(["?"], "This list")}${row(["Esc"], "Close a dialog or a tool panel")}
+        ${row(["Ctrl", "Shift", "H"], "Show every hidden bar and panel")}
+        ${row(["Ctrl", "K"], "Command palette (also hides or shows bars)")}
+      </table>
+      <h3>Play assists</h3><table>
+        ${row(["Studio", "Play"], "Transpose / chord / scale lock / arp panel (saved on this device)")}
+        ${row(["Ctrl", "K", "transpose"], "Palette: shift notes by octaves or semitones")}
+        ${row(["Ctrl", "K", "chord"], "Palette: pick a harmonizer voicing")}
+        ${row(["Ctrl", "K", "scale"], "Palette: lock notes to a key")}
+        ${row(["Ctrl", "K", "arp"], "Palette: arpeggiate held notes")}
       </table>
       <p class="sc-note">Shortcuts don't fire while you type in a field or while a dialog is open. With Keys open and
-        "Play with computer keys" on, the letter keys play through its scale, chord and arpeggiator.</p>`;
+        "Play with computer keys" on, the letter keys play through its scale, chord and arpeggiator. Studio → Play
+        assists apply to every note source (Keys, MIDI files, audition), not only the on-screen keyboard.</p>`;
 
     // ---------------------------------------------------------------- firmware details
     const details = modal("fw-details", "Firmware");
@@ -134,7 +144,7 @@
     const hint = document.querySelector(".hint");
     if (hint && !document.getElementById("sc-open")) {
       const s = document.createElement("span"); s.className = "keyb";
-      s.innerHTML = `<button type="button" id="sc-open" class="sc-link"><kbd>?</kbd> all shortcuts</button>`;
+      s.innerHTML = `<button type="button" id="sc-open" class="sc-link" title="All shortcuts"><kbd>?</kbd></button>`;
       hint.appendChild(s);
       s.querySelector("button").onclick = () => sheet.open();
     }

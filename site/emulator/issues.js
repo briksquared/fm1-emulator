@@ -13,17 +13,17 @@
     if (document.getElementById("fm1-issues-style")) return;
     const st = document.createElement("style"); st.id = "fm1-issues-style";
     st.textContent = `
-      #fm1-issue{display:none;align-items:center;gap:6px;flex:none;max-width:260px;height:26px;padding:0 10px;
+      #fm1-issue{display:none;align-items:center;gap:5px;flex:none;max-width:168px;height:22px;padding:0 8px;
         border-radius:999px;border:1px solid color-mix(in srgb,var(--issue-c) 55%,var(--ui-line,#2a2c31));
         background:color-mix(in srgb,var(--issue-c) 12%,var(--ui-surface,#17181b));color:var(--ui-text,#e9edf2);
-        font:600 11.5px/1 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer;white-space:nowrap}
+        font:600 10.5px/1 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;cursor:pointer;white-space:nowrap}
       #fm1-issue.on{display:inline-flex}
-      #fm1-issue .d{width:7px;height:7px;border-radius:50%;background:var(--issue-c);flex:none}
+      #fm1-issue .d{width:6px;height:6px;border-radius:50%;background:var(--issue-c);flex:none}
       #fm1-issue .t{overflow:hidden;text-overflow:ellipsis}
-      #fm1-issue-pop{position:fixed;z-index:9996;width:340px;max-width:calc(100vw - 16px);max-height:calc(100vh - 80px);overflow:auto;
-        display:none;flex-direction:column;gap:10px;padding:12px 14px;border-radius:10px;background:var(--ui-pop,#0c0d0f);
-        border:1px solid var(--ui-line,#2a2c31);box-shadow:0 14px 36px rgba(0,0,0,.5);color:var(--ui-text,#e9edf2);
-        font:12.5px/1.45 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
+      #fm1-issue-pop{position:fixed;z-index:9996;width:280px;max-width:calc(100vw - 16px);max-height:min(42vh,320px);overflow:auto;
+        display:none;flex-direction:column;gap:8px;padding:10px 12px;border-radius:9px;background:var(--ui-pop,#0c0d0f);
+        border:1px solid var(--ui-line,#2a2c31);box-shadow:0 12px 28px rgba(0,0,0,.5);color:var(--ui-text,#e9edf2);
+        font:12px/1.4 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif}
       #fm1-issue-pop.on{display:flex}
       #fm1-issue-pop h4{margin:0;font-size:13px;display:flex;align-items:center;gap:7px}
       #fm1-issue-pop p{margin:0;color:var(--ui-text2,#cfd4da)}

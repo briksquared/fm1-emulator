@@ -24,7 +24,7 @@
       .cart{position:relative;height:74px;flex:0 0 74px;border-radius:9px 9px 7px 7px;background:linear-gradient(150deg,#26282c,#141518 72%);
         border:1px solid #2c2e33;box-shadow:inset 0 1px 0 var(--ui-line-hi,#3a3d44),inset 0 -8px 16px rgba(0,0,0,.5);overflow:hidden}
       .cart .lip{position:absolute;left:10px;right:10px;bottom:0;height:12px;background:repeating-linear-gradient(90deg,#1b1c1f 0 4px,#2a2c31 4px 8px);border-radius:0 0 6px 6px}
-      .cart .lbl{position:absolute;left:10px;right:10px;top:9px;height:42px;border-radius:4px;background:linear-gradient(var(--amber),#c2440b);
+      .cart .lbl{position:absolute;left:10px;right:10px;top:9px;height:42px;border-radius:4px;background:linear-gradient(var(--amber),var(--amber-lo,color-mix(in srgb,var(--amber) 70%,#000)));
         box-shadow:0 1px 2px rgba(0,0,0,.4);padding:6px 9px;color:var(--ui-on-accent,#180a02)}
       .cart .lbl b{display:block;font:800 13px 'Space Grotesk',-apple-system,Segoe UI,sans-serif;letter-spacing:.02em}
       .cart .lbl span{font-size:10px;opacity:.8}
@@ -39,7 +39,7 @@
       #bank-grid button:hover{border-color:var(--amber);color:var(--ui-text,#fff)}
       #bank-grid button .n{color:var(--ui-dim,#6b6e76);margin-right:5px}
       #bank-badge{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--ui-line,#2a2c31);color:var(--ui-dim,#8c93a0);margin-left:auto}
-      #bank-badge.ok{border-color:#2f6b35;color:#62d36e}
+      #bank-badge.ok{border-color:var(--green,#c0c0c0);color:var(--green,#c0c0c0)}
       #bank-status{margin:0;font-size:11.5px;color:var(--ui-text2,#cfd4da);min-height:1em}
       #bank-pop a.syx{color:var(--amber-ink, var(--amber));font-size:11.5px}`;
     document.head.appendChild(css);
@@ -54,11 +54,11 @@
       <div class="cart"><div class="lbl"><b id="cart-name">DX7</b><span id="cart-sub">32-voice cartridge</span></div><div class="lip"></div></div>
       <select id="bank-sel"></select>
       <p class="about" id="bank-about"></p>
-      <div class="tp"><button class="load" id="bank-load">⤵ Load into FM-1</button></div>
+      <div class="tp"><button class="load" id="bank-load">⤵ Load into emu</button><button type="button" id="bank-send-hw" title="Send this bank's .syx to the paired FM-1 over MIDI out (USB or Bluetooth). Does not reboot the emulator.">⇪ Send bank</button><button type="button" id="bank-send-voice" title="Send only the first voice as a DX7 single-voice SysEx">⇪ Voice 1</button></div>
       <div id="bank-grid"></div>
       <p id="bank-status"></p>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:11px;color:var(--ui-dim,#8c93a0)">Loading a bank reboots with it. Click a voice to select it.</span>
+        <span style="font-size:11px;color:var(--ui-dim,#8c93a0)">Load reboots the emu with the bank. Send pushes SysEx to MIDI out. Click a voice for program change (also goes out).</span>
         <a class="syx" id="bank-own" href="#">Load .syx…</a></div>
       <input type="file" id="bank-file" accept=".syx" hidden>`;
     document.body.appendChild(pop);
@@ -107,18 +107,61 @@
       if (FM().loadBank(bytes, name)) status(`✓ Loaded ${name}. Reboots with it — play notes, click voices to pick.`);
       else status("Could not load that bank.");
     }
+    async function fetchBankBytes() {
+      const b = CAT.banks[+sel.value]; if (!b) return null;
+      const r = await fetch(b.file + "?v=23"); if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return { bytes: new Uint8Array(await r.arrayBuffer()), name: b.name };
+    }
     pop.querySelector("#bank-load").onclick = async () => {
-      const b = CAT.banks[+sel.value]; if (!b) return;
-      try { const r = await fetch(b.file + "?v=23"); if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        await load(new Uint8Array(await r.arrayBuffer()), b.name); }
-      catch (e) { status(`✗ ${(e && e.message) || e}`); }
+      try {
+        const pack = await fetchBankBytes(); if (!pack) return;
+        await load(pack.bytes, pack.name);
+      } catch (e) { status(`✗ ${(e && e.message) || e}`); }
+    };
+    async function sendSysexPack(bytes, label) {
+      if (!FM() || !FM().midiOutSendSysex) { status("MIDI out is not available in this build."); return; }
+      if (!FM().hasMidiOut || !FM().hasMidiOut()) {
+        status("Pick your FM-1 under MIDI out first (Play from / Menu).");
+        return;
+      }
+      status(`Sending ${label} → ${FM().midiOutName()}…`);
+      const res = await FM().midiOutSendSysex(bytes);
+      if (res.ok) {
+        const kinds = (window.FM1Midi && window.FM1Midi.splitSysex)
+          ? window.FM1Midi.splitSysex(bytes).map((m) => (window.FM1Midi.classifyDx7Sysex(m) || {}).kind)
+          : [];
+        status(`✓ Sent ${label} (${res.count} SysEx${kinds.length ? ": " + kinds.join(",") : ""}) to ${FM().midiOutName()}. Unit may ask which bank A–D.`);
+      } else if (res.reason === "sysex-denied") status("✗ Browser refused SysEx — allow MIDI SysEx, then try again.");
+      else if (res.reason === "no-sysex") status("✗ That file has no SysEx messages.");
+      else status(`✗ Send failed (${res.reason || "error"}).`);
+    }
+    pop.querySelector("#bank-send-hw").onclick = async () => {
+      try {
+        const pack = await fetchBankBytes(); if (!pack) return;
+        await sendSysexPack(pack.bytes, pack.name);
+      } catch (e) { status(`✗ ${(e && e.message) || e}`); }
+    };
+    pop.querySelector("#bank-send-voice").onclick = async () => {
+      try {
+        const pack = await fetchBankBytes(); if (!pack) return;
+        const msgs = (window.FM1Midi && window.FM1Midi.splitSysex) ? window.FM1Midi.splitSysex(pack.bytes) : [];
+        let voice = msgs.find((m) => (window.FM1Midi.classifyDx7Sysex(m) || {}).kind === "voice");
+        if (!voice && msgs[0] && msgs[0].length >= 150 && msgs[0].length <= 200) voice = msgs[0];
+        // Extract first voice from a VMEM bank is firmware/librarian work; if only a bank is present, send the whole bank.
+        if (!voice) {
+          status("No single-voice SysEx in that file — sending full bank instead.");
+          await sendSysexPack(pack.bytes, pack.name + " (bank)");
+          return;
+        }
+        await sendSysexPack(voice, pack.name + " voice");
+      } catch (e) { status(`✗ ${(e && e.message) || e}`); }
     };
     const fileIn = pop.querySelector("#bank-file");
     pop.querySelector("#bank-own").onclick = (e) => { e.preventDefault(); fileIn.click(); };
     fileIn.onchange = async () => { const f = fileIn.files[0]; fileIn.value = ""; if (!f) return;
       await load(new Uint8Array(await f.arrayBuffer()), f.name.replace(/\.syx$/i, "")); };
 
-    const place = () => { const r = btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 332)) + "px"; };
+    const place = () => { const r = (window.FM1PopAnchor && window.FM1PopAnchor(btn)) || btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 332)) + "px"; };
     btn.onclick = (e) => { e.preventDefault(); pop.classList.toggle("open"); if (pop.classList.contains("open")) place(); };
     window.addEventListener("resize", () => { if (pop.classList.contains("open")) place(); });
     document.addEventListener("click", (e) => { if (e.target !== btn && !btn.contains(e.target) && !pop.contains(e.target)) pop.classList.remove("open"); });

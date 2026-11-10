@@ -1690,7 +1690,7 @@
       "author": "Denis Sablić",
       "repo": "dsablic/sidou",
       "ident": "FM-1_964",
-      "what": "Turns the FM-1 into a C64 SID machine: two SIDs measured on real chips, a GoatTracker 2 tracker and step sequencer with slide and accent, .sid playback with live tweaks, LAB for sounds with step tables and LFOs, patches from an AI chat or SidStation banks, Bluetooth MIDI, and Live Link in a browser.",
+      "what": "Turns the FM-1 into a C64 SID machine: two SIDs measured on real chips, a GoatTracker 2 tracker and step sequencer with slide and accent, .sid playback with live tweaks, LAB for sounds with step tables and LFOs, patches from SidStation banks, Bluetooth MIDI, and Live Link in a browser.",
       "editor": "https://dsablic.github.io/sidou/editor.html",
       "play": "https://dsablic.github.io/sidou/",
       "added": "2026-10-23",
@@ -1704,7 +1704,7 @@
       "fmhub": {
         "sha": "97867109",
         "data": {
-          "what": "Turns the FM-1 into a C64 SID machine: two SIDs measured on real chips, a GoatTracker 2 tracker and step sequencer with slide and accent, .sid playback with live tweaks, LAB for sounds with step tables and LFOs, patches from an AI chat or SidStation banks, Bluetooth MIDI, and Live Link in a browser.",
+          "what": "Turns the FM-1 into a C64 SID machine: two SIDs measured on real chips, a GoatTracker 2 tracker and step sequencer with slide and accent, .sid playback with live tweaks, LAB for sounds with step tables and LFOs, patches from SidStation banks, Bluetooth MIDI, and Live Link in a browser.",
           "kind": "tracker",
           "play": "https://dsablic.github.io/sidou/",
           "editor": "https://dsablic.github.io/sidou/editor.html",

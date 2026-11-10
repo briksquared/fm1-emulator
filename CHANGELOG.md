@@ -2,15 +2,9 @@
 
 ## 1.1.2 — 2026-11-10
 
-- Generative Eurorack-style patch bay under the machine: one rack, cartoon cables, Livewire
-  opacity / Glow / Fat, and cable motion (Off / Wave / Beat / Wiggle).
-- Deep rack engines (GATE, PIANIST, QUANT, EUCLID, BASS, DRONE, ARP, PROG, RIFF, MARKOV, POLYR)
-  with factory presets, grooves, swing clock, user save slots, and live meters.
-- Desktop MIDI in/out to a paired FM-1 (Bluetooth or USB): Link, A/B listen, FX CC, panel host, bank/voice SysEx, Identify.
-- Focus Mode for the LCD; session export/import for UI prefs.
-- Clearer recovery wording in Advanced recovery (bundled flash recovery tool on Windows).
-- Stronger disclaimer: author not responsible for bricked or damaged hardware.
-- Wave OS icons; Worker vortex mark for in-app identifiers. Shorter Install confirm copy.
+- Patch bay with generative modules, presets, and cable motion.
+- Desktop MIDI link to a real FM-1; Focus Mode; shorter Install confirm.
+- Themes, wave app icon, open-license catalog cleanup.
 
 ## 1.1.1 — 2026-11-09
 

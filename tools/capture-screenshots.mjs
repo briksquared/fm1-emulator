@@ -1,7 +1,7 @@
 // Capture README gallery shots from a running local site server.
 // Usage: CHROME="C:/.../chrome.exe" node tools/capture-screenshots.mjs [baseUrl]
 import { createRequire } from "node:module";
-import { mkdirSync, unlinkSync, readdirSync } from "node:fs";
+import { mkdirSync, unlinkSync, readdirSync, copyFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,7 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const outDir = resolve(root, "docs/screenshots");
 const chrome = process.env.CHROME || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const base = (process.argv[2] || "http://127.0.0.1:8844/emulator/").replace(/\/?$/, "/");
+const base = (process.argv[2] || "http://127.0.0.1:8845/emulator/").replace(/\/?$/, "/");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const require = createRequire(resolve(
@@ -17,6 +17,8 @@ const require = createRequire(resolve(
   "package.json",
 ));
 const puppeteer = require("puppeteer-core");
+
+const THEMES = ["Midnight", "Graphite", "Cobalt", "Emerald", "Crimson", "Vaporwave", "Ice", "Paper"];
 
 mkdirSync(outDir, { recursive: true });
 for (const f of readdirSync(outDir)) {
@@ -35,31 +37,21 @@ page.setDefaultTimeout(60000);
 async function goto(qs = "") {
   await page.goto(base + (qs ? `?${qs}` : ""), { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.getElementById("fw") || document.querySelector(".side"), { timeout: 30000 }).catch(() => {});
-  await sleep(800);
+  await sleep(700);
 }
 
-async function setTheme(id) {
+async function setTheme(name) {
   await page.evaluate((theme) => {
-    const apply = window.FM1Theme?.set || window.FM1UiTheme?.set;
-    if (typeof apply === "function") apply(theme);
-    else {
+    const TH = window.FM1Theme;
+    if (!TH) {
       document.documentElement.dataset.theme = theme;
-      document.body.className = (document.body.className || "").replace(/theme-\S+/g, "") + ` theme-${theme}`;
-      try { localStorage.setItem("fm1.theme.v1", theme); } catch {}
+      return;
     }
-  }, id);
-  await sleep(400);
-}
-
-async function clickText(sel, re) {
-  const ok = await page.$$eval(sel, (els, source) => {
-    const rx = new RegExp(source, "i");
-    const el = els.find((e) => rx.test((e.textContent || "").trim()));
-    if (!el) return false;
-    el.click();
-    return true;
-  }, re.source || String(re));
-  return ok;
+    const ui = { theme };
+    TH.save(ui);
+    TH.apply(ui);
+  }, name);
+  await sleep(450);
 }
 
 async function shot(name) {
@@ -78,68 +70,47 @@ async function startFw(id) {
       if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("change", { bubbles: true })); }
     }
   }, id);
-  await sleep(500);
+  await sleep(400);
   const started = await page.evaluate(() => {
     const btn = [...document.querySelectorAll("button")].find((b) => /^Start$/i.test(b.textContent.trim()));
     if (btn) { btn.click(); return true; }
     return false;
   });
-  if (started) await sleep(4500);
+  if (started) await sleep(4200);
+}
+
+async function openDeckMod(label) {
+  await page.evaluate((lab) => {
+    const face = [...document.querySelectorAll(".fm1-face, .fm1-mod")].find((el) =>
+      new RegExp(lab, "i").test(el.textContent || ""));
+    face?.click?.() || face?.querySelector?.(".fm1-face")?.click();
+  }, label);
+  await sleep(600);
 }
 
 try {
   await startFw("felucca");
-  await setTheme("miami");
-  await shot("01-miami.png");
 
-  await setTheme("cobalt");
+  // One clean shot per interface colour
+  let n = 1;
+  for (const theme of THEMES) {
+    await setTheme(theme);
+    await sleep(300);
+    const file = `${String(n).padStart(2, "0")}-${theme.toLowerCase()}.png`;
+    await shot(file);
+    n++;
+  }
+
+  // Feature shots (still cycling colours)
+  await setTheme("Cobalt");
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll("button,a,[role=button]")].find((b) => /Customize/i.test(b.textContent || ""));
     btn?.click();
-  });
-  await sleep(800);
-  await clickText("button,a,[role=tab],.tab", /Interface/i);
-  await sleep(600);
-  await shot("02-cobalt-customize-interface.png");
-
-  await setTheme("paper");
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button,a,[role=button]")].find((b) => /Customize/i.test(b.textContent || ""));
-    btn?.click();
-  });
-  await sleep(500);
-  await clickText("button,a,[role=tab],.tab", /Device|Case|Colour/i);
-  await sleep(400);
-  await page.evaluate(() => {
-    const opt = [...document.querySelectorAll("button,option,label")].find((e) => /White\s*\/\s*Green|White \/ Green/i.test(e.textContent || ""));
-    opt?.click();
-  });
-  await sleep(500);
-  await clickText("button,a,[role=tab],.tab", /Sticker/i);
-  await sleep(500);
-  await page.evaluate(() => {
-    const stickers = [...document.querySelectorAll("img,button,.sticker")].slice(0, 6);
-    for (const s of stickers) s.click();
   });
   await sleep(700);
-  await shot("03-white-green-stickers.png");
+  await shot("09-cobalt-customize.png");
 
-  await setTheme("graphite");
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button,a,[role=button]")].find((b) => /Customize/i.test(b.textContent || ""));
-    btn?.click();
-  });
-  await sleep(500);
-  await clickText("button,a,[role=tab],.tab", /Device|Case/i);
-  await sleep(400);
-  await page.evaluate(() => {
-    const opt = [...document.querySelectorAll("button,option,label")].find((e) => /Gold/i.test(e.textContent || ""));
-    opt?.click();
-  });
-  await sleep(700);
-  await shot("04-gold-customize-device-stickers.png");
-
-  await setTheme("emerald");
+  await setTheme("Emerald");
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll("button,a,[role=button]")].find((b) => /Browse|Browser|Firmwares/i.test(b.textContent || ""));
     btn?.click();
@@ -153,84 +124,30 @@ try {
       input.dispatchEvent(new Event("input", { bubbles: true }));
     }
   });
-  await sleep(800);
-  await shot("05-emerald-browser-search.png");
+  await sleep(700);
+  await shot("10-emerald-browser.png");
 
-  await setTheme("amethyst");
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button,a,[role=button]")].find((b) => /Radar|Updates/i.test(b.textContent || ""));
-    btn?.click();
-  });
-  await sleep(900);
-  await page.evaluate(() => {
-    const det = document.querySelector("#inst-recovery");
-    if (det) det.open = true;
-  });
+  await setTheme("Ice");
+  await openDeckMod("GATE");
   await sleep(500);
-  await shot("06-amethyst-radar-uplink.png");
+  await shot("11-ice-patch-bay.png");
 
-  await startFw("mvave");
-  await setTheme("crimson");
+  await setTheme("Vaporwave");
   await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button,a,[role=button],summary")].find((b) => /Banks|DX7/i.test(b.textContent || ""));
+    const btn = [...document.querySelectorAll("button,summary,a")].find((b) => /^Keys$/i.test((b.textContent || "").trim()) || /\bKeys\b/i.test(b.textContent || ""));
     btn?.click();
-  });
-  await sleep(1000);
-  await shot("07-crimson-banks.png");
-
-  await setTheme("ice");
-  await page.evaluate(() => {
-    for (const label of [/MIDI/i, /Tape/i, /Scope/i, /Rec/i]) {
-      const el = [...document.querySelectorAll("button,summary,a")].find((b) => label.test(b.textContent || ""));
-      el?.click();
-    }
-  });
-  await sleep(1000);
-  await shot("08-ice-cables-scope-rec.png");
-
-  await setTheme("vaporwave");
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button,summary,a")].find((b) => /^Keys$/i.test((b.textContent || "").trim()) || /Keys/i.test(b.textContent || ""));
-    btn?.click();
-  });
-  await sleep(800);
-  await shot("09-vaporwave-keys.png");
-
-  await setTheme("midnight");
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button,summary,a")].find((b) => /FX|Effect|Panel host|MIDI out/i.test(b.textContent || ""));
-    btn?.click();
-  });
-  await sleep(900);
-  await shot("10-midnight-midi-fx.png");
-
-  await startFw("x0x");
-  await setTheme("graphite");
-  await sleep(3500);
-  await page.evaluate(() => {
-    const lcd = document.querySelector("canvas, .lcd, #lcd, .panel-lcd");
-    if (lcd) lcd.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
-  });
-  await sleep(800);
-  await shot("11-graphite-focus-lcd.png");
-
-  await setTheme("miami");
-  await page.evaluate(() => {
-    const det = document.querySelector("#inst-recovery");
-    if (det) { det.open = true; det.scrollIntoView({ block: "center" }); }
-    const adv = document.querySelector("#inst-advanced");
-    if (adv) adv.open = true;
   });
   await sleep(700);
-  await shot("12-miami-install-recovery.png");
+  await shot("12-vaporwave-keys.png");
 
-  // Hero image for README top
-  await startFw("felucca");
-  await setTheme("miami");
-  await sleep(2500);
+  // Hero for README top
+  await setTheme("Midnight");
+  await sleep(800);
   const hero = resolve(root, "docs/screenshot.jpg");
-  await page.screenshot({ path: hero, type: "jpeg", quality: 88 });
+  await page.screenshot({ path: hero, type: "jpeg", quality: 90 });
   console.log("ok screenshot.jpg");
+  // Also keep a PNG hero copy of Midnight
+  copyFileSync(resolve(outDir, "01-midnight.png"), resolve(outDir, "hero-midnight.png"));
 } finally {
   await browser.close();
 }

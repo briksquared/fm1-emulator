@@ -10,11 +10,15 @@ choose a firmware, press **Start**, and play with your keyboard, mouse, or a MID
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-informational)
 
-<img src="docs/screenshot.jpg" alt="FM-1 Emulator running a firmware" width="760">
+<img src="docs/screenshot.jpg" alt="FM-1 Emulator" width="760">
 
 </div>
 
 ---
+
+## What's new in 1.1.2
+
+Patch bay · generative modules · cable motion · desktop MIDI link · Focus Mode · colour themes.
 
 ## Download
 
@@ -43,15 +47,45 @@ Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 
 ## Features
 
-- **257 verified open-source firmwares bundled** — newest first, unique, and fully offline
-- **Search every firmware** — match names, IDs, versions, authors, licenses, product identities, and descriptions
-- **One-button update radar** — scans for newly published open-license FM-1 packages and downloads one only when you select it
+- **Open-source firmwares bundled** — newest first, unique, fully offline
+- **Search every firmware** — names, IDs, versions, authors, licenses, products, descriptions
+- **Update radar** — finds newly published open-license packages; downloads only when you pick one
 - **Load your own** — drag any `.fwsc` onto the window
-- **Play** with the computer keyboard, mouse, or a USB MIDI controller
-- **Desktop MIDI** — Bluetooth or USB MIDI in/out to a paired FM-1; Link, A/B listen, FX CC, panel host, bank/voice SysEx, Identify
-- **Focus Mode** — enlarge the LCD (double-click); session export/import for UI prefs
-- **Customize** panel colors and add image decals; decorate the case with stickers
-- **Firmware recovery (Windows)** — back up, restore, and reinstall your FM-1; a flash is never a dead end
+- **Play** — computer keyboard, mouse, or USB MIDI
+- **Patch bay** — generative modules with presets, grooves, and moving cables
+- **Desktop MIDI** — Bluetooth or USB link to a paired FM-1
+- **Focus Mode** — enlarge the LCD; session export/import for UI prefs
+- **Themes** — Midnight, Graphite, Cobalt, Emerald, Crimson, Vaporwave, Ice, Paper
+- **Customize** — panel colours, decals, stickers
+- **Firmware recovery (Windows)** — backup, restore, reinstall
+
+## Colours
+
+<p align="center">
+  <img src="docs/screenshots/01-midnight.png" alt="Midnight" width="48%">
+  <img src="docs/screenshots/02-graphite.png" alt="Graphite" width="48%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/03-cobalt.png" alt="Cobalt" width="48%">
+  <img src="docs/screenshots/04-emerald.png" alt="Emerald" width="48%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/05-crimson.png" alt="Crimson" width="48%">
+  <img src="docs/screenshots/06-vaporwave.png" alt="Vaporwave" width="48%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/07-ice.png" alt="Ice" width="48%">
+  <img src="docs/screenshots/08-paper.png" alt="Paper" width="48%">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/09-cobalt-customize.png" alt="Customize" width="48%">
+  <img src="docs/screenshots/10-emerald-browser.png" alt="Browser" width="48%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/11-ice-patch-bay.png" alt="Patch bay" width="48%">
+  <img src="docs/screenshots/12-vaporwave-keys.png" alt="Keys" width="48%">
+</p>
 
 ## Recovery & safety
 
@@ -71,7 +105,7 @@ responsible for any bricked or damaged FM-1** — you flash at your own risk. De
 ## Firmware & licensing
 
 Only firmwares published under a clear redistributable open-source license, with available source
-and a passing emulator boot audit, are bundled. The 257 packages use GPL, MPL, or another compatible
+and a passing emulator boot audit, are bundled. Packages use GPL, MPL, or another compatible
 open license and are redistributed unchanged with credit — see [THIRD-PARTY.md](THIRD-PARTY.md) and
 the exact hashes in [FIRMWARE-SOURCES.json](FIRMWARE-SOURCES.json). Packages with missing or
 unverifiable licensing, restricted media, a wrong-device identity, or a failed boot check stay out.
@@ -91,7 +125,7 @@ npm run dist:win     # or dist:mac / dist:linux to package
 
 Release builds for all three platforms are produced by GitHub Actions on each tag.
 
-Maintainers can refresh the open Firmware Hub set with `npm run sync:firmwares`; the command verifies
+Maintainers can refresh the open firmware set with `npm run sync:firmwares`; the command verifies
 every SHA-256 hash and FM-1 product identity and removes superseded package files.
 Run `npm run audit:firmwares -- --out <directory>` to boot every package in an isolated emulator,
 check for CPU halts or blank LCDs, and write a machine-readable report plus LCD captures.

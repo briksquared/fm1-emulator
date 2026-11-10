@@ -343,7 +343,7 @@
     "kind": "other",
     "author": "jaeggerr",
     "license": "GPL-3.0",
-    "about": "A tracker for you and your LLM — firmware for the M-VAVE FM-1",
+    "about": "A tracker built for live writing — firmware for the M-VAVE FM-1",
     "package": "../archive/moondaw-fm1/moondaw-0.3.fwsc",
     "repo": "https://github.com/jaeggerr/moondaw-fm1",
     "catalogId": null,

@@ -5,9 +5,23 @@
 // computer (M-VAVE's own: their server does not let other pages fetch it).
 import { fetchPackage } from "./fwsc.js";
 import { SaveStore, packageHash, changedSectors, packSectors, exportSave, importSave } from "./persistence.js";
-import { productOf } from "./fm1pkg.js";
+import "./catalog-source.js";
 import { judgeSecond, recovered } from "./perf-judge.js?v=2";
-import { CATALOG_ORIGIN, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } from "./catalog-updates.js?v=3";
+import { mergeCatalog, isSafeRemembered } from "./catalog-updates.js?v=5";
+import { wireRadar } from "./radar.js?v=2";
+import {
+  remapChannel, isActivityMessage, isFm1PortName, splitSysex,
+  parseRemoteFm1, parseFm1Ctrl, parsePanelAbsolute,
+  fxMapFor, fxCcMessage, effectChannelConflict, classifyDx7Sysex,
+  FM1_IDENTITY_REQ, isRecentRelease,
+} from "./midi-bridge.js?v=4";
+import { Updater } from "./fm1ota.js";
+
+window.FM1Midi = {
+  parseRemoteFm1, parseFm1Ctrl, parsePanelAbsolute,
+  fxMapFor, fxCcMessage, effectChannelConflict, classifyDx7Sysex,
+  FM1_IDENTITY_REQ, isRecentRelease, splitSysex, isFm1PortName,
+};
 
 const CLOCKS = [60, 80, 100, 120, 160, 200, 240];
 // The device this page is for: the FM-1 (index.html) or the SMK-37 (smk37/index.html, <html
@@ -24,21 +38,24 @@ const stored = (k) => { try { return localStorage.getItem(k); } catch { return n
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } };
 
 const bundledCatalog = await (await fetch("firmwares.json?v=62")).json();
-const updateKey = "fm1.open-source-catalog.v1";
-let rememberedCatalog = [];
-try { rememberedCatalog = JSON.parse(stored(updateKey) || "[]"); } catch { /* discard malformed local data */ }
-{ // entries remembered by 1.1.0 name the catalog id differently: rewrite them once
-  const migrated = migrateRemembered(rememberedCatalog);
-  if (JSON.stringify(migrated) !== JSON.stringify(rememberedCatalog)) { rememberedCatalog = migrated; store(updateKey, JSON.stringify(migrated)); }
-}
-const catalog = mergeCatalog(bundledCatalog, rememberedCatalog);
+const source = globalThis.FM1Source;
+// Open-license radar finds only (firmwares.json is never rewritten). Prefer the current key;
+// still read the older open-source key so 1.1.0 remembers survive an update.
+const radarKey = "fm1.firmware-radar.v1";
+const legacyRadarKey = "fm1.open-source-catalog.v1";
+let radarRemembered = [];
+try {
+  const raw = JSON.parse(stored(radarKey) || stored(legacyRadarKey) || "[]");
+  radarRemembered = (Array.isArray(raw) ? raw : []).filter(isSafeRemembered);
+} catch { /* discard malformed local data */ }
+const catalog = mergeCatalog(bundledCatalog, radarRemembered);
 window.FM1Catalog = catalog;
-window.FM1CatalogSite = CATALOG_ORIGIN;   // (extras.js links to the catalog site)
+window.FM1CatalogSite = source.origin;   // (extras.js links to the catalog site)
 const byId = new Map(catalog.firmwares.map((f) => [f.id, f]));
 // searchable text per firmware (name + author + description), so search finds by what it does
-const fwSearchText = Object.fromEntries(catalog.firmwares.map((f) => [f.id, `${f.name} ${f.version || ""} ${f.author || ""} ${f.about || ""}`.toLowerCase()]));
-// the firmware catalog's ids too, where they differ (its cards link here with ?fw=<its id>)
-for (const f of catalog.firmwares) if (f.catalogId && !byId.has(f.catalogId)) byId.set(f.catalogId, f);
+const fwSearchText = Object.fromEntries(catalog.firmwares.map((f) => [f.id, `${f.id} ${f.name} ${f.version || ""} ${f.author || ""} ${f.product || ""} ${f.about || ""}`.toLowerCase()]));
+// the community catalog's ids too, where they differ (its cards link here with ?fw=<its id>)
+for (const f of catalog.firmwares) { const id = source.idOf(f); if (id && !byId.has(id)) byId.set(id, f); }
 // ?embed=1: only the device and its controls, for a window on another site (the inline script in
 // <head> set data-embed before the first paint; style.css hides the rest). It does not change the
 // firmware this browser starts with on the full page.
@@ -132,7 +149,7 @@ const MIDI_NOTES = {
   choralroot: NO_NOTE, hortator: NO_NOTE, "sloop-alg": NO_NOTE, x0x: NO_NOTE,
 };
 const cards = new Map();
-const catalogCard = (f) => new URL(`#fw-${f.catalogId}`, CATALOG_ORIGIN).href;
+const catalogCard = (f) => source.card(f);
 // the FM-1 page: which entries have an SMK-37 build (that catalog names them)
 const twins = new Map();
 if (DEVICE === "fm1") {
@@ -165,15 +182,26 @@ if (DEVICE === "fm1") {
     else {
       links.append(link(f.repo, `source · ${f.license} ↗`));
       // the catalog's card has the details and installs it on a real FM-1; the author's installer otherwise
-      if (f.catalogId) links.append(link(catalogCard(f), "details & install ↗"));
+      if (source.idOf(f)) links.append(link(catalogCard(f), "details & install ↗"));
       else if (f.installer) links.append(link(f.installer, "install ↗"));
     }
     // the same firmware on the other device (an SMK-37 build's `fm1`, or an FM-1 entry it names)
     const twin = DEVICE === "smk37" ? f.fm1 : twins.get(f.id);
     if (twin) links.append(link(`${DEV.other.href}?fw=${twin}`, `also on the ${DEV.other.name}`));
     const by = [f.author + (f.base ? ` (${f.base})` : ""), f.porter && `SMK-37 port: ${f.porter}`].filter(Boolean).join(" · ");
+    const headKids = [el("b", "", f.name), el("span", "dim", f.version)];
+    if (f.remote && isRecentRelease(f.released, 14)) {
+      const badge = el("span", "new-badge", "new");
+      badge.title = `Released ${String(f.released).slice(0, 10)}`;
+      headKids.splice(2, 0, badge);
+    }
+    if (f.kind) {
+      const kinds = Array.isArray(f.kind) ? f.kind : [f.kind];
+      for (const k of kinds.slice(0, 2)) headKids.push(Object.assign(el("span", "kind-tag", String(k)), { title: "Catalog kind" }));
+    }
+    headKids.push(play);
     const card = el("li", "",
-      el("div", "head", el("b", "", f.name), el("span", "dim", f.version), play),
+      el("div", "head", ...headKids),
       el("div", "by", by),
       el("p", "what", f.byo && DEVICE === "fm1" ? "The firmware the FM-1 ships with: a DX7-style FM synth, both cores running. " +
         "Bring your own copy (see below)." : f.about));
@@ -201,7 +229,6 @@ async function packageOf(f) {
   // that runs), the catalog wins: fall through and fetch the new one.
   if (kept && (!kept.url || f.byo || kept.url === f.package)) {
     const got = { bytes: kept.package, url: kept.url };
-    await verifyPackage(f, got.bytes);
     packages.set(f.id, got);
     return got;
   }
@@ -211,21 +238,15 @@ async function packageOf(f) {
     try { bytes = await saveStore.get("packages", f.id); } catch (error) { saveFailure(error); }
     if (!bytes) throw new NeedFile();
     const got = { bytes, url: null };
-    await verifyPackage(f, got.bytes);
     packages.set(f.id, got);
     return got;
   }
   const got = await fetchPackage(f);
-  await verifyPackage(f, got.bytes);
+  if (f.remote && f.sha256 && await packageHash(got.bytes) !== f.sha256)
+    throw new Error(`${f.name}: downloaded package does not match the catalog checksum`);
   packages.set(f.id, got);
   noteVersion(f, got.version);
   return got;
-}
-async function verifyPackage(f, bytes) {
-  if (f.sha256 && await packageHash(bytes) !== String(f.sha256).toLowerCase())
-    throw new Error(`${f.name}: downloaded package checksum does not match the catalog`);
-  if (f.product && productOf(bytes) !== f.product)
-    throw new Error(`${f.name}: downloaded package is for a different device`);
 }
 // A package that had gone came as the one the catalog lists now: show the version that runs.
 function noteVersion(f, version) {
@@ -250,9 +271,13 @@ let bank = null;                           // a DX7 32-voice bank for the stock 
 let loadedUrl = null;                      // the package the running machine came from
 
 function showFirmware() {
-  title.textContent = running && running.entry !== DEV.key + fw.id
-    ? `${DEV.product} · ${running.record.name} running · ${fw.name} selected`
-    : `${DEV.product} · ${fw.name} (emulated)`;
+  // Deck brand is the Worker mark; firmware name lives beside it (and in status), not as "M-VAVE · Felucca".
+  const fwEl = document.getElementById("title-fw");
+  const label = running && running.entry !== DEV.key + fw.id
+    ? `${running.record.name} · ${fw.name}`
+    : `${fw.name}`;
+  if (fwEl) { fwEl.hidden = false; fwEl.textContent = label; }
+  else if (title) title.textContent = label;
   for (const [id, card] of cards) {
     card.classList.toggle("on", id === fw.id);
     card.querySelector("button").textContent = id === fw.id ? "Selected" : "Play";
@@ -281,10 +306,10 @@ function showFirmware() {
     a.href = fw.repo;
     a.textContent = `source · ${fw.license} ↗`;
     links.append(a);
-    if (fw.catalogId) {
+    if (source.idOf(fw)) {
       const h = document.createElement("a");
       h.href = catalogCard(fw);
-      h.textContent = "catalog page ↗";
+      h.textContent = "details & install ↗";
       links.append(h);
     }
     const what = document.createElement("span");
@@ -327,6 +352,10 @@ fwSel.addEventListener("change", () => {
   if (!EMBED) store(DEV.key + "fw", fw.id);
   showFirmware();
   fwSel.blur();                 // back to playing from the keyboard
+  // Tell the Install panel (right bar) to mirror this pick — Random / Browse / #fw all land here.
+  // Install never writes back into #fw, so browsing firmwares only on the right stays independent.
+  try { document.dispatchEvent(new CustomEvent("fm1-fw-selected", { detail: { id: fw.id } })); } catch {}
+  try { window.FM1Install?.followEmulator?.(fw.id); } catch {}
   if (node) boot();
 });
 mhzSel.addEventListener("change", () => {
@@ -407,13 +436,16 @@ stage.addEventListener("drop", (e) => {
 
 // ---------------------------------------------------------------- drawing
 function draw() {
-  // Always reschedule. A wasm memory growth can detach a view mid-frame; that
-  // frame may be skipped, but it must never kill the render loop and black out
-  // the panel until the user reloads the app.
+  // The reschedule lives in `finally`. It used to be the last statement in the
+  // body, so ANY throw here killed the render loop for good and the panel
+  // froze until reload -- the "window went black after Start" failure. A frame
+  // can legitimately throw: every view below is built over ui.memory.buffer,
+  // and that buffer detaches if the wasm memory grows mid-frame. Skipping one
+  // frame is harmless; the views are rebuilt on the next one.
   try {
     drawFrame();
-  } catch (error) {
-    if (!draw.warned) { console.warn("draw: skipped a frame", error); draw.warned = true; }
+  } catch (e) {
+    if (!draw.warned) { console.warn("draw: skipped a frame", e); draw.warned = true; }
   } finally {
     requestAnimationFrame(draw);
   }
@@ -444,7 +476,7 @@ requestAnimationFrame(draw);
 
 /* ---------- Customize: live panel skin (fm1_skin) + a cut-out decal ---------- */
 const SKIN_ORDER = ["room","body_top","body_bot","tray","silk","btn_top","btn_bot","btn_ink","key_top","key_bot","key_line","key_lit","knob_skirt_a","knob_skirt_b","knob_cap_a","knob_cap_b","knob_glow","amber","green","bezel_a","bezel_b"];
-const SKIN_DEFAULT = {room:"#000000",body_top:"#141414",body_bot:"#070707",tray:"#0d0d0d",silk:"#c9c6bd",btn_top:"#1e1e1e",btn_bot:"#141414",btn_ink:"#9c9a94",key_top:"#fa5400",key_bot:"#b23c00",key_line:"#ff8a3a",key_lit:"#ffd0a0",knob_skirt_a:"#2e3034",knob_skirt_b:"#50535a",knob_cap_a:"#3a3d43",knob_cap_b:"#6d7178",knob_glow:"#fa5400",amber:"#fa5400",green:"#62d36e",bezel_a:"#0e0e10",bezel_b:"#0b0b0c"};
+const SKIN_DEFAULT = {room:"#000000",body_top:"#141414",body_bot:"#070707",tray:"#0d0d0d",silk:"#c8c8c8",btn_top:"#1e1e1e",btn_bot:"#141414",btn_ink:"#9a9a9a",key_top:"#3a3a3a",key_bot:"#1c1c1c",key_line:"#6e6e6e",key_lit:"#e8e8e8",knob_skirt_a:"#2e2e2e",knob_skirt_b:"#505050",knob_cap_a:"#3a3a3a",knob_cap_b:"#6d6d6d",knob_glow:"#d8d8d8",amber:"#d8d8d8",green:"#c8c8c8",bezel_a:"#0e0e0e",bezel_b:"#0b0b0b"};
 function fm1ApplySkin(sk) {
   // (anything but #rrggbb, from storage or a shared look, falls back to the stock colour)
   const arr = SKIN_ORDER.map(k => (parseInt((/^#[0-9a-f]{6}$/i.test(sk?.[k]) ? sk[k] : SKIN_DEFAULT[k]).slice(1), 16) >>> 0));
@@ -452,10 +484,46 @@ function fm1ApplySkin(sk) {
   new Uint32Array(ui.memory.buffer, p, arr.length).set(arr);
   ui.fm1_skin(p, arr.length);
 }
+// MIDI bus declared before FM1 is published so Keys / MIDI Mon can subscribe as soon as they see it.
+const midiTaps = new Set();
+function subscribeMidi(fn) {
+  if (typeof fn !== "function") return () => {};
+  midiTaps.add(fn);
+  return () => midiTaps.delete(fn);
+}
+function notifyMidi(bytes) {
+  for (const fn of midiTaps) {
+    try { fn(bytes); }
+    catch (err) { if (!notifyMidi.warned) { notifyMidi.warned = true; console.error("MIDI tap failed", err); } }
+  }
+}
+// Forward declarations: real bodies are wired with the MIDI UI below (after Start/node exist).
+let midiMessage = (e) => { /* not ready */ };
+let hwMessage = (e) => { midiMessage(e); };
+let inputProcessor = null;
+
+// Wrap canvas + Start so % placement is relative to the panel art and survives deck zoom.
+// Worker mark is a sticker only (stickers.js) — not painted onto the faceplate.
+(function ensurePanelStack() {
+  const stage = canvas.closest(".stage") || canvas.parentElement;
+  if (!stage) return;
+  let stack = stage.querySelector(".panel-stack");
+  if (!stack) {
+    stack = document.createElement("div");
+    stack.className = "panel-stack";
+    canvas.replaceWith(stack);
+    stack.appendChild(canvas);
+    const start = document.getElementById("start");
+    if (start) stack.appendChild(start);
+  }
+  window.FM1PlaceBrand = () => {};
+})();
+
 window.FM1 = { applySkin: fm1ApplySkin, SKIN_ORDER, SKIN_DEFAULT, panelCanvas: canvas, stage: canvas.closest(".stage") || canvas.parentElement,
   midi: (bytes) => { try { midiMessage({ data: bytes }); } catch (e) {} },     // inject MIDI into the device (after Start)
   midiInput: (bytes) => { try { hwMessage({ data: bytes }); } catch (e) {} },   // feed the input chain, through any processor
   setInputProcessor: (fn) => { inputProcessor = fn; },                          // transform hardware MIDI (scale/chord/arp)
+  onMidi: (fn) => subscribeMidi(fn),                                          // every byte that reaches the device (Keys, HW, player)
   audio: (samples) => { try { engine && engine.postMessage({ type: "audio", samples }); } catch (e) {} }, // line-in over USB audio
   hasAudioIn: () => !!window.FM1._audioIn,                                     // the booted firmware takes USB line-in
   _audioIn: false,
@@ -468,13 +536,46 @@ window.FM1 = { applySkin: fm1ApplySkin, SKIN_ORDER, SKIN_DEFAULT, panelCanvas: c
   supportsBanks: () => !!window.FM1._usr,                                      // the booted firmware has a DX7 patch area
   _usr: false,
   fwText: (id) => fwSearchText[id] || "",                                      // searchable text (name + description) for a firmware
+  caps: (id) => (id && CAPS[id]) || null,                                      // classify.json entry (MIDI / banks / audioIn / feats)
   isSampler: (id) => !!(CAPS[id] && CAPS[id].audioIn),                         // takes USB audio in (a sampler)
   runningFirmware: () => running ? { id: running.entry.slice(DEV.key.length), name: running.record.name, hash: running.record.hash } : null,
   latency: () => latency,                                                      // the buffer in use (self-tests)
   heldKeys: () => [...down.keys()].filter((i) => down[i]),                    // matrix keys held (self-tests)
-  running: () => !!running };
+  running: () => !!running,
+  // Panel host / tools (filled after input helpers exist; stubs until then)
+  panelKey: (id, on) => { try { setKey(id, !!on); } catch {} },
+  panelEnc: (i, clicks) => { try { turn(i, clicks); } catch {} },
+  panelEncAbs: null,
+  panelPot: (v) => { try { setPot(v); } catch {} },
+  panelVelocity: (f) => { try { setVelocity(f); } catch {} },
+};
 try { fm1ApplySkin({ ...SKIN_DEFAULT, ...JSON.parse(localStorage.getItem("fm1.skin") || "{}") }); } catch {}
 if (typeof window.initCustomize === "function") window.initCustomize(window.FM1);
+
+// Absolute encoder CC → relative clicks for the panel host.
+const encAbsLast = new Array(8).fill(64);
+window.FM1.panelEncAbs = (i, value) => {
+  const idx = Math.max(0, Math.min(7, i | 0));
+  const v = Math.max(0, Math.min(127, value | 0));
+  const prev = encAbsLast[idx];
+  encAbsLast[idx] = v;
+  const d = v - prev;
+  if (d) turn(idx, Math.sign(d) * Math.max(1, Math.round(Math.abs(d) / 3)));
+};
+
+// A/B listen: both | emu (mute MIDI out) | hw (mute emu audio, keep MIDI out). Declared early for MIDI UI.
+let outGain = null;
+let abMode = (() => { try { return localStorage.getItem("fm1.ab.v1") || "both"; } catch { return "both"; } })();
+function applyAbAudio() {
+  if (outGain) outGain.gain.value = abMode === "hw" ? 0 : 1;
+}
+function setAbMode(mode) {
+  abMode = mode === "emu" || mode === "hw" ? mode : "both";
+  try { localStorage.setItem("fm1.ab.v1", abMode); } catch {}
+  applyAbAudio();
+  return abMode;
+}
+window.FM1Ab = { get: () => abMode, set: setAbMode };
 
 // ---------------------------------------------------------------- input to the machine
 const send = (m) => engine && engine.postMessage(m);
@@ -632,32 +733,115 @@ addEventListener("keyup", (e) => {
   if (id >= 0) setKey(id, false);
 });
 
-// ---------------------------------------------------------------- MIDI in (Web MIDI)
-// The chosen input(s) play the synth through its MIDI IN jack (UART1 at 31250 baud in the
-// emulator). Access is asked for only once an input is picked (Chrome asks the visitor), and on
-// Start when one was picked on an earlier visit. Channel: channel messages rewritten to one
-// channel (0 = as sent).
+// ---------------------------------------------------------------- MIDI in / out (Web MIDI)
+// Inputs play the synth through its MIDI IN jack (UART1 at 31250 baud in the emulator).
+// Outputs tee Keys / player / assist MIDI to a real FM-1 (USB or Bluetooth LE MIDI). Hardware
+// input is never echoed to the chosen output (avoids a feedback loop with a paired unit).
+// Access is asked for only once an input/out is picked (Chrome asks the visitor), and on Start
+// when one was picked on an earlier visit. Channel: channel messages rewritten to one channel
+// (0 = as sent). Desktop Windows enables WinRT MIDI so BLE devices appear in this list.
 const midiSel = document.getElementById("midi");
+const midiOutSel = document.getElementById("midiout");
 const midiChSel = document.getElementById("midich");
+const midiLinkEl = document.getElementById("midilink");
 const midiAct = document.getElementById("midiact");
-let midi = null, midiAsked = null, midiActOff = 0, inputProcessor = null;
+const midiOutAct = document.getElementById("midioutact");
+let midi = null, midiAsked = null, midiActOff = 0, midiOutActOff = 0;
+let midiOutPort = null;
+let midiHwDepth = 0; // >0 while handling a hardware MIDI message (blocks out echo)
 let midiCh = Number(stored("fm1.midich") || 0);
+let midiDropWarned = false;
+let midiPortsSeen = null; // Set of FM-1-ish names after first connect (for appear/disappear toasts)
 for (let c = 1; c <= 16; c++) midiChSel.add(new Option(String(c), c));
 midiChSel.value = midiCh;
 const midiWant = () => stored("fm1.midi") || "";
-if (!navigator.requestMIDIAccess) {
-  midiSel.disabled = midiChSel.disabled = true;
-  document.getElementById("midiin").title = "this browser has no Web MIDI (Chrome, Edge and Firefox do)";
+const midiOutWant = () => stored("fm1.midiout") || "";
+const midiLinkOn = () => (midiLinkEl ? midiLinkEl.checked : true);
+if (midiLinkEl) {
+  const savedLink = stored("fm1.midilink");
+  midiLinkEl.checked = savedLink === null ? true : savedLink === "1";
+  midiLinkEl.addEventListener("change", () => store("fm1.midilink", midiLinkEl.checked ? "1" : "0"));
 }
-function midiMessage(e) {
-  const d = e.data;
-  if (!d.length || !node) return;
-  const bytes = Array.from(d);
-  if (midiCh && bytes[0] >= 0x80 && bytes[0] < 0xf0) bytes[0] = (bytes[0] & 0xf0) | (midiCh - 1);
-  if (window.FM1Rec) { try { window.FM1Rec(bytes); } catch (e) {} }   // tap for the MIDI recorder
+if (!navigator.requestMIDIAccess) {
+  midiSel.disabled = midiOutSel.disabled = midiChSel.disabled = true;
+  if (midiLinkEl) midiLinkEl.disabled = true;
+  document.getElementById("midiin").title = "this browser has no Web MIDI (Chrome, Edge and Firefox do)";
+  document.getElementById("midioutl").title = "this browser has no Web MIDI (Chrome, Edge and Firefox do)";
+}
+function midiOutPulse(bytes) {
+  if (isActivityMessage(bytes) && midiOutAct) {
+    midiOutAct.classList.add("on");
+    clearTimeout(midiOutActOff);
+    midiOutActOff = setTimeout(() => midiOutAct.classList.remove("on"), 120);
+  }
+}
+function midiOutSend(bytes) {
+  if (!midiOutPort || midiHwDepth > 0 || !bytes || !bytes.length) return false;
+  if (abMode === "emu") return false; // A/B: emu only — keep MIDI on the soft synth
+  try {
+    midiOutPort.send(bytes instanceof Uint8Array ? bytes : Uint8Array.from(bytes));
+    midiOutPulse(bytes);
+    return true;
+  } catch (err) {
+    if (!midiOutSend.warned) { midiOutSend.warned = true; console.error("MIDI out send failed", err); }
+    return false;
+  }
+}
+/** Send one or more SysEx messages from a .syx buffer to MIDI out. Upgrades to sysex access if needed. */
+async function midiOutSendSysex(bytes) {
+  await midiOpen(); // always SysEx-capable; do not open a second MIDIAccess beside the shared one
+  if (!midiOutPort) return { ok: false, count: 0, reason: "no-out" };
+  if (!midi || midi.sysexEnabled === false) return { ok: false, count: 0, reason: "sysex-denied" };
+  if (!midiOutPort) return { ok: false, count: 0, reason: "no-out" };
+  const msgs = splitSysex(bytes);
+  if (!msgs.length) return { ok: false, count: 0, reason: "no-sysex" };
+  let sent = 0;
+  for (const msg of msgs) {
+    try {
+      midiOutPort.send(msg);
+      midiOutPulse(msg);
+      sent++;
+      if (msgs.length > 1) await new Promise((r) => setTimeout(r, 40));
+    } catch (err) {
+      if (!midiOutSendSysex.warned) { midiOutSendSysex.warned = true; console.error("MIDI SysEx send failed", err); }
+      return { ok: false, count: sent, reason: "send-failed" };
+    }
+  }
+  return { ok: true, count: sent, reason: "" };
+}
+function applyMidiLink(fromInName) {
+  if (!midiLinkOn() || !fromInName || fromInName === "*") return;
+  if (![...midiOutSel.options].some((o) => o.value === fromInName)) return;
+  if (midiOutSel.value === fromInName) return;
+  midiOutSel.value = fromInName;
+  store("fm1.midiout", fromInName);
+}
+midiMessage = function midiMessage(e) {
+  const d = e?.data;
+  if (!d || !d.length) return;
+  // Remap → notify screen/monitor/recorder → tee soft MIDI to hardware out → drive emulator.
+  const bytes = remapChannel(d, midiCh);
+  notifyMidi(bytes);
+  midiOutSend(bytes);
+  if (window.FM1Rec) { try { window.FM1Rec(bytes); } catch (err) {} }
+  if (isActivityMessage(bytes)) {
+    midiAct.classList.add("on");
+    clearTimeout(midiActOff);
+    midiActOff = setTimeout(() => midiAct.classList.remove("on"), 120);
+  }
+  // A/B hardware-only: soft MIDI still goes out, but the emulator stays silent.
+  if (abMode === "hw") return;
+  if (!node || !engine) {
+    if (!midiDropWarned && isActivityMessage(bytes)) {
+      midiDropWarned = true;
+      status.textContent = "MIDI is arriving — press Start so the emulator plays what you see.";
+    }
+    return;
+  }
+  midiDropWarned = false;
   if (board === 1) {
     // the SMK-37 has no MIDI in jack: notes C3..C6 play its keys (the velocity as the time between
-    // the contacts), the pitch bend and the mod wheel its wheels
+    // the contacts), the pitch bend and the mod wheel its wheels — screen + machine stay one path
     const st = bytes[0] & 0xf0, k = bytes[1] - 48;
     if ((st === 0x90 || st === 0x80) && k >= 0 && k < NKEY) {
       const on = st === 0x90 && bytes[2] > 0;
@@ -672,12 +856,7 @@ function midiMessage(e) {
   } else {
     send({ type: "midi", bytes });
   }
-  if (bytes[0] < 0xf8) {
-    midiAct.classList.add("on");
-    clearTimeout(midiActOff);
-    midiActOff = setTimeout(() => midiAct.classList.remove("on"), 120);
-  }
-}
+};
 // hardware MIDI can run through an input processor (the Keys module's scale/chord/arp) before it
 // reaches the synth; the processor returns true when it has handled and re-injected the message.
 // notes and sustain held from hardware, so they can be let go if the device is unplugged mid-note
@@ -694,15 +873,28 @@ function releaseHardware() {
   for (const ch of [...hwSustain]) hwMessage({ data: new Uint8Array([0xb0 | ch, 64, 0]) });
   hwHeld.clear(); hwSustain.clear();
 }
-function hwMessage(e) {
-  if (e?.data?.length >= 3) trackHeld(e.data);
-  if (inputProcessor) {
-    try { if (inputProcessor(Array.from(e.data))) return; }
-    catch (err) { if (!hwMessage.warned) { hwMessage.warned = true; console.error("MIDI input processor failed; passing input through", err); } }
+hwMessage = function hwMessage(e) {
+  midiHwDepth++;
+  try {
+    if (e?.data?.length >= 3) trackHeld(e.data);
+    // Panel host consumes hardware panel MIDI before Keys / play path.
+    if (window.FM1HostPanel && window.FM1HostPanel.get && window.FM1HostPanel.get() !== "off") {
+      try {
+        if (window.FM1HostPanel.process(Array.from(e.data || []))) return;
+      } catch (err) {
+        if (!hwMessage.hostWarned) { hwMessage.hostWarned = true; console.error("Panel host failed; passing input through", err); }
+      }
+    }
+    if (inputProcessor) {
+      try { if (inputProcessor(Array.from(e.data))) return; }
+      catch (err) { if (!hwMessage.warned) { hwMessage.warned = true; console.error("MIDI input processor failed; passing input through", err); } }
+    }
+    midiMessage(e);
+  } finally {
+    midiHwDepth--;
   }
-  midiMessage(e);
-}
-// listen to the wanted inputs only; the list follows devices coming and going
+};
+// listen to the wanted inputs / outputs only; the lists follow devices coming and going
 let attached = new Set();
 function midiConnect() {
   if (!midi) return;
@@ -714,53 +906,161 @@ function midiConnect() {
   const names = inputs.map((i) => i.name);
   for (const o of [...midiSel.options]) if (o.value !== "" && o.value !== "*" && !names.includes(o.value)) o.remove();
   for (const n of names) if (![...midiSel.options].some((o) => o.value === n)) midiSel.add(new Option(n, n));
-  // plug-and-play: if the player has never chosen an input, auto-grab a connected FM-1 / M-VAVE / SMK so
-  // playing the real hardware's keys drives the emulator with no setup (kept "auto" until they choose one)
-  if (!want && localStorage.getItem("fm1.midi") === null) {
-    const fm = names.find((n) => /fm[\s-]?1|m[\s-]?vave|smk[\s-]?37/i.test(n || ""));
-    if (fm) { want = fm; status.textContent = `Playing from ${fm} — your FM-1 is driving the emulator.`; }
-  }
+  // Never auto-grab a port. MIDI stays off until the user picks one (or a saved choice reconnects).
   if ([...midiSel.options].some((o) => o.value === want)) midiSel.value = want;
+  else if (!want) midiSel.value = "";
+  if (midiLinkOn() && want && want !== "*") applyMidiLink(want);
   const now = new Set();
+  // Never reassign handlers while Check/install is listening — that raced the SysEx
+  // handshake and made a live FM-1 look "not found" / unreadable over USB.
+  const holdHandlers = !!globalThis.FM1MidiUpdaterBusy;
   for (const input of midi.inputs.values()) {
     const on = input.state !== "disconnected" && (want === "*" || want === input.name);
-    input.onmidimessage = on ? hwMessage : null;
+    if (!holdHandlers) input.onmidimessage = on ? hwMessage : null;
     if (on) now.add(input.id || input.name);
   }
   // an input that was playing is gone: let go of what it held
   if ([...attached].some((id) => !now.has(id))) releaseHardware();
   attached = now;
+
+  // MIDI out: Keys / player / assist / panic / clock → paired FM-1 (USB or BLE). Never echo hardware in.
+  const savedOut = stored("fm1.midiout");
+  let wantOut = savedOut !== null && savedOut !== "" ? savedOut : midiOutSel.value;
+  const outputs = [...midi.outputs.values()].filter((o) => o.state !== "disconnected");
+  const outNames = outputs.map((o) => o.name);
+  for (const o of [...midiOutSel.options]) if (o.value !== "" && !outNames.includes(o.value)) o.remove();
+  for (const n of outNames) if (![...midiOutSel.options].some((o) => o.value === n)) midiOutSel.add(new Option(n, n));
+  // Link only mirrors an explicit in choice onto out — never invents an out on its own.
+  if (midiLinkOn() && want && want !== "*" && outNames.includes(want)) wantOut = want;
+  if ([...midiOutSel.options].some((o) => o.value === wantOut)) midiOutSel.value = wantOut;
+  else midiOutSel.value = "";
+  midiOutPort = outputs.find((o) => o.name === midiOutSel.value) || null;
+
+  // Quiet appear/disappear notice only after the user has chosen a port (never on first auto-enum).
+  const fmNow = new Set([...names, ...outNames].filter(isFm1PortName));
+  if (midiPortsSeen && (midiWant() || midiOutWant())) {
+    for (const n of fmNow) {
+      if (!midiPortsSeen.has(n)) status.textContent = `${n} connected — available under MIDI in / out.`;
+    }
+    for (const n of midiPortsSeen) {
+      if (!fmNow.has(n)) status.textContent = `${n} disconnected.`;
+    }
+  }
+  midiPortsSeen = fmNow;
 }
 async function midiOpen() {
-  if (midi || !navigator.requestMIDIAccess) return midiConnect();
-  midiAsked ||= navigator.requestMIDIAccess().then((m) => {
+  if (!navigator.requestMIDIAccess) return midiConnect();
+  // Always ask for SysEx. Install / Identify / bank dump need it; a first open without
+  // sysex on Windows can leave the FM-1 port silent to identity queries ("nothing answered").
+  if (midi && midi.sysexEnabled !== false) return midiConnect();
+  if (midi && midi.sysexEnabled === false) midiAsked = null; // upgrade a non-sysex session
+  midiAsked ||= navigator.requestMIDIAccess({ sysex: true }).then((m) => {
     midi = m;
     midi.onstatechange = midiConnect;
   }, () => {
     midiAsked = null;
     midiSel.value = "";
+    midiOutSel.value = "";
     status.textContent = "MIDI: access was not given";
   });
   await midiAsked;
   midiConnect();
 }
+// Shared with Install firmware so Check / flash use the same SysEx-capable access.
+window.FM1MidiAccess = () => midi;
+window.FM1MidiOpen = midiOpen;
 {
   const want = midiWant();
   if (want && want !== "*") midiSel.add(new Option(want, want));
   midiSel.value = want;
+  const wantOut = midiOutWant();
+  if (wantOut) midiOutSel.add(new Option(wantOut, wantOut));
+  midiOutSel.value = wantOut;
 }
-// On load, reconnect a saved input; in the desktop app (MIDI already permitted) enumerate so a
-// plugged-in FM-1 is found and auto-selected with no prompt. In the browser we wait for the user
-// to pick an input (which grants access) rather than prompting on load.
-if (navigator.requestMIDIAccess && (midiWant() || window.FM1Desktop)) midiOpen();
+// On load, reconnect only a port the user already chose. Never open MIDI / grab devices unprompted.
+if (navigator.requestMIDIAccess && (midiWant() || midiOutWant())) midiOpen();
 midiSel.addEventListener("change", () => {
   store("fm1.midi", midiSel.value);
-  if (midiSel.value) midiOpen(); else midiConnect();
+  applyMidiLink(midiSel.value);
+  if (midiSel.value || midiOutSel.value) midiOpen(); else midiConnect();
+});
+midiOutSel.addEventListener("change", () => {
+  store("fm1.midiout", midiOutSel.value);
+  // Manual out choice that disagrees with in turns Link off so we don't snap it back.
+  if (midiLinkEl && midiLinkOn() && midiSel.value && midiSel.value !== "*" && midiOutSel.value !== midiSel.value) {
+    midiLinkEl.checked = false;
+    store("fm1.midilink", "0");
+  }
+  if (midiOutSel.value || midiSel.value) midiOpen(); else { midiOutPort = null; midiConnect(); }
 });
 midiChSel.addEventListener("change", () => {
   midiCh = Number(midiChSel.value);
   store("fm1.midich", midiCh);
 });
+// Soft MIDI already tees to MIDI out (Keys, player, assist, panic, clock). Expose helpers for Banks / tools.
+Object.assign(window.FM1, {
+  hasMidiOut: () => !!midiOutPort,
+  midiOutName: () => (midiOutPort && midiOutPort.name) || "",
+  midiOutSend: (bytes) => midiOutSend(bytes),
+  midiOutSendSysex: (bytes) => midiOutSendSysex(bytes),
+  midiIdentify: () => midiIdentify(),
+});
+
+const midiAbSel = document.getElementById("midiab");
+if (midiAbSel) {
+  midiAbSel.value = abMode;
+  midiAbSel.addEventListener("change", () => {
+    setAbMode(midiAbSel.value);
+    status.textContent = abMode === "both" ? "A/B: emu + hardware"
+      : abMode === "emu" ? "A/B: emulator only (MIDI out muted)"
+      : "A/B: hardware only (emu audio muted)";
+    if (window.FM1Announce) window.FM1Announce(status.textContent);
+  });
+}
+
+const midiIdBtn = document.getElementById("midi-identify");
+const midiIdEl = document.getElementById("midi-identity");
+let identityBytes = null;
+async function midiIdentify() {
+  await midiOpen();
+  if (!midi) {
+    if (midiIdEl) { midiIdEl.hidden = false; midiIdEl.textContent = "MIDI access was not given."; }
+    return null;
+  }
+  if (midiIdEl) { midiIdEl.hidden = false; midiIdEl.textContent = "Checking…"; }
+  // Same SysEx handshake as Install → Check. Do not steal onmidimessage or open a second access.
+  let text = "No identity reply (unit may ignore this SysEx, or needs USB).";
+  identityBytes = null;
+  try {
+    const r = await new Updater(midi).detect();
+    if (r.found) {
+      text = r.inUpdateMode
+        ? `Identity: ${r.id} (update mode) via ${r.name}`
+        : `Identity: ${r.id} via ${r.name}`;
+      identityBytes = r.id;
+    } else if (r.code === "busy") text = "Port busy — close other MIDI apps, then Identify again.";
+    else if (r.code === "nomidi") text = "No USB-MIDI device visible.";
+    else if (r.code === "noport") text = "No FM-1-like MIDI port among connected devices.";
+    else text = `No FM-1 answer. Ports: ${(r.ports || []).join(", ") || "none"}.`;
+  } catch (e) {
+    text = (e && e.message) || "Identify failed.";
+  }
+  if (midiIdEl) { midiIdEl.hidden = false; midiIdEl.textContent = text; }
+  status.textContent = text;
+  return identityBytes;
+}
+if (midiIdBtn) midiIdBtn.addEventListener("click", () => { midiIdentify(); });
+
+// Effect-channel conflict hint (play ch vs factory Effect Chn 2).
+function refreshFxWarn() {
+  const el = document.getElementById("midi-fx-warn");
+  if (!el) return;
+  const msg = effectChannelConflict(midiCh, 2);
+  el.textContent = msg;
+  el.hidden = !msg;
+}
+midiChSel.addEventListener("change", refreshFxWarn);
+refreshFxWarn();
 
 // ---------------------------------------------------------------- is the device keeping up?
 // Two measures, per second: the load (the share of the audio thread's time the emulation takes,
@@ -1155,8 +1455,10 @@ function stopAudioGraph() {
   worker?.terminate();
   worker = null;
   engine = null;
-  node?.disconnect();
+  try { node?.disconnect(); } catch {}
+  try { outGain?.disconnect(); } catch {}
   node = null;
+  outGain = null;
 }
 async function startAudio() {
   // "interactive"/"playback" are the browser hints; a number (e.g. 0.3) asks for an even larger buffer
@@ -1182,7 +1484,13 @@ async function startAudio() {
       node = new AudioWorkletNode(ac, "fm1", { numberOfInputs: 0, outputChannelCount: [2] });
       engine = node.port;
     }
-    node.connect(ac.destination);
+    // Master gain between the emulator and speakers so A/B can mute emu while MIDI out still drives hardware.
+    if (!outGain || outGain.context !== ac) {
+      outGain = ac.createGain();
+      outGain.gain.value = abMode === "hw" ? 0 : 1;
+    }
+    node.connect(outGain);
+    outGain.connect(ac.destination);
     engine.onmessage = onWorklet;
     perf.reset();
     // Boot now waits for a worklet acknowledgement; let its thread run even on browsers
@@ -1366,38 +1674,7 @@ document.getElementById("update-firmware").addEventListener("click", action(asyn
   if (node) await boot();
   else saveMessage("Firmware ready: click Start");
 }));
-const scanOpenSource = document.getElementById("scan-open-source");
-const applyOpenSource = document.getElementById("apply-open-source");
-const openSourceStatus = document.getElementById("open-source-status");
-if (scanOpenSource && applyOpenSource && openSourceStatus) {
-  scanOpenSource.addEventListener("click", async () => {
-    scanOpenSource.disabled = true;
-    scanOpenSource.classList.add("scanning");
-    applyOpenSource.hidden = true;
-    openSourceStatus.dataset.error = "false";
-    openSourceStatus.textContent = "Scanning for new firmware…";
-    try {
-      const result = await scanOpenFirmwareUpdates(bundledCatalog, catalog, fetch, { previous: rememberedCatalog });
-      store(updateKey, JSON.stringify(result.remember));
-      const found = result.newCount + result.updateCount;
-      openSourceStatus.textContent = found
-        ? `Found ${result.newCount} new and ${result.updateCount} updated open-source firmware${found === 1 ? "" : "s"}. Packages download only when selected.`
-        : `Up to date — checked ${result.checked} open-license FM-1 packages.`;
-      if (found) {
-        applyOpenSource.textContent = `Use ${found} catalog update${found === 1 ? "" : "s"}`;
-        applyOpenSource.hidden = false;
-      }
-    } catch (error) {
-      openSourceStatus.dataset.error = "true";
-      openSourceStatus.textContent = `Update scan failed: ${error.message}`;
-    } finally {
-      scanOpenSource.disabled = false;
-      scanOpenSource.classList.remove("scanning");
-    }
-  });
-  applyOpenSource.addEventListener("click", () => location.reload());
-  scanOpenSource.disabled = false;   // enabled once the handler is wired (the page loads the emulator first)
-}
+wireRadar({ bundledCatalog, radarRemembered, radarKey, legacyRadarKey, store });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden" && running) flushRunning().catch(saveFailure);
 });
@@ -1436,3 +1713,17 @@ document.getElementById("open-saved-version").addEventListener("click", action(a
   if (node) await boot();
   else status.textContent = `${record.name} saved version ready: click Start`;
 }));
+
+// First-launch flash risk notice (once). Install still asks Yes/Cancel; journal/vault fail-safes stay.
+if (stored("fm1.flashRiskAck") !== "1") {
+  queueMicrotask(() => {
+    issue.show("flash-risk", {
+      title: "Flashing the real FM-1",
+      text: "Install replaces what’s on the unit. No flash backup · your risk. Check / Finish / Roll back still apply.",
+      level: "warn",
+      persist: true,
+      actions: [{ label: "Got it", primary: true, run: () => store("fm1.flashRiskAck", "1") }],
+      onDismiss: () => store("fm1.flashRiskAck", "1"),
+    });
+  });
+}

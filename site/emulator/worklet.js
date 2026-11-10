@@ -1,4 +1,4 @@
-import { applyPackageResources } from "./package-resources.js?v=1";
+import { applyPackageResources } from './package-resources.js?v=1';
 // The emulator in the audio thread: each 128-frame quantum runs the machine until its I2S
 // DMA has produced 128 frames, so the audio device paces the emulation; and also, for an even
 // amount of work per quantum, its share of emulated time while the queue holds less than one
@@ -114,8 +114,9 @@ class Fm1 extends AudioWorkletProcessor {
     this.jit = { regions: 0, failed: 0, error: "", bytes: 0, tableSlots: 0, compileMs: 0, compileMaxMs: 0 };
     x = (await WebAssembly.instantiate(this.module, { env: jitImports(() => x, this.jit) })).exports;
     if (token !== this.bootToken) return;
-    // Interpreter by default; a missing message field must not silently turn
-    // the JIT back on after a firmware switch.
+    // The interpreter is the default and the JIT is opt-in (?jit=1): it can
+    // stall the audio thread on newer firmware. Default to the interpreter when
+    // the flag is missing too, so a dropped field cannot silently turn it on.
     x.fm1_jit(m.jit === true ? 1 : 0, 16);
     const ahead = x.fm1_ahead ? m.ahead ?? AHEAD_FRAMES : 0;
     x.fm1_ahead?.(ahead);               // (?ahead=0: each quantum runs for its own frames only)

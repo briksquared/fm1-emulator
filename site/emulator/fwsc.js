@@ -114,31 +114,32 @@ export function appFromPackage(file) {
   throw new Error("no app.bin in the app area");
 }
 
-// The package the firmware catalog lists now for its firmware `id`, and its version (its
-// catalog.json, read once; asked again after a failure): the catalog removes a firmware's old
-// package when a new version comes, so firmwares.json's goes stale between runs of
-// ci/sync-open-firmwares.mjs. { url, version } or null. (One catalog per fetch function: the
-// page's is fetch; a test's its own.)
-import { CATALOG_URL } from "./catalog-updates.js?v=3";
-const liveCatalogs = new WeakMap();
+// The package the community catalog lists now for its firmware `id`, and its version (the
+// catalog, read once; asked again after a failure): the catalog removes a firmware's old package
+// when a new version comes, so web/firmwares.json's goes stale between runs of
+// the catalog tool. { url, version } or null. (One catalog per fetch function: the page's is
+// fetch; a test's its own.)
+import "./catalog-source.js";
+const { CATALOG_URL, idOf } = globalThis.FM1Source;
+const catalogs = new WeakMap();
 async function catalogPackage(id, fetchFn) {
   try {
-    if (!liveCatalogs.has(fetchFn)) {
-      liveCatalogs.set(fetchFn, fetchFn(CATALOG_URL).then((r) => {
-        if (!r.ok) throw new Error(`catalog.json: ${r.status}`);
+    if (!catalogs.has(fetchFn)) {
+      catalogs.set(fetchFn, fetchFn(CATALOG_URL).then((r) => {
+        if (!r.ok) throw new Error(`firmware catalog: ${r.status}`);
         return r.json();
       }));
     }
-    const h = (await liveCatalogs.get(fetchFn))?.firmwares?.find((h) => h.id === id);
-    return h?.pkg ? { url: new URL(h.pkg, CATALOG_URL).href, version: h.version == null ? null : String(h.version) } : null;
+    const c = (await catalogs.get(fetchFn))?.firmwares?.find((c) => c.id === id);
+    return c?.pkg ? { url: new URL(c.pkg, CATALOG_URL).href, version: c.version == null ? null : String(c.version) } : null;
   } catch {
-    liveCatalogs.delete(fetchFn);
+    catalogs.delete(fetchFn);
     return null;
   }
 }
 
 // Fetch a catalog entry's package (web/firmwares.json): its `package` URL, or when that has
-// gone (a newer version replaced it) the package the catalog lists now (an entry with `catalogId`), or
+// gone (a newer version replaced it) the package the catalog lists now (an entry with a catalog id), or
 // the .fwsc its `installer` page links now, found in the
 // page or the scripts it loads, or named by its `manifest` (a JSON file whose `package` or
 // `file` is relative to it: ORBIT's manifest.json, FiMba-1's latest.json). An entry with
@@ -159,8 +160,8 @@ export async function fetchPackage(entry, fetchFn = fetch) {
   }
   let r = await fetchFn(entry.package);
   if (r.ok) return { bytes: new Uint8Array(await r.arrayBuffer()), url: entry.package };
-  if (entry.catalogId) {
-    const now = await catalogPackage(entry.catalogId, fetchFn);
+  if (idOf(entry)) {
+    const now = await catalogPackage(idOf(entry), fetchFn);
     if (now && now.url !== entry.package) {
       const h = await fetchFn(now.url);
       if (h.ok) return { bytes: new Uint8Array(await h.arrayBuffer()), url: now.url, ...(now.version && { version: now.version }) };

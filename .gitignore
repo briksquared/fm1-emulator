@@ -1,7 +1,12 @@
 node_modules/
 dist/
+ci/out/
 *.log
 npm-debug.log*
 .DS_Store
 Thumbs.db
 *.tmp
+tools/_geom/
+.worker/
+logs/
+memory/

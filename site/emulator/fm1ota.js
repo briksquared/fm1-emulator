@@ -22,7 +22,7 @@ export const TIMING = {
   returnWait: 40000,     // how long the new firmware may take to appear
   poll: 1000,            // read / re-scan interval
   openTimeout: 5000,     // a port that does not open within this is treated as busy
-  handshake: 1000,       // identity reply window per attempt
+  handshake: 4000,       // identity reply window per attempt (WinRT / busy USB stacks need longer)
   packetGap: 10,         // pause before each data response
   backoff: 250,          // first retry delay for a failed open or send (doubles each time)
   retries: 3,
@@ -33,7 +33,8 @@ const within = (promise, ms) => {
 }
 const IS_OTA = (id) => /^ota-/i.test(id.model)
 // Names emitted by known FM-1 firmware USB MIDI descriptors — tried first as a fast path.
-export const isCandidatePort = (name) => /fm-1|felucca|ota|composite|sinco|usb-midi|hortator/i.test(name || '')
+// Match common USB/BLE product strings: "FM-1", "FM1", "Mutable Dreams FM-1", M-VAVE, SMK-37, etc.
+export const isCandidatePort = (name) => /fm[\s_-]?1|mutable\s*dreams|m[\s-]?vave|smk[\s-]?37|felucca|ota|composite|sinco|usb-midi|hortator/i.test(name || '')
 // Community firmwares advertise arbitrary USB product names (e.g. "Matryoshka"), and WebMIDI
 // exposes no VID/PID to match on — so any port that is not obviously someone else's gear is also
 // worth probing. The identity handshake is the real gate: only an FM-1 answers it, and no package
@@ -52,7 +53,7 @@ export const isKnownOtherGear = (name) => /motu|fireface|\brme\b|babyface|scarle
 //   busy        - an FM-1-like port exists but could not be opened (another app holds it)
 //   notfound    - probed port(s) but nothing answered the FM-1 identity handshake
 //   model       - the connected device is a different product than the package is for
-//   downloadmode- found, but the running firmware won't enter USB-MIDI update mode (use M-Flasher)
+//   downloadmode- found, but the running firmware won't enter USB-MIDI update mode (this app cannot install it; see Advanced recovery)
 //   stopped     - the device stopped responding mid-transfer
 //   lost        - the device was unplugged mid-transfer
 //   badreq      - the device asked for data outside the image (corrupt package / protocol error)
@@ -120,12 +121,21 @@ function parseRequest(pkt) {
   return { fl: u[6], addr: (u[7] | (u[8] << 8) | (u[9] << 16) | (u[10] << 24)) >>> 0, len: u[11] | (u[12] << 8) | (u[13] << 16) }
 }
 
-function parseIdentity(pkt) {
+export function parseIdentity(pkt) {
+  if (!pkt?.length || pkt[0] !== 0xf0 || pkt[pkt.length - 1] !== 0xf7) return null
   const d = unpack7(pkt.slice(1, -1))
   if (d.length !== 34 || d[0] !== 0 || d[1] !== 0x59 || d[2] !== 0x11) return null
   const txt = String.fromCharCode(...d.slice(6, 33)).replace(/\0+$/, '')
   const m = /^([^_]+)_(\d+)$/.exec(txt)
   return m ? { text: txt, model: m[1], version: parseInt(m[2], 10) } : null
+}
+
+// While Check / install holds a Link, the page MIDI reconnect path must not reassign
+// onmidimessage (that wiped the handshake and looked like "USB not found").
+let midiUpdaterLinks = 0
+export function midiUpdaterBusy() { return midiUpdaterLinks > 0 }
+if (typeof globalThis !== "undefined") {
+  Object.defineProperty(globalThis, "FM1MidiUpdaterBusy", { configurable: true, get: () => midiUpdaterBusy() })
 }
 
 // one MIDI in/out pair with a SysEx queue
@@ -135,8 +145,13 @@ class Link {
     this.output = output
     this.q = []
     this.waiter = null
+    this._closed = false
+    midiUpdaterLinks++
+    // Chain — do not wipe the emulator's MIDI-in handler (Keys / panel host).
+    this._prevMidi = input.onmidimessage
     input.onmidimessage = (ev) => {
-      if (ev.data[0] !== 0xf0) return
+      try { if (typeof this._prevMidi === "function") this._prevMidi(ev) } catch (_) {}
+      if (!ev?.data?.length || ev.data[0] !== 0xf0) return
       this.q.push(Array.from(ev.data))
       if (this.waiter) {
         const w = this.waiter
@@ -144,6 +159,11 @@ class Link {
         w()
       }
     }
+  }
+  _releaseHandlerSlot() {
+    if (this._closed) return
+    this._closed = true
+    midiUpdaterLinks = Math.max(0, midiUpdaterLinks - 1)
   }
   get lost() {
     return this.input.state === 'disconnected' || this.output.state === 'disconnected'
@@ -187,10 +207,14 @@ class Link {
     return this.q.shift() || null
   }
   close() {
-    this.input.onmidimessage = null
-    // Release the OS MIDI ports too. find() probes the user's other gear to locate the FM-1, so
-    // leaving ports open would hold those devices' MIDI ports after every probe or failed flash.
-    // Fire-and-forget: close() returns a promise we don't need, and may be absent on test doubles.
+    // Restore the previous handler; do not force-close ports the emulator still uses for play.
+    try { this.input.onmidimessage = this._prevMidi || null } catch (_) {}
+    this._releaseHandlerSlot()
+  }
+  /** After a successful flash path, release OS ports that only the updater opened. */
+  releasePorts() {
+    try { this.input.onmidimessage = this._prevMidi || null } catch (_) {}
+    this._releaseHandlerSlot()
     try { this.input.close() } catch (_) {}
     try { this.output.close() } catch (_) {}
   }
@@ -198,13 +222,14 @@ class Link {
 
 async function handshake(link, tries, t) {
   link.drain()
-  for (let n = 0; n < tries; n++) {
+  const nTries = Math.max(tries || 2, 3)
+  for (let n = 0; n < nTries; n++) {
     if (n) await sleep(t.backoff * 2 ** (n - 1))
     if (!(await link.sendRetry(HS_QUERY, t))) return null
     const end = Date.now() + t.handshake
     while (Date.now() < end) {
-      const p = await link.read(end - Date.now())
-      if (!p) break
+      const p = await link.read(Math.max(50, end - Date.now()))
+      if (!p) continue
       const id = parseIdentity(p)
       if (id) return id
     }
@@ -240,32 +265,45 @@ export class Updater {
   // `diag`, when given, collects a one-line outcome per probed port so callers can report exactly
   // what the flasher saw and why it did not find the device.
   async find(filter, diag) {
-    const outs = [...this.access.outputs.values()]
+    const outs = [...this.access.outputs.values()].filter((o) => o.state !== 'disconnected')
     const live = [...this.access.inputs.values()].filter((i) => i.state !== 'disconnected')
+    // Prefer specific names ("Mutable Dreams FM-1") over bare "FM-1" ghost SoftwareDevices.
+    const bySpecificity = (a, b) => String(b.name || '').length - String(a.name || '').length
     const ordered = [
-      ...live.filter((i) => isCandidatePort(i.name)),
-      ...live.filter((i) => !isCandidatePort(i.name) && !isKnownOtherGear(i.name)),
+      ...live.filter((i) => isCandidatePort(i.name)).sort(bySpecificity),
+      ...live.filter((i) => !isCandidatePort(i.name) && !isKnownOtherGear(i.name)).sort(bySpecificity),
     ]
     // Windows can name a device's in/out asymmetrically ("MIDIIN2 (X)" / "MIDIOUT2 (X)"), so when
     // the names don't match exactly, fall back to the output whose normalized device name is the
     // same — but only when that is unambiguous, never guessing which output a port belongs to.
     const norm = (n) => (n || '').toLowerCase().replace(/\bmidi(in|out)\d*\b/g, ' ').replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim()
+    const outputsFor = (input) => {
+      const exact = outs.filter((o) => o.name === input.name)
+      if (exact.length) return exact
+      const key = norm(input.name)
+      const same = key ? outs.filter((o) => norm(o.name) === key) : []
+      if (same.length) return same
+      // Last resort: every non-other-gear output (WinRT sometimes renames in/out differently).
+      const rest = outs.filter((o) => !isKnownOtherGear(o.name))
+      return rest.length ? rest : outs
+    }
     for (const input of ordered) {
-      let output = outs.find((o) => o.name === input.name)
-      if (!output) {
-        const key = norm(input.name)
-        const same = key ? outs.filter((o) => norm(o.name) === key) : []
-        output = same.length === 1 ? same[0] : (outs.length === 1 ? outs[0] : null)
+      const candidates = outputsFor(input)
+      if (!candidates.length) { diag?.push(`${input.name}: no matching MIDI output`); continue }
+      let answered = false
+      for (const output of candidates) {
+        if (!(await this.open(input, output))) {
+          diag?.push(`${input.name}→${output.name}: port busy (another app has it open?)`)
+          continue
+        }
+        const link = new Link(input, output)
+        const id = await handshake(link, 3, this.t)
+        if (id && (!filter || filter(id))) return { link, id, name: input.name }
+        answered = true
+        diag?.push(`${input.name}→${output.name}: ${id ? `identified as ${id.text}, not the expected one` : 'no FM-1 response'}`)
+        link.close()
       }
-      if (!output) { diag?.push(`${input.name}: no matching MIDI output`); continue }
-      if (!(await this.open(input, output))) {
-        diag?.push(`${input.name}: port busy (another app has it open?)`); continue
-      }
-      const link = new Link(input, output)
-      const id = await handshake(link, 2, this.t)
-      if (id && (!filter || filter(id))) return { link, id, name: input.name }
-      diag?.push(`${input.name}: ${id ? `identified as ${id.text}, not the expected one` : 'no FM-1 response'}`)
-      link.close()
+      if (!answered) diag?.push(`${input.name}: could not open any MIDI output`)
     }
     return null
   }
@@ -319,41 +357,41 @@ export class Updater {
     }
     const other = live.filter((i) => !isCandidatePort(i.name) && isKnownOtherGear(i.name))
     if (!live.some((i) => isCandidatePort(i.name) || !isKnownOtherGear(i.name))) {
-      throw fail('noport', `No FM-1-like USB-MIDI port found. The only MIDI devices visible are other gear: ${other.map((i) => i.name).join(', ')}. Connect the FM-1 with a USB data cable. If it is running a firmware with no USB-MIDI update port, use download mode (hold OCT- and OCT+ for 5 seconds) + Device Lab / M-Flasher. Back up the whole flash first.`, other.map((i) => i.name).join(', '))
+      throw fail('noport', `No FM-1-like USB-MIDI port found. The only MIDI devices visible are other gear: ${other.map((i) => i.name).join(', ')}. Connect the FM-1 with a USB data cable. If the screen is black or it is still not found, see Screen black or not found? under Recovery and help.`, other.map((i) => i.name).join(', '))
     }
     const diag = []
     const dev = await this.find(null, diag)
     if (!dev) {
       const busy = diag.filter((d) => /port busy/.test(d))
       if (busy.length) throw fail('busy', `An FM-1 USB-MIDI port is present but could not be opened — another app (a DAW, a MIDI tool, or another copy of this app) is holding it. Close that app and press Install again. Details: ${busy.join('; ')}.`, busy.join('; '))
-      throw fail('notfound', `No device answered the FM-1 identity handshake. Use a USB data cable and the right mode, or put the unit in download mode (hold OCT- and OCT+ for 5 seconds) + Device Lab / M-Flasher. Ports probed — ${diag.join('; ') || '(none)'}. Back up the whole flash first.`, diag.join('; '))
+      throw fail('notfound', `No device answered the FM-1 identity handshake. Check the USB data cable, then see Screen black or not found? under Recovery and help. Ports probed — ${diag.join('; ') || '(none)'}.`, diag.join('; '))
     }
     if (IS_OTA(dev.id)) {
       dev.link.close()
-      throw fail('inupdate', `The FM-1 is already in update mode (${dev.id.text}): an earlier install did not finish. Press Resume interrupted install to finish it, or roll back to the previous firmware.`, dev.id.text)
+      throw fail('inupdate', `The FM-1 is already in update mode (${dev.id.text}): an earlier install did not finish. Press Finish interrupted install to finish it, or roll back to the previous firmware.`, dev.id.text)
     }
     const [model] = product.split('_')
     if (dev.id.model !== model) {
-      dev.link.close()
+      dev.link.releasePorts()
       throw fail('model', `the device is ${dev.id.text}, the package is for ${product}`, dev.id.text)
     }
     const t = this.t
     step('start', dev.id.text)
-    if (!(await dev.link.sendRetry(UPGRADE, t))) { dev.link.close(); throw fail('lost', 'the device was disconnected before the install started: nothing was written') }
+    if (!(await dev.link.sendRetry(UPGRADE, t))) { dev.link.releasePorts(); throw fail('lost', 'the device was disconnected before the install started: nothing was written') }
     await sleep(t.settle)
     let s1
-    try { s1 = await this.serve(dev.link, image, 0xe0000000, t.stageIdle, (n) => step('stage', n)) } finally { dev.link.close() }
+    try { s1 = await this.serve(dev.link, image, 0xe0000000, t.stageIdle, (n) => step('stage', n)) } finally { dev.link.releasePorts() }
     if (!s1.finished) {
       // Never got a single read request back: the device answered identity but did
       // not enter update mode — most likely a firmware without in-app OTA. Point at
       // download mode rather than the bare "nothing was written".
-      if (!s1.lost && s1.served === 0) throw fail('downloadmode', `${dev.id.text} did not enter update mode, so nothing was written. This firmware may not support in-app USB-MIDI updates — hold OCT- and OCT+ for 5 seconds to enter download mode, then use Device Lab (M-Flasher). Back up the whole flash first.`)
+      if (!s1.lost && s1.served === 0) throw fail('downloadmode', `${dev.id.text} did not enter update mode, so nothing was written. This firmware may not support in-app USB-MIDI updates. This app cannot install it; see Advanced recovery under Recovery and help.`)
       throw fail(s1.lost ? 'lost' : 'stopped', `the device ${s1.lost ? 'was disconnected' : 'stopped'} after ${s1.served} requests: nothing was written`)
     }
     step('loader')
     await sleep(t.loaderBoot)
     const ota = await this.waitFor(IS_OTA, t.loaderWait)
-    if (!ota) throw fail('noloader', 'the update loader did not appear. Replug the USB cable and press Resume interrupted install: the device stays in update mode until it is finished.')
+    if (!ota) throw fail('noloader', 'the update loader did not appear. Replug the USB cable and press Check; if it shows update mode, press Finish interrupted install. Keep it switched on: a power cycle can leave it unable to return to update mode.')
     return this.complete(ota, image, product, step)
   }
 
@@ -362,12 +400,12 @@ export class Updater {
   async complete(ota, image, product, step) {
     const t = this.t
     const s2 = await this.write(ota, image, step)
-    if (!s2.finished) throw fail(s2.lost ? 'lost' : 'stopped', `the loader ${s2.lost ? 'was disconnected' : 'stopped'} after ${s2.served} requests. Replug and press Resume interrupted install.`)
+    if (!s2.finished) throw fail(s2.lost ? 'lost' : 'stopped', `the loader ${s2.lost ? 'was disconnected' : 'stopped'} after ${s2.served} requests. Keep it switched on, replug, press Check, and if it shows update mode press Finish interrupted install.`)
     step('reboot')
     await sleep(t.rebootBoot)
     const back = await this.waitFor((id) => !IS_OTA(id), t.returnWait)
     if (!back) throw fail('noreturn', 'the device did not come back: power-cycle it')
-    back.link.close()
+    back.link.releasePorts()
     if (back.id.text !== product) throw fail('mismatch', `installed, but the device reports ${back.id.text}`, back.id.text)
     step('done', back.id.text)
     return back.id.text
@@ -375,9 +413,9 @@ export class Updater {
 
   // step 2 with the loader found by find()/waitFor()
   async write(ota, image, step) {
-    if (!(await ota.link.sendRetry(UPGRADE, this.t))) { ota.link.close(); return { served: 0, finished: false, lost: true } }
+    if (!(await ota.link.sendRetry(UPGRADE, this.t))) { ota.link.releasePorts(); return { served: 0, finished: false, lost: true } }
     await sleep(this.t.settle)
-    try { return await this.serve(ota.link, image, 0xf0000000, this.t.writeIdle, (n) => step('write', n)) } finally { ota.link.close() }
+    try { return await this.serve(ota.link, image, 0xf0000000, this.t.writeIdle, (n) => step('write', n)) } finally { ota.link.releasePorts() }
   }
 
   // resume: the device is already in update mode (loader). The loader writes whichever image it

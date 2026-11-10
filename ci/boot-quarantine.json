@@ -1,0 +1,8 @@
+{
+  "note": "Public catalog packages excluded after full WASM boot audit. Reasons must stay evidence-based.",
+  "audited": "2026-11-10",
+  "entries": {
+    "bb1": "emulated CPU halts with blank LCD (colorsMax=1, halted=true)",
+    "bubba": "LCD remains blank after full audit window (colorsMax=1, halted=false, ~108s wall)"
+  }
+}

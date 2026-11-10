@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Three-dimensional faceted atom-array sphere on black">
+  <title>Worker — three-dimensional atom-array sphere</title>
+  <rect width="256" height="256" rx="42" fill="#08090b"/>
+  <defs>
+    <clipPath id="sphere"><circle cx="128" cy="128" r="99"/></clipPath>
+    <radialGradient id="body" cx="34%" cy="27%" r="78%">
+      <stop offset="0" stop-color="#626d78"/>
+      <stop offset=".35" stop-color="#343c46"/>
+      <stop offset=".72" stop-color="#171c23"/>
+      <stop offset="1" stop-color="#080a0e"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff"/><stop offset=".43" stop-color="#e1e7eb"/>
+      <stop offset="1" stop-color="#6d7984"/>
+    </linearGradient>
+    <linearGradient id="bonds" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#d9e0e5"/>
+      <stop offset="1" stop-color="#8f9aa5"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="99" fill="url(#body)"/>
+  <g clip-path="url(#sphere)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Receding latitude and longitude arcs sit behind the front lattice. -->
+    <g stroke="#a2acb6" stroke-width="2.5" opacity=".34">
+      <path d="M29 128C68 66 188 66 227 128M29 128c39 62 159 62 198 0"/>
+      <path d="M128 29C66 65 66 191 128 227M128 29c62 36 62 162 0 198"/>
+    </g>
+    <!-- Small, differently lit facets give the mesh a cut-metal surface. -->
+    <g stroke="none">
+      <path d="M128 38 80 59 105 91 128 77Z" fill="#e5edf4" opacity=".18"/>
+      <path d="M80 59 48 100 86 111 105 91Z" fill="#eff4f8" opacity=".11"/>
+      <path d="M105 91 86 111 128 132 150 99Z" fill="#fff" opacity=".16"/>
+      <path d="M86 111 61 151 105 158 128 132Z" fill="#fff" opacity=".09"/>
+      <path d="M128 132 105 158 128 185 153 155Z" fill="#dae3ea" opacity=".12"/>
+      <path d="M150 99 128 132 170 113 179 65Z" fill="#84919c" opacity=".08"/>
+      <path d="M153 155 128 185 177 189 195 151Z" fill="#8a98a5" opacity=".10"/>
+    </g>
+    <!-- Atom bonds compress toward the edge as a projected 3-D array. -->
+    <g stroke="url(#bonds)" stroke-width="4.1">
+      <path d="M128 38 80 59 48 100 38 128 61 151 82 191 128 218 177 189 195 151 218 128 207 100 179 65Z"/>
+      <path d="M80 59 128 77 179 65M48 100 86 111 128 102 170 113 207 100M38 128 86 111 128 132 170 113 218 128M61 151 105 158 128 185 153 155 195 151M82 191 128 185 177 189"/>
+      <path d="M128 38v39M80 59l25 32m23-14-23 14m23-14 22 22m29-34-29 34M48 100l38 11m19-20-19 20m19-20 23 11m22-3-22 3m22-3 20 14m37-13-37 13M38 128l48-17m0 0v0m0 0-25 40m25-40 42 21m0-30v30m42-19-42 19m42-19 25 38m23-23-48-15M61 151l44 7m23-26-23 26m23-26 25 23m42-4-42 4M82 191l23-33m23 27-23-27m23 27 25-30m24 34-24-34M128 185v33"/>
+    </g>
+  </g>
+  <circle cx="128" cy="128" r="100" fill="none" stroke="url(#rim)" stroke-width="5.5"/>
+  <path d="M42 96a100 100 0 0 1 126-62" fill="none" stroke="#fff" stroke-width="2.5" opacity=".82" stroke-linecap="round"/>
+  <g fill="#182029" stroke="#f5f7f9" stroke-width="3">
+    <circle cx="128" cy="77" r="5.3"/><circle cx="86" cy="111" r="5.3"/><circle cx="128" cy="102" r="5.3"/><circle cx="170" cy="113" r="5.3"/>
+    <circle cx="128" cy="132" r="6"/><circle cx="105" cy="158" r="5.3"/><circle cx="153" cy="155" r="5.3"/><circle cx="128" cy="185" r="5.3"/>
+  </g>
+</svg>

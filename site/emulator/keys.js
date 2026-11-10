@@ -64,6 +64,7 @@
   const latched = new Map();     // note(root) -> [sounding notes]   (arp off, latched)
   const roots = new Set();       // arp on: the held/latched root notes feeding the sequence
   const sounding = new Map();    // midi note -> refcount, so overlapping voices don't cut early
+  const extLit = new Set();      // notes lit from the shared MIDI bus (hardware / player / panic)
   let latch = false;
 
   // computer keyboard -> these assists (opt-in). Same letter row the panel uses, but the notes run
@@ -71,7 +72,7 @@
   let pcRoute = false, hwProc = false; const pcDown = new Map();
   const PIANO_MAP = { a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, j: 11, k: 12, o: 13, l: 14, p: 15, ";": 16, "'": 17 };
 
-  function sendRaw(b) { const F = FM(); if (F && F.midi && (!F.running || F.running())) F.midi(b); }
+  function sendRaw(b) { const F = FM(); if (F && F.midi) F.midi(b); }
   // velocity curve: reshape the incoming velocity — soft eases up quiet, hard favours loud, fixed ignores
   // the input dynamics and plays the slider value; then humanize adds a little life on top.
   function curveVel(v) {
@@ -354,9 +355,25 @@
     const s = scaleSet();
     for (const [note, el] of noteToEl) {
       el.classList.toggle("off", !!s && !s.includes(((note - scaleRoot) % 12 + 12) % 12));
-      el.classList.toggle("act", active.has(snap(note)));
+      // Local assists OR anything that reached the emulated MIDI IN — screen matches the machine.
+      el.classList.toggle("act", active.has(snap(note)) || extLit.has(note));
     }
     updateReadout();
+  }
+  function onBusMidi(bytes) {
+    if (!bytes || !bytes.length) return;
+    const st = bytes[0] & 0xf0;
+    let changed = false;
+    if (st === 0x90 && bytes[2] > 0) {
+      const n = bytes[1] & 0x7f;
+      if (!extLit.has(n)) { extLit.add(n); changed = true; }
+    } else if (st === 0x80 || (st === 0x90 && !(bytes[2] > 0))) {
+      const n = bytes[1] & 0x7f;
+      if (extLit.has(n)) { extLit.delete(n); changed = true; }
+    } else if (st === 0xb0 && (bytes[1] === 123 || bytes[1] === 120)) {
+      if (extLit.size) { extLit.clear(); changed = true; }
+    }
+    if (changed) lights();
   }
   const keyEl = (el) => (el && el.closest && el.closest(".wk,.bk")) || null;
   const keyNote = (el) => { const k = keyEl(el); return k ? +k.dataset.note : null; };
@@ -382,6 +399,10 @@
   // ---- UI ----
   function ready(fn) { const t = setInterval(() => { const nav = document.querySelector("header.site .wrap"); if (nav && window.FM1) { clearInterval(t); fn(nav); } }, 120); setTimeout(() => clearInterval(t), 9000); }
   ready((nav) => {
+    if (typeof window.FM1.onMidi === "function" && !window.FM1._keysMidiLit) {
+      window.FM1.onMidi(onBusMidi);
+      window.FM1._keysMidiLit = true;
+    }
     const css = document.createElement("style"); css.textContent = `
       #keys-btn{cursor:pointer}
       #keys-pop{position:fixed;z-index:9997;width:316px;max-width:94vw;max-height:88vh;overflow:auto;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#232428);
@@ -401,10 +422,10 @@
       .kb{position:relative;height:88px;border-radius:6px;overflow:hidden;background:#000;touch-action:none;user-select:none;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
       .kb .wk{position:absolute;top:0;height:100%;background:linear-gradient(#f4f1ea,#d7d2c6);border-right:1px solid #1a1a1a;box-sizing:border-box}
       .kb .wk.off{opacity:.38}
-      .kb .wk.act{background:linear-gradient(var(--amber),var(--amber-lo,#b23c00))}
+      .kb .wk.act{background:linear-gradient(var(--amber),var(--amber-lo,#888))}
       .kb .bk{position:absolute;top:0;height:58%;background:linear-gradient(#333,#090909);border:1px solid #000;border-radius:0 0 3px 3px;z-index:2;box-shadow:0 2px 3px rgba(0,0,0,.6)}
       .kb .bk.off{opacity:.4}
-      .kb .bk.act{background:linear-gradient(var(--amber),#8a2d00)}
+      .kb .bk.act{background:linear-gradient(var(--amber),var(--amber-lo,#666))}
       .kb .lab{position:absolute;left:0;right:0;text-align:center;pointer-events:none;font-weight:700;letter-spacing:-.3px}
       .kb .wk .lab{bottom:4px;font-size:8.5px;color:#6b665b}
       .kb .wk.act .lab{color:#2a0f00}
@@ -475,7 +496,7 @@
     updateReadout();
     const status = (s) => { pop.querySelector("#keys-status").textContent = s; };
 
-    const place = () => { const r = btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 328)) + "px"; };
+    const place = () => { const r = (window.FM1PopAnchor && window.FM1PopAnchor(btn)) || btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 328)) + "px"; };
     btn.onclick = (e) => { e.preventDefault(); pop.classList.toggle("open"); if (pop.classList.contains("open")) place(); };
     window.addEventListener("resize", () => { if (pop.classList.contains("open")) place(); });
     document.addEventListener("pointerdown", (e) => { if (e.target !== btn && !btn.contains(e.target) && !pop.contains(e.target)) pop.classList.remove("open"); });
@@ -633,7 +654,7 @@
 
     // route the computer keyboard through these assists (scale / chord / arp) instead of the raw panel.
     // Capture-phase listeners run before main.js's; stopImmediatePropagation keeps the panel from also playing.
-    try { pcRoute = localStorage.getItem("fm1.keys.pcroute") !== "0"; } catch { pcRoute = true; }   // on by default: type on your keyboard to play
+    try { pcRoute = localStorage.getItem("fm1.keys.pcroute") !== "0"; } catch { pcRoute = true; }
     const pcBtn = pop.querySelector("#k-pcroute");
     const syncPc = () => { pcBtn.classList.toggle("on", pcRoute); status(pcRoute ? "Computer keyboard → Keys (scale / chord / arp)." : "Click or tap the keys. Boot a firmware (Start) first."); };
     pcBtn.onclick = () => { pcRoute = !pcRoute; try { localStorage.setItem("fm1.keys.pcroute", pcRoute ? "1" : "0"); } catch {} if (!pcRoute) { for (const n of pcDown.values()) play(n, false); pcDown.clear(); } syncPc(); };

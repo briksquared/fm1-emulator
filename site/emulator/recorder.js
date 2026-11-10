@@ -94,8 +94,9 @@
     window.FM1Rec = (bytes) => {
       if (!recording) return;
       const s = bytes[0]; if (s < 0x80 || s >= 0xf0) return;
-      const ch = s & 0x0f;
-      if (muted.has(ch)) return;
+      // Capture everything. Mute is a mixer setting applied on playback and on
+      // export; dropping events here used to destroy them permanently, so a
+      // channel muted mid-take could never be brought back.
       events.push({ t: stamp(), b: bytes.slice() });
     };
   }
@@ -111,9 +112,158 @@
     }
     return m;
   }
-  function filteredEvents() {
-    if (!muted.size) return events;
-    return events.filter((e) => { const s = e.b[0]; return s < 0x80 || s >= 0xf0 || !muted.has(s & 0x0f); });
+  // ---- mixer: mute, solo and per-channel level, applied to playback AND export
+  // so what you hear is what you get. Non-destructive: `events` is never edited.
+  const soloed = new Set();
+  const levels = new Map();            // ch -> 0..2, 1 = as played
+  function level(ch) { const v = levels.get(ch); return v === undefined ? 1 : v; }
+  function audible(ch) {
+    if (soloed.size) return soloed.has(ch);
+    return !muted.has(ch);
+  }
+  function mixEvents() {
+    const out = [];
+    for (const e of events) {
+      const s = e.b[0];
+      if (s < 0x80 || s >= 0xf0) { out.push(e); continue; }
+      const ch = s & 0x0f;
+      if (!audible(ch)) continue;
+      const lv = level(ch);
+      if (lv !== 1 && (s & 0xf0) === 0x90 && e.b[2] > 0) {
+        const b = e.b.slice();
+        b[2] = Math.max(1, Math.min(127, Math.round(e.b[2] * lv)));
+        out.push({ t: e.t, b });
+      } else out.push(e);
+    }
+    return out;
+  }
+  function filteredEvents() { return mixEvents(); }
+
+  // ---- saved takes: a small library in localStorage, so a good take survives
+  // a reload or a firmware change instead of living only in this buffer ----
+  const TAKES_KEY = "fm1.takes.v1";
+  const TAKES_MAX = 24;
+  // Take names are user text rendered into innerHTML; escape them.
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function loadTakes() {
+    try {
+      const a = JSON.parse(localStorage.getItem(TAKES_KEY) || "[]");
+      return Array.isArray(a) ? a.filter((t) => t && Array.isArray(t.events)) : [];
+    } catch { return []; }
+  }
+  function writeTakes(list) {
+    try { localStorage.setItem(TAKES_KEY, JSON.stringify(list)); return true; }
+    catch (e) { console.warn("takes: could not save", e); return false; }
+  }
+  function currentFirmwareName() {
+    const fm = FM();
+    const rf = fm && fm.runningFirmware && fm.runningFirmware();
+    if (rf && rf.name) return rf.name;
+    const sel = document.getElementById("fw");
+    const opt = sel && sel.options && sel.options[sel.selectedIndex];
+    return (opt && opt.textContent && opt.textContent.trim()) || "";
+  }
+  function saveTake(name) {
+    if (!events.length) return null;
+    const list = loadTakes();
+    // Date.now() alone collides for two takes kept in the same millisecond,
+    // and then deleting one deletes both.
+    let id;
+    do { id = "t" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8); }
+    while (list.some((t) => t.id === id));
+    const take = {
+      id,
+      name: (name || "").trim() || new Date().toLocaleString(),
+      at: Date.now(),
+      bpm: sharedBpm(),
+      meter: sharedMeter(),
+      firmware: currentFirmwareName(),
+      // Store the take as played. Mixer settings are a view, so they are saved
+      // beside it and can be changed after recall.
+      events: events.map((e) => ({ t: Math.round(e.t), b: [...e.b] })),
+      mix: { muted: [...muted], soloed: [...soloed], levels: [...levels.entries()] },
+    };
+    list.unshift(take);
+    while (list.length > TAKES_MAX) list.pop();
+    return writeTakes(list) ? take : null;
+  }
+  function recallTake(id) {
+    const take = loadTakes().find((t) => t.id === id);
+    if (!take) return false;
+    events = take.events.map((e) => ({ t: e.t, b: e.b.slice() }));
+    muted.clear(); soloed.clear(); levels.clear();
+    const m = take.mix || {};
+    for (const ch of m.muted || []) muted.add(ch);
+    for (const ch of m.soloed || []) soloed.add(ch);
+    for (const [ch, v] of m.levels || []) levels.set(ch, v);
+    if (take.bpm && window.FM1Transport && window.FM1Transport.setBpm) window.FM1Transport.setBpm(take.bpm);
+    return true;
+  }
+  function deleteTake(id) {
+    const list = loadTakes().filter((t) => t.id !== id);
+    return writeTakes(list);
+  }
+
+  // ---- take playback: send the mixed take back into the device ----
+  let playTimers = [], playing = false, onPlayState = null, playDone = null;
+  function allNotesOff() {
+    const fm = FM(); if (!fm || !fm.midi) return;
+    for (let ch = 0; ch < 16; ch++) { fm.midi([0xb0 | ch, 123, 0]); fm.midi([0xb0 | ch, 64, 0]); }
+  }
+  function stopPlay() {
+    playing = false;
+    for (const t of playTimers) clearTimeout(t);
+    playTimers = [];
+    allNotesOff();
+    if (onPlayState) onPlayState(false);
+    const done = playDone; playDone = null;
+    if (done) done();
+  }
+  function playTake(onComplete) {
+    const fm = FM();
+    if (!fm || !fm.midi || !fm.running || !fm.running()) return false;
+    stopPlay();
+    const evts = mixEvents();
+    if (!evts.length) return false;
+    playing = true;
+    playDone = onComplete || null;
+    if (onPlayState) onPlayState(true);
+    const t0p = evts[0].t;
+    let last = 0;
+    for (const e of evts) {
+      const at = Math.max(0, e.t - t0p);
+      if (at > last) last = at;
+      playTimers.push(setTimeout(() => { if (playing) fm.midi(e.b); }, at));
+    }
+    playTimers.push(setTimeout(stopPlay, last + 420));
+    return true;
+  }
+
+  // Bounce: render the current take to audio by playing it (mixer applied) while
+  // FM1Audio captures the output, then hand the .wav to the recordings tray.
+  // Reuses the tested playback and capture paths; no new audio code.
+  let bouncing = false, onBounceState = null;
+  function setBouncing(v) { bouncing = v; if (onBounceState) onBounceState(v); }
+  async function bounce() {
+    const A = window.FM1Audio;
+    const fm = FM();
+    if (bouncing || !A || !fm || !fm.running || !fm.running()) return false;
+    if (!mixEvents().length) return false;
+    if (!(await A.start())) return false;
+    setBouncing(true);
+    return await new Promise((resolve) => {
+      const finish = () => {
+        // A short tail after the last note so release/reverb is captured.
+        setTimeout(() => {
+          const blob = A.stop();
+          setBouncing(false);     // notifies the UI, so the label never sticks
+          const rec = blob && A.addRecording ? A.addRecording(blob) : null;
+          resolve(rec || !!blob);
+        }, 600);
+      };
+      if (!playTake(finish)) { A.stop(); setBouncing(false); resolve(false); }
+    });
   }
 
   // ---- UI ----
@@ -146,8 +296,23 @@
       #rec-pop .mixer .ch b{font-variant-numeric:tabular-nums;min-width:2.2em}
       #rec-pop .mixer .bar{flex:1;height:6px;background:#1a1b1e;border-radius:3px;overflow:hidden}
       #rec-pop .mixer .bar i{display:block;height:100%;background:var(--amber);border-radius:3px}
-      #rec-pop .mixer .mute{font-size:10px;padding:3px 6px;flex:0 0 auto}
+      #rec-pop .mixer .mute,#rec-pop .mixer .solo{font-size:10px;padding:3px 6px;flex:0 0 auto;min-width:22px}
       #rec-pop .mixer .mute.on{border-color:#e23b3b;color:#e23b3b}
+      #rec-pop .mixer .solo.on{border-color:#e2b23b;color:#e2b23b}
+      #rec-pop .mixer .ch.off b,#rec-pop .mixer .ch.off span{opacity:.45}
+      #rec-pop .mixer .mixhead{display:flex;align-items:center;gap:8px;margin:2px 0 4px}
+      #rec-pop .mixer .mixhead button{font-size:11px;padding:4px 10px}
+      #rec-pop .mixer .mixhead .hint{font-size:10.5px;color:#8c93a0}
+      #rec-pop .mixer .lvl{display:flex;align-items:center;gap:6px;margin:-2px 0 4px 0}
+      #rec-pop .mixer .lvl input{flex:1;height:3px}
+      #rec-pop .mixer .lvl span{font:600 10px 'Space Mono',monospace;color:#8c93a0;min-width:3.2em;text-align:right}
+      #rec-pop .takes{display:flex;flex-direction:column;gap:3px;border-top:1px solid #1c1d21;padding-top:8px}
+      #rec-pop .takes .take{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#cfd4da}
+      #rec-pop .takes .tk-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      #rec-pop .takes .tk-meta{font:600 9.5px 'Space Mono',monospace;color:#8c93a0;flex:0 0 auto}
+      #rec-pop .takes .tk-load,#rec-pop .takes .tk-del{font-size:10px;padding:3px 6px;flex:0 0 auto}
+      #rec-pop .takes .tk-del{color:#9aa1ab}
+      #rec-pop .takes .tk-del:hover{border-color:#e23b3b;color:#e23b3b}
       #rec-status{margin:0;font-size:11.5px;color:var(--ui-text2,#cfd4da);min-height:1em}`;
     document.head.appendChild(css);
 
@@ -178,6 +343,8 @@
       <label class="splitrow"><input type="checkbox" id="rec-split" style="width:16px;height:16px;flex:0 0 auto"> Split export into per-channel tracks</label>
       <div id="rec-mixer" class="mixer" hidden></div>
       <div class="rrow"><button class="dl" id="rec-dl" disabled style="flex:2">⤓ Download .mid</button><button id="rec-clear" disabled style="flex:1">Clear</button></div>
+      <div class="rrow"><button id="rec-save" disabled style="flex:1">★ Keep take</button></div>
+      <div id="rec-takes" class="takes" hidden></div>
       <p id="rec-status">Records everything you play into the FM-1.</p>`;
     document.body.appendChild(pop);
     const statusEl = pop.querySelector("#rec-status");
@@ -198,23 +365,102 @@
       if (!stats.size) { mixerEl.hidden = true; mixerEl.innerHTML = ""; return; }
       mixerEl.hidden = false;
       const max = Math.max(...stats.values());
-      let html = `<div class="lbl"><span>Channels</span><span>${stats.size} active · mute skips export</span></div>`;
+      let html = `<div class="lbl"><span>Channels</span><span>${stats.size} active · affects play + export</span></div>` +
+        `<div class="mixhead"><button type="button" id="rec-play">${playing ? "Stop" : "Play take"}</button>` +
+        (window.FM1Audio ? `<button type="button" id="rec-bounce"${bouncing ? " disabled" : ""}>${bouncing ? "Bouncing…" : "Bounce ↓"}</button>` : "") +
+        `<span class="hint">${soloed.size ? soloed.size + " soloed" : (muted.size ? muted.size + " muted" : "all channels")}</span></div>`;
       for (const ch of [...stats.keys()].sort((a, b) => a - b)) {
         const n = stats.get(ch), pct = Math.max(4, Math.round(n / max * 100));
         const name = ch === 9 ? "Ch10 drums" : "Ch " + (ch + 1);
-        const on = muted.has(ch) ? " on" : "";
-        html += `<div class="ch" data-ch="${ch}"><b>${name}</b><span class="bar"><i style="width:${pct}%"></i></span><span>${n}</span><button type="button" class="mute${on}">${muted.has(ch) ? "Muted" : "Mute"}</button></div>`;
+        const dim = audible(ch) ? "" : " off";
+        html += `<div class="ch${dim}" data-ch="${ch}"><b>${name}</b>` +
+          `<span class="bar"><i style="width:${pct}%"></i></span><span>${n}</span>` +
+          `<button type="button" class="solo${soloed.has(ch) ? " on" : ""}">S</button>` +
+          `<button type="button" class="mute${muted.has(ch) ? " on" : ""}">M</button></div>` +
+          `<div class="lvl" data-ch="${ch}"><input type="range" min="0" max="150" step="5" value="${Math.round(level(ch) * 100)}">` +
+          `<span>${Math.round(level(ch) * 100)}%</span></div>`;
       }
       mixerEl.innerHTML = html;
+      const sync = () => { refreshMixer(); dlBtn.disabled = filteredEvents().length === 0; };
       mixerEl.querySelectorAll(".mute").forEach((btn) => {
         btn.onclick = () => {
           const ch = +btn.closest(".ch").dataset.ch;
           if (muted.has(ch)) muted.delete(ch); else muted.add(ch);
-          refreshMixer();
-          dlBtn.disabled = filteredEvents().length === 0;
+          sync();
         };
       });
+      mixerEl.querySelectorAll(".solo").forEach((btn) => {
+        btn.onclick = () => {
+          const ch = +btn.closest(".ch").dataset.ch;
+          if (soloed.has(ch)) soloed.delete(ch); else soloed.add(ch);
+          sync();
+        };
+      });
+      mixerEl.querySelectorAll(".lvl input").forEach((sl) => {
+        sl.oninput = () => {
+          const ch = +sl.closest(".lvl").dataset.ch;
+          levels.set(ch, (+sl.value) / 100);
+          sl.nextElementSibling.textContent = sl.value + "%";
+        };
+      });
+      const playBtn = mixerEl.querySelector("#rec-play");
+      if (playBtn) playBtn.onclick = () => {
+        if (playing) { stopPlay(); return; }
+        if (!playTake()) playBtn.textContent = "Press Start first";
+      };
+      const bounceBtn = mixerEl.querySelector("#rec-bounce");
+      if (bounceBtn) bounceBtn.onclick = async () => {
+        if (bouncing) return;
+        const ok = await bounce();
+        refreshMixer();
+        if (!ok) { const b = mixerEl.querySelector("#rec-bounce"); if (b) b.textContent = "Press Start first"; }
+        else status("Bounced the take to audio — it's in the Audio tray.");
+      };
     }
+    onPlayState = () => refreshMixer();
+    onBounceState = () => refreshMixer();
+
+    const takesEl = pop.querySelector("#rec-takes");
+    const saveBtn = pop.querySelector("#rec-save");
+    function refreshTakes() {
+      const list = loadTakes();
+      if (!list.length) { takesEl.hidden = true; takesEl.innerHTML = ""; return; }
+      takesEl.hidden = false;
+      let html = `<div class="lbl"><span>Kept takes</span><span>${list.length}${list.length >= TAKES_MAX ? " (full)" : ""}</span></div>`;
+      for (const t of list) {
+        const bars = t.meter && t.bpm
+          ? Math.max(1, Math.round((t.events.length ? t.events[t.events.length - 1].t : 0) / (60000 / t.bpm * t.meter)))
+          : 0;
+        html += `<div class="take" data-id="${t.id}">` +
+          `<span class="tk-name" title="${esc(t.firmware || "")}">${esc(t.name)}</span>` +
+          `<span class="tk-meta">${t.events.length} ev${bars ? " · " + bars + " bar" + (bars > 1 ? "s" : "") : ""} · ${Math.round(t.bpm || 0)} BPM</span>` +
+          `<button type="button" class="tk-load">Load</button>` +
+          `<button type="button" class="tk-del" title="Delete this take">✕</button></div>`;
+      }
+      takesEl.innerHTML = html;
+      takesEl.querySelectorAll(".tk-load").forEach((b) => {
+        b.onclick = () => {
+          const id = b.closest(".take").dataset.id;
+          if (!recallTake(id)) return;
+          refreshMixer();
+          dlBtn.disabled = filteredEvents().length === 0;
+          clearBtn.disabled = events.length === 0;
+          saveBtn.disabled = events.length === 0;
+        };
+      });
+      takesEl.querySelectorAll(".tk-del").forEach((b) => {
+        b.onclick = () => { deleteTake(b.closest(".take").dataset.id); refreshTakes(); };
+      });
+    }
+    saveBtn.onclick = () => {
+      if (!events.length) return;
+      const suggested = (currentFirmwareName() || "Take") + " " + new Date().toTimeString().slice(0, 5);
+      const name = window.prompt("Name this take", suggested);
+      if (name === null) return;      // cancelled
+      if (saveTake(name)) refreshTakes();
+      else saveBtn.textContent = "Storage full";
+    };
+    refreshTakes();
 
     // ---- metronome: short blips on the FM-1 AudioContext, scheduled with a lookahead for steady time ----
     let clickTimer = null, clickRunning = false;
@@ -270,8 +516,9 @@
       goBtn.disabled = false; stopBtn.disabled = true;
       dlBtn.disabled = filteredEvents().length === 0;
       clearBtn.disabled = events.length === 0;
+      saveBtn.disabled = events.length === 0;
       refreshMixer();
-      status(events.length ? `Captured ${events.length} events · ${(((events[events.length - 1] || {}).t || 0) / 1000).toFixed(1)}s. Download below.` : "Nothing was played.");
+      status(events.length ? `Captured ${events.length} events · ${(((events[events.length - 1] || {}).t || 0) / 1000).toFixed(1)}s. Keep it or download below.` : "Nothing was played.");
     }
 
     goBtn.onclick = () => {
@@ -296,10 +543,11 @@
     stopBtn.onclick = doStop;
     clearBtn.onclick = () => {
       if (recording) return;
-      events = []; muted.clear();
-      dlBtn.disabled = true; clearBtn.disabled = true;
+      // Clear empties the working buffer only; kept takes are a separate library.
+      events = []; muted.clear(); soloed.clear(); levels.clear();
+      dlBtn.disabled = true; clearBtn.disabled = true; saveBtn.disabled = true;
       refreshMixer();
-      status("Take cleared.");
+      status("Take cleared. Kept takes are still below.");
     };
     dlBtn.onclick = () => {
       const src = filteredEvents();
@@ -359,7 +607,7 @@
     qsSlider.oninput = (e) => { quantStrength = +e.target.value / 100; qsLbl.textContent = e.target.value + "%"; };
     swSlider.oninput = (e) => { swing = +e.target.value / 100; swLbl.textContent = e.target.value + "%"; };
 
-    const place = () => { const r = btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 274)) + "px"; };
+    const place = () => { const r = (window.FM1PopAnchor && window.FM1PopAnchor(btn)) || btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 274)) + "px"; };
     btn.onclick = (e) => { e.preventDefault(); pop.classList.toggle("open"); if (pop.classList.contains("open")) place(); };
     window.addEventListener("resize", () => { if (pop.classList.contains("open")) place(); });
     document.addEventListener("pointerdown", (e) => { if (e.target !== btn && !btn.contains(e.target) && !pop.contains(e.target)) pop.classList.remove("open"); });
@@ -369,7 +617,16 @@
       _startClicks: startClicks, _stopClicks: stopClicks,
       _inject: (evs) => { events = evs.map((e) => ({ t: e.t, b: e.b.slice() })); refreshMixer(); },
       _grids: GRIDS, _setOverdub: (v) => { overdub = !!v; }, _setLoop: (v) => { loopOn = !!v; },
-      _muted: () => [...muted], _channelStats: channelStats, _refreshMixer: refreshMixer
+      _muted: () => [...muted], _channelStats: channelStats, _refreshMixer: refreshMixer,
+      // mixer: mute/solo/level are non-destructive and shared by play and export
+      mix: mixEvents, filtered: filteredEvents,
+      _setMute: (ch, on) => { if (on) muted.add(ch); else muted.delete(ch); },
+      _setSolo: (ch, on) => { if (on) soloed.add(ch); else soloed.delete(ch); },
+      _setLevel: (ch, v) => { levels.set(ch, v); },
+      _soloed: () => [...soloed], _level: level, _audible: audible,
+      play: playTake, stopPlay, playing: () => playing, bounce, bouncing: () => bouncing,
+      // saved-take library
+      saveTake, recallTake, deleteTake, takes: loadTakes, _takesKey: TAKES_KEY, _takesMax: TAKES_MAX
     };
   });
 })();

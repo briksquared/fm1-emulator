@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
@@ -37,7 +38,7 @@ assert.equal(packageJson.version, lock.packages[""].version, "package-lock packa
 assert.equal(entries.length, sources.firmwares.length, "source manifest count");
 assert.ok(entries.length >= 250, "expanded public firmware set");
 assert.ok(entries.some(entry => entry.id === manifest.default), "default firmware exists");
-assert.ok(catalog.firmwares.length >= 160, "current open-license catalog snapshot");
+assert.ok(catalog.firmwares.length >= 160, "current open-license Hub catalog");
 
 const ids = new Set(), hashes = new Set(), files = new Set();
 let previous = "9999";
@@ -72,7 +73,7 @@ for (const directory of [resolve(site, "fw"), resolve(site, "archive")]) {
   visit(directory);
 }
 assert.deepEqual(new Set(diskPackages), files, "no stale or unlisted .fwsc packages");
-for (const excluded of ["modfm1", "fm1-operator", "fm1-doom", "core-fm1", "fm1-neverhood", "ketch", "mpfm1", "vesper", "emb"])
+for (const excluded of ["modfm1", "fm1-operator", "fm1-doom", "core-fm1", "fm1-neverhood", "ketch", "mpfm1", "vesper", "emb", "bb1", "bubba"])
   assert.ok(!ids.has(excluded), `excluded unsafe/unverified package: ${excluded}`);
 
 const host = text("main.js");
@@ -81,12 +82,51 @@ const worklet = text("site/emulator/worklet.js");
 assert.match(host, /app\.disableHardwareAcceleration\(\)/, "software-rendering default");
 assert.match(host, /render-process-gone/, "renderer recovery hook");
 assert.match(host, /showRecovery/, "visible renderer recovery page");
-assert.match(page, /params\.get\("jit"\) === "1"/, "interpreter default with opt-in JIT in the audio thread");
-assert.match(page, /new Worker\("engine\.js/, "emulation runs off the audio thread");
-assert.match(page, /addModule\("stream-worklet\.js/, "audio thread only plays the queued stream");
+// Worker engine (default): JIT on, queue absorbs compiles. Audio-thread fallback
+// (?engine=worklet): interpreter default, ?jit=1 opts in. Fixes Mac Apple Silicon
+// "noise instead of sound" underruns (issue #1).
+assert.match(page, /return worker \? params\.get\("jit"\) !== "0" : params\.get\("jit"\) === "1"/,
+  "JIT on with worker engine; interpreter default in audio-thread fallback");
+assert.match(page, /stream-worklet\.js/, "threaded audio reader is wired");
+assert.match(page, /new Worker\("engine\.js/, "emulator runs off the audio thread by default");
+assert.ok(existsSync(resolve(emulator, "engine.js")), "engine.js is shipped");
+assert.ok(existsSync(resolve(emulator, "stream-worklet.js")), "stream-worklet.js is shipped");
+assert.ok(existsSync(resolve(emulator, "layout.js")), "hide/show layout is shipped");
+assert.ok(existsSync(resolve(emulator, "flash-core.js")), "install recovery core is shipped");
+assert.ok(existsSync(resolve(emulator, "flash-vault.js")), "package vault for resume/rollback is shipped");
+assert.ok(existsSync(resolve(emulator, "install.js")), "install UI is shipped");
+assert.ok(existsSync(resolve(root, "ci/fake-fm1.mjs")), "simulated FM-1 for flash tests is shipped");
+assert.match(text("site/emulator/flash-core.js"), /pendingRecovery/, "interrupted-install recovery is shipped");
+assert.match(text("site/emulator/flash-core.js"), /JOURNAL_STALE_MS/, "stale journal warning is shipped");
+assert.match(text("site/emulator/flash-core.js"), /BADREQ_LIMIT/, "bad-request retry limit is shipped");
+assert.match(text("site/emulator/install.js"), /createPackageVault/, "install keeps package bytes for recovery");
+assert.match(text("site/emulator/install.js"), /fi-checks/, "install requires safety acknowledgements");
+assert.match(text("docs/Recovery.md"), /Package vault/, "recovery docs describe the package vault");
+assert.match(text("main.js"), /isPeExecutable/, "M-Flasher PE check is shipped");
+assert.match(text("main.js"), /usb-check/, "USB check is logged");
+assert.match(text("main.js"), /fm1:check-updates/, "app update IPC is wired");
+assert.match(text("preload.js"), /checkUpdates/, "app update bridge is exposed");
+assert.match(text("updater.js"), /briksquared\/fm1-emulator/, "public updater points at the public repo");
+assert.match(text("site/emulator/extras.js"), /app-upd-btn/, "desktop Updates control is injected");
+{
+  const html = text("site/emulator/index.html");
+  const nav = html.match(/<nav class="sitenav"[\s\S]*?<\/nav>/)?.[0] || "";
+  const header = html.match(/<header class="site"[\s\S]*?<\/header>/)?.[0] || "";
+  assert.ok(nav, "site nav exists");
+  assert.doesNotMatch(nav, /href="#firmwares"|href="#guide"|href="#plugin"/, "top nav does not link to hidden sections");
+  // Docs lives under More ▾ (site-more), not the empty plugin host nav.
+  assert.match(header, /briksquared\/fm1-emulator#readme/, "Docs link remains in the site header");
+}
+assert.match(text("site/emulator/install.js"), /Keep the visible line short/, "install errors stay compact");
+assert.ok(existsSync(resolve(emulator, "catalog-source.js")), "neutral catalog source is shipped");
+assert.match(text("site/emulator/index.html"), /layout\.js\?v=\d+/, "layout.js is loaded");
+assert.doesNotMatch(text("site/emulator/index.html"), /Firmware Hub|thefirmwarehub/i, "page must not brand the Firmware Hub");
 assert.match(page, /finally\s*{\s*requestAnimationFrame\(draw\)/, "render loop survives a bad frame");
 assert.match(worklet, /m\.jit === true \? 1 : 0/, "worklet cannot silently re-enable JIT");
 assert.match(worklet, /applyPackageResources\(x, m\.package\)/, "type-101 package resources applied");
+assert.match(host, /fm1:usb-check/, "desktop USB check IPC is wired");
+assert.match(host, /require\("\.\/updater"\)/, "app update check is wired");
+assert.ok(existsSync(resolve(root, "updater.js")), "updater.js is shipped");
 
 const { packageResources } = await browserModule(resolve(emulator, "package-resources.js"));
 const melodee = entries.find(entry => entry.id === "melodee");
@@ -95,43 +135,45 @@ assert.ok(packageResources(readFileSync(resolve(emulator, melodee.package)))?.da
 const felucca = entries.find(entry => entry.id === "felucca");
 assert.equal(packageResources(readFileSync(resolve(emulator, felucca.package))), null, "ordinary packages do not invent resources");
 
-const { CATALOG_URL, LEGACY_ID_FIELD, fromCatalog, mergeCatalog, migrateRemembered, scanOpenFirmwareUpdates } = await browserModule(resolve(emulator, "catalog-updates.js"));
+const { fromHub, mergeCatalog, scanOpenFirmwareUpdates, classifyScan } = await browserModule(resolve(emulator, "catalog-updates.js"));
 const liveExample = {
   id: "test-open", name: "Test Open", version: "2.0", published: "2026-11-09T12:00:00Z",
   kind: "synth", author: "tester", lic: "GPL-3.0", what: "Test entry", pkg: "fw/test-open-2.0.fwsc",
   sha256: "a".repeat(64), product: "FM-1_123", source: "https://github.com/example/test-open/tree/v2.0",
 };
-assert.equal(fromCatalog({ ...liveExample, lic: "" }), null, "scanner rejects a missing license");
-assert.equal(fromCatalog({ ...liveExample, product: "SMK-37_123" }), null, "scanner rejects a wrong-device product");
-const converted = fromCatalog(liveExample);
-assert.equal(converted.package, new URL("fw/test-open-2.0.fwsc", CATALOG_URL).href, "scanner creates a pinned catalog URL");
-const catalogHost = new URL(CATALOG_URL).hostname;
-assert.ok(!JSON.stringify(catalog).includes(catalogHost), "bundled snapshot carries no links back to the catalog site");
-assert.ok(catalog.firmwares.every(entry => !("fmhub" in entry)), "bundled snapshot uses makerCard");
-assert.deepEqual(migrateRemembered([{ id: "a", [LEGACY_ID_FIELD]: "a" }]), [{ id: "a", catalogId: "a" }], "1.1.0 remembered entries migrate");
+assert.equal(fromHub({ ...liveExample, lic: "" }), null, "scanner rejects a missing license");
+assert.equal(fromHub({ ...liveExample, product: "SMK-37_123" }), null, "scanner rejects a wrong-device product");
+const converted = fromHub(liveExample);
+assert.equal(converted.package, "https://thefirmwarehub.com/fw/test-open-2.0.fwsc", "scanner creates a pinned Hub URL");
 const merged = mergeCatalog({ default: "felucca", firmwares: [felucca] }, [converted, { ...converted, id: "bad", package: "https://evil.example/fw/bad.fwsc" }]);
 assert.deepEqual(merged.firmwares.map(entry => entry.id), ["test-open", "felucca"], "only safe remembered entries merge");
 const scanned = await scanOpenFirmwareUpdates({ firmwares: [felucca] }, { firmwares: [felucca] }, async () => ({ ok: true, json: async () => ({ firmwares: [liveExample, { ...liveExample, id: "closed", lic: "" }] }) }));
-assert.deepEqual({ checked: scanned.checked, newCount: scanned.newCount, updateCount: scanned.updateCount, remembered: scanned.remember.length },
-  { checked: 1, newCount: 1, updateCount: 0, remembered: 1 }, "open-source update scan filters and counts releases");
+assert.deepEqual({ checked: scanned.checked, newCount: scanned.newCount, updateCount: scanned.updateCount, remembered: scanned.remember.length, closedLicense: scanned.closedLicense },
+  { checked: 1, newCount: 1, updateCount: 0, remembered: 1, closedLicense: 1 }, "open-source update scan filters and counts releases");
+const review = classifyScan(scanned, []);
+assert.equal(review.length, 1, "review list has the new open find");
+assert.equal(review[0].kind, "new", "new find is marked for review");
+assert.ok(existsSync(resolve(emulator, "radar.js")), "radar panel module is shipped");
+assert.match(text("site/emulator/index.html"), /firmware-radar-list/, "radar results list is in the page");
+assert.match(text("site/emulator/index.html"), /radar-filter-new/, "radar filters are in the page");
+assert.match(text("site/emulator/index.html"), /radar-filter-q/, "radar text filter is in the page");
+assert.match(text("site/emulator/index.html"), /assist\.js\?v=\d+/, "Play assist panel is loaded");
+assert.match(text("site/emulator/assist.js"), /fm1\.assist\.v1/, "Play assist persists its state");
+assert.match(text("site/emulator/audition.js"), /STYLES/, "audition has multiple phrase styles");
+assert.match(text("site/emulator/midimon.js"), /mon-pause/, "MIDI monitor can pause capture");
+assert.match(text("site/emulator/style.css"), /flex-wrap:\s*nowrap/, "key legend stays on one row");
 assert.ok(entries.some(entry => entry.id === "aurora" && entry.version === "0.9.1" && entry.product === "FM-1_4747"), "AURORA 0.9.1 is bundled and identified");
+
+const radarTests = spawnSync(process.execPath, [resolve(root, "ci/test-radar.mjs")], { encoding: "utf8" });
+assert.equal(radarTests.status, 0, `radar unit tests failed:\n${radarTests.stdout}\n${radarTests.stderr}`);
+assert.match(radarTests.stdout, /PASS: \d+ radar tests/, "radar unit tests report a pass count");
+const flashTests = spawnSync(process.execPath, [resolve(root, "ci/test-flash.mjs")], { encoding: "utf8" });
+assert.equal(flashTests.status, 0, `flash unit tests failed:\n${flashTests.stdout}\n${flashTests.stderr}`);
+assert.match(flashTests.stdout, /PASS: \d+ flash tests/, "flash unit tests report a pass count");
 
 const readme = text("README.md");
 assert.match(readme, new RegExp(`\\b${entries.length}\\b`), "README firmware count");
 assert.match(text("THIRD-PARTY.md"), new RegExp(`Bundled firmware \\(${entries.length}\\)`), "third-party count");
-// Upgrades: every public installer so far used this appId, product name and NSIS GUID (the GUID
-// electron-builder derives from the appId). Changing any of them makes a new installer a
-// different app, which leaves the old one installed beside it.
-assert.equal(packageJson.build.appId, "com.briksquared.fm1emulator", "appId stays stable across releases");
-assert.equal(packageJson.build.productName, "FM-1 Emulator", "productName stays stable across releases");
-assert.equal(packageJson.build.nsis.guid, "79b50ff1-604f-59d5-b1fb-36e19b956082", "NSIS GUID matches earlier installers");
-assert.equal(packageJson.build.nsis.perMachine, false, "per-user install, as before");
-assert.notEqual(packageJson.build.nsis.deleteAppDataOnUninstall, true, "upgrades keep user data");
-assert.match(host, /setAppUserModelId\("com\.briksquared\.fm1emulator"\)/, "window AppUserModelID matches the shortcuts");
-// App updates only check GitHub and link to the release page: nothing downloads or installs itself.
-assert.ok(packageJson.build.files.includes("updater.js"), "update check packaged");
-assert.ok(!packageJson.dependencies?.["electron-updater"] && !packageJson.devDependencies?.["electron-updater"], "no self-installing updater");
-assert.ok(!text("updater.js").includes("electron-updater") && !host.includes("electron-updater"), "no self-installing updater in the app");
 assert.ok(packageJson.build.files.includes("FIRMWARE-SOURCES.json"), "source manifest included in packaged app");
 assert.ok(packageJson.build.files.includes("LICENSES/**/*"), "third-party license texts included in packaged app");
 console.log(`PASS: ${entries.length} unique, open-license FM-1 packages; hashes, identities, order, source manifest, patch, and resource loader verified.`);

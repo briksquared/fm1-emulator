@@ -5,12 +5,14 @@
 (function () {
   "use strict";
   const KEY = "fm1.ui";
-  const DEFAULT_ACCENT = "#fa5400";
+  // Public default: monochrome accent (no orange). Customize can still pick colour.
+  const DEFAULT_ACCENT = "#d8d8d8";
+  const LEGACY_STOCK_ACCENT = "#fa5400";
   const DEFAULT_THEME = "Midnight";
   // bg: the page, panel: cards and boxes, surface: inputs and buttons, text: body text
   const THEMES = {
-    Midnight:  { bg: "#000000", panel: "#1e1f22", surface: "#17181b", text: "#e9edf2", accent: DEFAULT_ACCENT },
-    Graphite:  { bg: "#17181b", panel: "#26282d", surface: "#1e2024", text: "#eef0f3", accent: "#9aa7b8" },
+    Midnight:  { bg: "#000000", panel: "#121212", surface: "#141414", text: "#f0f0f0", accent: DEFAULT_ACCENT },
+    Graphite:  { bg: "#111111", panel: "#1a1a1a", surface: "#161616", text: "#f0f0f0", accent: "#c0c0c0" },
     Cobalt:    { bg: "#050a17", panel: "#111b33", surface: "#0b1428", text: "#e5ecff", accent: "#4d82ff" },
     Emerald:   { bg: "#03100a", panel: "#0e2419", surface: "#091a12", text: "#e2f5eb", accent: "#10b981" },
     Crimson:   { bg: "#110406", panel: "#261014", surface: "#1b0a0d", text: "#f8e6e8", accent: "#ff3a4c" },
@@ -25,7 +27,8 @@
     "--ui-dim", "--ui-cap-top", "--ui-cap-bot", "--ui-cap-edge", "--ui-cap-shade", "--ui-box-top", "--ui-box-bot",
     "--ui-box-edge", "--ui-well-top", "--ui-well-bot", "--ui-head-top", "--ui-head-bot", "--ui-stage-top",
     "--ui-stage-bot", "--ui-mod-top", "--ui-mod-bot", "--ui-raised", "--ui-pressed", "--ui-panel-shadow",
-    "--amber", "--amber-hi", "--amber-lo", "--amber-edge", "--amber-ink", "--ui-on-accent", "--ui-cable-midi", "--ui-cable-scope"];
+    "--amber", "--amber-hi", "--amber-lo", "--amber-edge", "--amber-ink", "--ui-on-accent",
+    "--green", "--ui-warn", "--ui-cable-midi", "--ui-cable-scope", "--ui-cable-tuner"];
 
   // --- colour maths (sRGB hex) ---
   const isHex = (h) => typeof h === "string" && /^#[0-9a-f]{6}$/i.test(h);
@@ -52,6 +55,8 @@
   function load() { try { const o = JSON.parse(localStorage.getItem(KEY) || "{}"); return o && typeof o === "object" ? o : {}; } catch { return {}; } }
   function save(ui) { try { localStorage.setItem(KEY, JSON.stringify(ui)); } catch {} }
 
+  const isStock = (ui) => (!ui.theme || ui.theme === DEFAULT_THEME || !Object.hasOwn(THEMES, ui.theme)) && !FIELDS.some((k) => k !== "accent" && isHex(ui[k]));
+
   // the colours in effect: a preset, any custom fields over it, and the accent
   function resolve(ui) {
     // (own names only: "constructor" or "__proto__" from a link or storage is not a theme)
@@ -59,9 +64,10 @@
     const t = { ...base };
     for (const k of FIELDS) if (isHex(ui[k])) t[k] = ui[k].toLowerCase();
     if (isHex(ui.accent)) t.accent = ui.accent.toLowerCase();
+    // Prior public builds used orange as the stock accent; treat that alone as the new mono default.
+    if (t.accent === LEGACY_STOCK_ACCENT && isStock(ui)) t.accent = DEFAULT_ACCENT;
     return t;
   }
-  const isStock = (ui) => (!ui.theme || ui.theme === DEFAULT_THEME || !Object.hasOwn(THEMES, ui.theme)) && !FIELDS.some((k) => k !== "accent" && isHex(ui[k]));
 
   // readable text: body text at least 7:1 on panels (falls back to near-white/near-black),
   // secondary text 4.5:1, accent-coloured text 4.5:1, text on the accent whichever is stronger
@@ -108,11 +114,25 @@
     const v = {};
     v["--amber"] = a; v["--amber-hi"] = mix(a, "#ffffff", 0.28); v["--amber-lo"] = scale(a, 0.86); v["--amber-edge"] = scale(a, 0.72);
     v["--amber-ink"] = ensure(a, panel, 4.5);
-    v["--ui-on-accent"] = contrast(a, "#14110d") >= contrast(a, "#ffffff") ? "#14110d" : "#ffffff";
-    // the Tape cable is the accent; keep the MIDI (blue) and Scope (green) cables distinct from it
-    const [h, sat] = hueSat(a), near = (x) => sat > 0.25 && Math.min(Math.abs(h - x), 360 - Math.abs(h - x)) < 32;
-    if (near(211)) v["--ui-cable-midi"] = "#b48cff";
-    if (near(154)) v["--ui-cable-scope"] = "#e8c547";
+    v["--ui-on-accent"] = contrast(a, "#111111") >= contrast(a, "#ffffff") ? "#111111" : "#ffffff";
+    const [h, sat] = hueSat(a);
+    const mono = sat < 0.14;
+    // Stock / monochrome accent: every chrome token stays gray (cables, ok/warn, LEDs).
+    if (mono) {
+      v["--green"] = ensure(mix(a, "#ffffff", 0.22), panel, 4.5);
+      v["--ui-warn"] = ensure(mix(panel, "#ffffff", 0.55), panel, 4.5);
+      v["--ui-cable-midi"] = mix(a, "#888888", 0.45);
+      v["--ui-cable-scope"] = mix(a, "#aaaaaa", 0.35);
+      v["--ui-cable-tuner"] = "#ff8a1a"; // tuner cable stays orange even in stock mono chrome
+      return v;
+    }
+    // Coloured Customize themes: restore semantic green / warn and distinct cable hues.
+    v["--green"] = "#7cc48a";
+    v["--ui-warn"] = "#e2705f";
+    const near = (x) => sat > 0.25 && Math.min(Math.abs(h - x), 360 - Math.abs(h - x)) < 32;
+    v["--ui-cable-midi"] = near(211) ? "#b48cff" : "#4aa8ff";
+    v["--ui-cable-scope"] = near(154) ? "#e8c547" : "#49d49a";
+    v["--ui-cable-tuner"] = near(30) ? "#ffb347" : "#ff8a1a";
     return v;
   }
 
@@ -123,9 +143,8 @@
     const t = resolve(ui);
     let light = false;
     if (!isStock(ui)) { const d = derive(t); light = d.light; for (const [k, val] of Object.entries(d.vars)) st.setProperty(k, val); }
-    // the stock look keeps its exact colours; only a different accent is set
-    if (isStock(ui) && t.accent === DEFAULT_ACCENT) st.setProperty("--amber", DEFAULT_ACCENT);
-    else for (const [k, val] of Object.entries(accentVars(t.accent, t.panel))) st.setProperty(k, val);
+    // Always derive accent companions (hi/lo/ink/on-accent) so mono defaults stay consistent.
+    for (const [k, val] of Object.entries(accentVars(t.accent, t.panel))) st.setProperty(k, val);
     root.style.colorScheme = light ? "light" : "dark";
     root.toggleAttribute("data-ui-light", light);
     return t;

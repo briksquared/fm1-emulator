@@ -1,7 +1,9 @@
 {
   "license": {
     "license": "CC-BY-4.0",
-    "url": "https://creativecommons.org/licenses/by/4.0/"
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Firmware list: The Firmware Hub – https://thefirmwarehub.com",
+    "terms": "Name The Firmware Hub with its address: a working link to https://thefirmwarehub.com where links work; on a device without a browser the address written out where people see it (the list's title or info screen, About). Card texts and pictures belong to their makers (their fmhub.json and repositories), not under this licence: name each maker and link its repository. Read this file at most once a day; rules: https://thefirmwarehub.com/kb/#catalog"
   },
   "updated": "2026-11-09T13:30:16.298Z",
   "firmwares": [
@@ -14,6 +16,7 @@
       "ident": "FM-1_\\d{3,8}",
       "what": "A bio-synthetic groovebox: six tracks drawn as living beings in thermal colours, eight engines (FM6 with Dexed, analog, phase, voice…), mutating macros, song mode from SLOOP. Not yet tested much on a real FM-1.",
       "editor": "https://juanjiant-bit.github.io/JIANT/webapp/editor/",
+      "play": "https://play.thefirmwarehub.com/?fw=jiant",
       "added": "2026-10-10",
       "loader": null,
       "cheat": null,
@@ -22,7 +25,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 224,
       "talk": null,
       "lic": "GPL-3.0",
@@ -70,7 +73,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 9,
       "talk": "https://github.com/nzimas/bigorna/issues",
       "lic": "GPL-3.0",
@@ -120,7 +123,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 25,
       "talk": "https://github.com/De-Pattern/Ravel_FM1/issues",
       "lic": "GPL-3.0",
@@ -169,7 +172,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "9e0625d2",
         "data": {
           "what": "A four-track groovebox: an acid bass or a Juno-style poly, physical modelling, two dozen synthesis models and a drum synth. A 64-step sequencer with song mode, generators that write parts on one chord plan, pixel characters, and USB audio with six stems, MIDI out and DAW sync.",
@@ -177,7 +180,8 @@
           "kind": "groove",
           "play": "https://eatyourgreensstudio-dotcom.github.io/karma-fm1/emu/",
           "editor": "https://eatyourgreensstudio-dotcom.github.io/karma-fm1/webapp/editor/",
-          "cheat": "https://eatyourgreensstudio-dotcom.github.io/karma-fm1/emu/cheatsheet.html"
+          "cheat": "https://eatyourgreensstudio-dotcom.github.io/karma-fm1/emu/cheatsheet.html",
+          "image": "assets/card.png"
         }
       },
       "stars": 29,
@@ -228,13 +232,14 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "4e2a2846",
         "data": {
           "what": "Six mono machines in the spirit of Elektron's Monomachine: FM, superwaves, wavetables, a SID, a voice and four drum synths, one per track. A 64-step sequencer with parameter locks, trig conditions and ratchets, a lofi bus, four demo parts and a web patch editor.",
           "kind": "groove",
           "play": "https://inigohernandez.github.io/mono2k/",
-          "editor": "https://inigohernandez.github.io/mono2k/editor.html"
+          "editor": "https://inigohernandez.github.io/mono2k/editor.html",
+          "image": "docs/hub/screen-4x.png"
         }
       },
       "stars": 20,
@@ -285,7 +290,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "fcee9a3f",
         "data": {
           "what": "BEETLE BLUE turns your M-VAVE FM1 into a six-lane drum tracker. Build beats with BEETLE and MONOLITH kits, design custom drums, arrange songs, and perform setlists with Live Mode and hands-on effects.",
@@ -343,13 +348,14 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "a1c19e2a",
         "data": {
           "what": "BEETLE transforms the FM-1 into a powerful 6-channel music workstation. Create beats, design sounds with retro-inspired synth engines, sequence entire songs, and perform with live effects. A complete pocket-sized tracker, drum machine, and synthesizer. Built for creativity, born out of passion.",
           "author": "Joppe Sikken (SikkenWorks)",
           "kind": "tracker",
-          "editor": "https://sikkenworks.github.io/BEETLE/BEETLE-Project-Manager.html"
+          "editor": "https://sikkenworks.github.io/BEETLE/BEETLE-Project-Manager.html",
+          "image": "BEETLE-1024.png"
         }
       },
       "stars": 5,
@@ -399,14 +405,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "dbcf44f8",
         "data": {
           "what": "A monophonic bass synth on Cycle Exchange Synthesis: two sub-oscillators, a ladder filter, Channel EQ, eight effects from MOSFET drive to octave fuzz, a step sequencer up to 128 steps and an arpeggiator.",
           "author": "Joppe Sikken (SikkenWorks)",
           "kind": "synth",
           "play": "https://sikkenworks.github.io/RUPTURE/emu/web",
-          "cheat": "https://sikkenworks.github.io/RUPTURE/#cheatsheet"
+          "cheat": "https://sikkenworks.github.io/RUPTURE/#cheatsheet",
+          "image": "RUPTURE.png"
         }
       },
       "stars": 2,
@@ -457,7 +464,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 104,
       "talk": "https://github.com/Quixotic7/ChoralRootFM1/issues",
       "lic": "GPL-3.0",
@@ -517,14 +524,15 @@
       "color": "#4CC9B0",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "8f505baf",
         "data": {
           "what": "A ultra-refined Chiptune music editor, featuring over 35 classic chips such as NES, Gameboy, heck even the Sunsoft 5B! Gimmick fans rejoice!",
           "kind": "groove",
           "play": "https://ihavenocluewhatimdoing.com/chipbox/play/",
           "editor": "https://ihavenocluewhatimdoing.com/chipbox/projects/",
-          "color": "#4CC9B0"
+          "color": "#4CC9B0",
+          "image": "site/img/card.png"
         }
       },
       "stars": 7,
@@ -587,14 +595,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "0efaf160",
         "data": {
           "what": "A super powerful drum synth and sequencer that started as a port of the Erica Synths LXR-02 and kept going. Make a beat in two minutes, then dig into 29 sound engines, deep effects, generative sequencing, live performance tricks, MIDI control and 8-channel USB audio.",
           "author": "Dan Majka",
           "kind": "drums",
           "play": "https://dmajka.github.io/elixir/try/",
-          "cheat": "https://dmajka.github.io/elixir/cheatsheet.pdf"
+          "cheat": "https://dmajka.github.io/elixir/cheatsheet.pdf",
+          "image": "docs/card.png"
         }
       },
       "stars": 12,
@@ -658,7 +667,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 6,
       "talk": null,
       "lic": "GPL-3.0",
@@ -706,13 +715,14 @@
       "color": "#E6F020",
       "vintage": true,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "83acb042",
         "data": {
           "what": "You're making acid, baby! Smash that LFO button until you hear something you like, and then twist those knobs! Now with 100% more FX! A truly trippy experience! Built on Chipbox.",
           "kind": "synth",
           "play": "https://ihavenocluewhatimdoing.com/smileyface/play/",
-          "color": "#E6F020"
+          "color": "#E6F020",
+          "image": "site/img/card.png"
         }
       },
       "stars": 0,
@@ -776,7 +786,7 @@
       "color": "#E7775D",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "7b85bd7f",
         "data": {
           "what": "A modular synth for the FM-1: 30 factory patches built from nested modules, from classic polysynths to drum machines, each played with four knobs per page, plus a step sequencer with patterns and songs. Build your own patches in the browser editor and send them to the FM-1 over USB.",
@@ -784,7 +794,8 @@
           "kind": "synth",
           "play": "https://matryoshka.lol/#emu",
           "editor": "https://matryoshka.lol/",
-          "color": "#E7775D"
+          "color": "#E7775D",
+          "image": "web/public/brand/fmhub-card.png"
         }
       },
       "stars": 7,
@@ -835,7 +846,7 @@
       "color": "#EE7D52",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "8472f6d4",
         "data": {
           "what": "A firmware for your firmwares when using the app or a high quality 24bit DX7 rompler with 16 user carts and MIDI Controller when using the FM-1 by itself. BLE and USB supported!",
@@ -843,7 +854,8 @@
           "kind": "synth",
           "editor": "https://remotefm1.com/",
           "cheat": "https://github.com/Quixotic7/RemoteFM1#using-it",
-          "color": "#EE7D52"
+          "color": "#EE7D52",
+          "image": "docs/hub-card.png"
         }
       },
       "stars": 32,
@@ -904,14 +916,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "ba230723",
         "data": {
           "what": "K-WASUB is a powerful bass synthesizer for the M-VAVE FM-1, featuring 9 synthesis engines with 2 engines playable simultaneously and morphing capabilities. A dedicated sample layer adds attack and texture, while 3 freely assignable MIDI-learnable LFOs, quantized live effects and extensive sound…",
           "kind": "synth",
           "play": "https://guizmoh.github.io/K-WASUB_Firmware_for_FM1/emulator/index.html",
           "editor": "https://guizmoh.github.io/K-WASUB_Firmware_for_FM1/data.html",
-          "cheat": "https://guizmoh.github.io/K-WASUB_Firmware_for_FM1/cheatsheet.html"
+          "cheat": "https://guizmoh.github.io/K-WASUB_Firmware_for_FM1/cheatsheet.html",
+          "image": "docs/img/card.webp"
         }
       },
       "stars": 5,
@@ -973,13 +986,14 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": {
+      "fmhub": {
         "sha": "e501ffbd",
         "data": {
           "what": "An ambient drone instrument: tap a key to latch a drone, a note or a chord in your key. Three layers a voice into a big reverb with shimmer and freeze; GLINT's icy FM bells on top, by hand, arpeggio or sequence; BASS a deep line below, held or sequenced; three LFOs keep it all moving.",
           "kind": "synth",
           "play": "https://frasilsynth.com/play/",
-          "editor": "https://editor.frasilsynth.com/"
+          "editor": "https://editor.frasilsynth.com/",
+          "image": "docs/img/screen-play.png"
         }
       },
       "stars": 11,
@@ -1030,7 +1044,7 @@
       "color": "#39A8FF",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "07533444",
         "data": {
           "what": "A four-track groovebox for M-VAVE FM-1: 12 synth engines, drums, 24 stored patterns, 128 song positions, 64-step tracks, live granular effects and MIDI THRU. Includes a browser editor with audio preview.",
@@ -1039,7 +1053,8 @@
           "play": "https://piotrwozniak.github.io/piterfly/webapp/editor/?mock=1",
           "editor": "https://piotrwozniak.github.io/piterfly/webapp/editor/",
           "cheat": "https://piotrwozniak.github.io/piterfly/webapp/changes/",
-          "color": "#39A8FF"
+          "color": "#39A8FF",
+          "image": "assets/piterfly/screenshots/home-64.png"
         }
       },
       "stars": 0,
@@ -1091,7 +1106,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "db2cc613",
         "error": "image: the path of a .png, .webp or .jpg in your repository, e.g. docs/card.png"
       },
@@ -1142,13 +1157,14 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "ba66af94",
         "data": {
           "what": "Noise and modeling synth with GM-style presets (4 banks, 512) and a 4-track tape recorder: each voice a live Chua circuit or noise program, through vactrol gates into resonators and piano, drum, voice, flute, brass, bowed, reed and bird waveguides, with temple, cathedral and mosque reverbs. GM…",
           "author": "plieuwski",
           "kind": "synth",
-          "play": "https://plieuw.github.io/hawk-chua/webapp/try/"
+          "play": "https://plieuw.github.io/hawk-chua/webapp/try/",
+          "image": "docs/card.png"
         }
       },
       "stars": 0,
@@ -1199,7 +1215,7 @@
       "color": "#CEFF18",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "18212d4e",
         "data": {
           "what": "Live club mixing for the FM-1: four layers (lead, chord, bass, drums) that play by themselves in 20 styles while you ride them live. Blend one style into the next, build with intros and break-build-drop arcs, edit steps or play a layer by hand. All synthesised, no samples.",
@@ -1207,7 +1223,8 @@
           "kind": "groove",
           "play": "https://delirioux.github.io/sardine/try/",
           "cheat": "https://github.com/delirioux/sardine/blob/main/docs/CHEATSHEET.md",
-          "color": "#CEFF18"
+          "color": "#CEFF18",
+          "image": "docs/card.png"
         }
       },
       "stars": 0,
@@ -1257,12 +1274,13 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "cd84f88c",
         "data": {
           "what": "A live jungle tool built around classic breaks (Amen, Apache, Think) and your own. Hold white keys for rolls, builds, echo and Akai-style metallic stretch, play hits on the black keys, and shape the break with variation, warp, ringing feedback, lo-fi, EQ, saturation and compression.",
           "author": "Presethead",
-          "kind": "drums"
+          "kind": "drums",
+          "image": "app/site/img/screen.png"
         }
       },
       "stars": 18,
@@ -1324,14 +1342,15 @@
       "color": "#2BA6E8",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "62f7b420",
         "data": {
           "what": "Generative music for the FM-1: it composes as it plays, melody, bass, accompaniment and percussion shaped by music theory out of controlled randomness. Pick a composer or one of 86 genres across eight decades and it plays in that manner, endlessly and never twice the same.",
           "author": "delirioux",
           "kind": "groove",
           "play": "https://delirioux.github.io/tuna/try/",
-          "color": "#2BA6E8"
+          "color": "#2BA6E8",
+          "image": "docs/card.png"
         }
       },
       "stars": 4,
@@ -1381,14 +1400,15 @@
       "color": "#3FA2E6",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "b912eeca",
         "data": {
           "what": "One piece on the FM-1: Chopin's Etude in C major, Op. 10 No. 1, on a sampled Steinway D. Flyfish plays it and lets you shape it, practise it and move it.",
           "author": "delirioux",
           "kind": "other",
           "play": "https://delirioux.github.io/flyfish/try/",
-          "color": "#3FA2E6"
+          "color": "#3FA2E6",
+          "image": "docs/card.png"
         }
       },
       "stars": 2,
@@ -1438,14 +1458,15 @@
       "color": "#D8E2EA",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "e4534139",
         "data": {
           "what": "Grooves in chrome: filtered, pumping, robotic. Press PLAY and Daurade plays a filtered loop that opens over sixteen bars, a mix that pumps on every kick, a robot voice singing the hook and crisp drums. Ten styles; steer it with four knobs, drop it, set off a solo or play the lead yourself.",
           "author": "delirioux",
           "kind": "groove",
           "play": "https://delirioux.github.io/daurade/try/",
-          "color": "#D8E2EA"
+          "color": "#D8E2EA",
+          "image": "docs/card.png"
         }
       },
       "stars": 2,
@@ -1495,14 +1516,15 @@
       "color": "#F03CC4",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "e4df70ba",
         "data": {
           "what": "Generative 90s eurodance, pickled in 1995. Press PLAY and Sill writes a song and plays it: offbeat basses, piano and supersaw stabs, a chorus hook with a choir and a key change for the last chorus. Ten styles; steer it with four knobs, break it down, push the key up and play the hook yourself.",
           "author": "delirioux",
           "kind": "groove",
           "play": "https://delirioux.github.io/sill/try/",
-          "color": "#F03CC4"
+          "color": "#F03CC4",
+          "image": "docs/card.png"
         }
       },
       "stars": 1,
@@ -1555,7 +1577,7 @@
       "color": "#1EA462",
       "vintage": false,
       "ambient": true,
-      "makerCard": {
+      "fmhub": {
         "sha": "197a7789",
         "data": {
           "what": "A generative Irish ambient instrument: harps in a jig's threes and a flute over a drone, with surf, wind and rain. Eight pieces play themselves for ever; play along on its keys, a keyboard or a DAW. Its **visualiser** paints it as an Irish landscape; its site lists the gear that works with it.",
@@ -1564,7 +1586,8 @@
           "play": "https://stephencummins.github.io/fm1-aisling/emu/",
           "editor": "https://stephencummins.github.io/fm1-aisling/editor/",
           "cheat": "https://stephencummins.github.io/fm1-aisling/cheat/",
-          "color": "#1EA462"
+          "color": "#1EA462",
+          "image": "docs/card.png"
         }
       },
       "stars": 1,
@@ -1617,14 +1640,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "72e6523a",
         "data": {
           "what": "Little Sound Dj, the Game Boy tracker, on the FM-1: played from its keys and knobs, with per-channel filters, drive, lo-fi and an LFO, a shared echo, reverb and compressor, MIDI sync and colour themes. Bring your own LSDj: the project's web page adds it to this firmware on your computer.",
           "author": "Dreamy_bacon",
           "kind": "tracker",
           "play": "https://dreamsofbacon.github.io/lsdj-burrito/#emulator-sec",
-          "editor": "https://dreamsofbacon.github.io/lsdj-burrito/#connect"
+          "editor": "https://dreamsofbacon.github.io/lsdj-burrito/#connect",
+          "image": "docs/card.png"
         }
       },
       "stars": 2,
@@ -1677,14 +1701,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "97867109",
         "data": {
           "what": "Turns the FM-1 into a C64 SID machine: two SIDs measured on real chips, a GoatTracker 2 tracker and step sequencer with slide and accent, .sid playback with live tweaks, LAB for sounds with step tables and LFOs, patches from an AI chat or SidStation banks, Bluetooth MIDI, and Live Link in a browser.",
           "kind": "tracker",
           "play": "https://dsablic.github.io/sidou/",
           "editor": "https://dsablic.github.io/sidou/editor.html",
-          "cheat": "https://dsablic.github.io/sidou/cheatsheet.html"
+          "cheat": "https://dsablic.github.io/sidou/cheatsheet.html",
+          "image": "docs/media/sidou-card-240.png"
         }
       },
       "stars": 6,
@@ -1735,7 +1760,7 @@
       "color": "#2C7FFF",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "4e02a0df",
         "data": {
           "what": "A TB-303 style acid synth with its own pattern generator: press PLAY and a line plays. Generate, mutate and undo patterns up to 64 steps, edit steps in a piano roll, add drive, chorus, synced delay and plate reverb. The ATEK303 engine from VCV Rack with 14 oscillators and its fine tuning, 12…",
@@ -1743,7 +1768,8 @@
           "kind": "synth",
           "play": "https://animatek.github.io/FM1-Animatek/atek303/play/",
           "cheat": "https://animatek.github.io/FM1-Animatek/atek303/cheatsheet/",
-          "color": "#2C7FFF"
+          "color": "#2C7FFF",
+          "image": "atek303/art/cover.jpg"
         }
       },
       "stars": 0,
@@ -1793,14 +1819,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "0ebd5d71",
         "data": {
           "what": "Resampling sound design. Build one sound from FM, analog or 808-style drums, play it as notes, steps or strummed chords, add 6 LFOs, 3 envelopes and 8 FX, then resample it into a new source. Every resample keeps its recipe, so a 64-sound bank of generation trees rebuilds bit for bit.",
           "author": "Veff",
           "kind": "synth",
           "play": "https://galfaroth.github.io/veffbox/emu/",
-          "cheat": "https://galfaroth.github.io/veffbox/#guide"
+          "cheat": "https://galfaroth.github.io/veffbox/#guide",
+          "image": "docs/fmhub2.png"
         }
       },
       "stars": 3,
@@ -1862,7 +1889,7 @@
       "color": "#FFB838",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "21bd3084",
         "data": {
           "what": "Microtonic, for the FM-1! Roll the dice for a kit, build one from scratch, or bring in your Microtonic presets and patterns. Share kits and patterns as files, and send it all to your Teenage Engineering PO-32! Built on Chipbox!",
@@ -1870,7 +1897,8 @@
           "kind": "drums",
           "play": "https://ihavenocluewhatimdoing.com/drumlab/play/",
           "editor": "https://ihavenocluewhatimdoing.com/drumlab/projects/",
-          "color": "#FFB838"
+          "color": "#FFB838",
+          "image": "site/img/card.png"
         }
       },
       "stars": 0,
@@ -1934,14 +1962,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "e15f1cd4",
         "data": {
           "what": "A Mega Drive / Genesis music tracker. It emulates the YM2612 and SN76489 chips: six FM channels, three square waves and noise, with Deflemask-style effects, 128 FM presets, a drum kit on the DAC, 256 song slots, a demo song and VGM export.",
           "author": "jartificer",
           "kind": "tracker",
           "play": "https://jartificer.github.io/fm1-trax/",
-          "editor": "https://jartificer.github.io/fm1-trax/editor.html"
+          "editor": "https://jartificer.github.io/fm1-trax/editor.html",
+          "image": "docs/card.png"
         }
       },
       "stars": 1,
@@ -1992,7 +2021,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 13,
       "talk": "https://github.com/jartificer/fm1-gm/issues",
       "lic": "GPL-3.0",
@@ -2040,7 +2069,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 9,
       "talk": "https://github.com/Quixotic7/PurpleMonkeyFM1/issues",
       "lic": "GPL-3.0",
@@ -2088,7 +2117,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "a3a5d7a9",
         "data": {
           "what": "A groovebox around one engine, ChoralRoot's FM TONE: eight tracks, p-locks and preset sound locks, conditions, ratchets, chords, and MIDI FX for generative patterns and for reworking the ones you have. Bluetooth MIDI, and recording over USB audio.",
@@ -2157,7 +2186,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 4,
       "talk": "https://github.com/PolarPatch/Arctic-scream-FM-1/issues",
       "lic": "GPL-3.0",
@@ -2220,7 +2249,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 20,
       "talk": null,
       "lic": "GPL-3.0",
@@ -2268,14 +2297,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "e5bce6c1",
         "data": {
           "what": "An Amen break chopper for the FM-1: eight classic breaks cut into 16 slices on the white keys, hold a key to loop it. Black keys are momentary pads for rolls, reverse, freeze, tape stop, gate, filter and dub throws. A generator rearranges the break live, with a four-slot FX chain and a DJ filter.",
           "author": "Laurens Profittlich",
           "kind": "drums",
           "play": "https://profikid.github.io/fm1-break-choppah/emu/",
-          "cheat": "https://profikid.github.io/fm1-break-choppah/manual/"
+          "cheat": "https://profikid.github.io/fm1-break-choppah/manual/",
+          "image": "docs/img/card.png"
         }
       },
       "stars": 10,
@@ -2337,7 +2367,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "2b758afd",
         "data": {
           "what": "A MIDI monitor for USB, the TRS jack and Bluetooth (as device and host at once): hex or words, filters, stats. Its THRU routes, each filtered, make the FM-1 a Bluetooth MIDI dongle.",
@@ -2403,13 +2433,14 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "288cd500",
         "data": {
           "what": "Dark-music firmware for the FM-1: 21 genres, 210 pieces, from dark techno to dark ambient and darkwave. Wander evolves it on its own. Arp with Hold, Dice, step editor. New in 1.0.5: brand new visuals, simplified settings, bigger easier-to-read text, plain-language help, SEL shortcut menu.",
           "author": "Polystellarflow",
           "kind": "groove",
-          "play": "https://sparky480v.github.io/Dark-1/play/"
+          "play": "https://sparky480v.github.io/Dark-1/play/",
+          "image": "docs/card.png"
         }
       },
       "stars": 1,
@@ -2462,7 +2493,7 @@
       "color": "#FFB000",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "d1b1024d",
         "data": {
           "what": "A groovebox that plays itself while you steer it: nineteen genres, FM pad, bass, acid and pluck voices, drums with a step sequencer, an auto-DJ, effects you play on the keys, scenes, and a Jam page to play along. Store your pieces, and share them through the online library.",
@@ -2471,7 +2502,8 @@
           "play": "https://deamonslinky.github.io/PERF-1/emu/",
           "editor": "https://deamonslinky.github.io/PERF-1/editor/",
           "cheat": "https://deamonslinky.github.io/PERF-1/manual/PERF-1-quick-manual.pdf",
-          "color": "#FFB000"
+          "color": "#FFB000",
+          "image": "docs/card.png"
         }
       },
       "stars": 15,
@@ -2522,14 +2554,15 @@
       "color": "#6FA3B8",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "5c3e23b2",
         "data": {
           "what": "A sad wavetable synth played by a pixel blob in a rainy room: its eyes are the filter, its mouth the envelope, its tears the delay. Gloomy beats with auto-bass, an arpeggiator, a pattern sequencer, twelve punch effects on the black keys, and presets of your own.",
           "author": "slothpallas",
           "kind": "synth",
           "play": "https://slothpallas.github.io/mope-1/play/",
-          "color": "#6FA3B8"
+          "color": "#6FA3B8",
+          "image": "docs/card.png"
         }
       },
       "stars": 3,
@@ -2580,7 +2613,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "4c05732a",
         "data": {
           "what": "An 8-voice virtual analog tweak synth: authentic 4-pole resonant filter, dual sub-oscillator, ADSR envelopes, 64-step sequencer, and hands-on live performance controls.",
@@ -2651,12 +2684,13 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "e3d5dc6e",
         "data": {
           "what": "USB audio interface and Bluetooth audio receiver with FX",
           "author": "MAX RAVE",
-          "kind": "other"
+          "kind": "other",
+          "image": "assets/github/mixer.png"
         }
       },
       "stars": 2,
@@ -2706,11 +2740,12 @@
       "color": "#FF60BE",
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": "https://github.com/zvenson/vibe-link/issues",
       "lic": "GPL-3.0",
       "starsDay": "2026-11-09",
+      "site": "https://thefirmwarehub.com/convert/",
       "version": "0.4",
       "date": "2026-11-07",
       "published": "2026-11-07T20:20:09Z",
@@ -2766,14 +2801,15 @@
       "color": "#FF2D8A",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "4d7faed8",
         "data": {
           "what": "Latin and Caribbean groovebox: synthesized congas, bongos, timbales, guiro and cowbell, 14 grooves from salsa and bomba to dembow, tumbao and montuno lines over the chord you hold, generative parts in the clave, and effect scenes from a backyard to a dub.",
           "author": "saulofilho",
           "kind": "groove",
           "play": "https://saulofilho.github.io/coqui-fm1/emu/",
-          "color": "#FF2D8A"
+          "color": "#FF2D8A",
+          "image": "docs/card.png"
         }
       },
       "stars": 0,
@@ -2836,7 +2872,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "bd9af0bc",
         "data": {
           "what": "One firmware, many synths: hold HOME and pick CS-1, Scintilla (the Elka Synthex), OberVave or a sine, no reflashing. Add PROPHET, B3 ORGAN, Niagara Drift, ARTIHIVE, FM-106, FM-1 SID, AMB-1, FoMni, MONK-1, FiMba-1, GATOR or DUB-1 from the page with one click, and your own modules over USB. A master…",
@@ -2904,7 +2940,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 31,
       "talk": "https://github.com/nzimas/tonitor/issues",
       "lic": "GPL-3.0",
@@ -2952,7 +2988,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 52,
       "talk": "https://github.com/zvenson/dinghy/issues",
       "lic": "GPL-3.0",
@@ -3011,7 +3047,7 @@
       "color": "#EDEDDD",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "7fcd11c2",
         "data": {
           "what": "A hands-on groovebox firmware for the FM-1. Shape sounds, build patterns, and find your own groove. Up to six assignable tracks, sound design, sequencing and performance. Free and open source, built on JIANT and reworked by Jazzy Rhythmer.",
@@ -3020,7 +3056,8 @@
           "play": "https://jazzyrhythmer.github.io/Rhythmer/#play",
           "editor": "https://jazzyrhythmer.github.io/Rhythmer/editor/",
           "cheat": "https://jazzyrhythmer.github.io/Rhythmer/downloads/Rhythmer-Manual-v0.1.2-dev1.pdf",
-          "color": "#EDEDDD"
+          "color": "#EDEDDD",
+          "image": "docs/launch/card.png"
         }
       },
       "stars": 10,
@@ -3073,7 +3110,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "c0dd7d45",
         "data": {
           "what": "A groovebox for lively mediæval dance music: hurdy-gurdy, lutes, shawms and frame drums over drones, four tracks with 64-step sequencers, mediæval modes and temperaments, and velocity from the FM-1's own keys. Built on GHOULBOX and Felucca.",
@@ -3143,7 +3180,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "4df0c4c3",
         "data": {
           "what": "Composing through systems on the FM-1. Thirteen generators, or your own steps, make parts that follow, answer and share one harmony. Sections, entries and a shape for the whole piece let a project unfold over minutes or hours. Play it by hand, or let it play.",
@@ -3151,7 +3188,8 @@
           "kind": "groove",
           "play": "https://rastapopolix.github.io/tessera/webapp/sim/",
           "editor": "https://rastapopolix.github.io/tessera/webapp/editor/",
-          "cheat": "https://rastapopolix.github.io/tessera/cheatsheet/tessera-cheatsheet.pdf"
+          "cheat": "https://rastapopolix.github.io/tessera/cheatsheet/tessera-cheatsheet.pdf",
+          "image": "assets/hub-card.png"
         }
       },
       "stars": 25,
@@ -3207,7 +3245,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "2bf3d9b0",
         "data": {
           "what": "Plays C64 SID music from HVSC on an emulated 6581 or 8580 and lets you remix every voice live: transpose, mute, solo, swap waveforms, bend envelopes and filter, add LFOs, ride the tempo. Out of the jack, as USB audio or over ASID to a real SID. MIDI clock from the tune, or the tune synced to yours.",
@@ -3215,7 +3253,8 @@
           "kind": "other",
           "play": "https://thomasj.github.io/fm1-sidj/emu/",
           "editor": "https://thomasj.github.io/fm1-sidj/#songs",
-          "cheat": "https://thomasj.github.io/fm1-sidj/#play"
+          "cheat": "https://thomasj.github.io/fm1-sidj/#play",
+          "image": "web/site/img/remix.png"
         }
       },
       "stars": 3,
@@ -3266,7 +3305,7 @@
       "color": "#F06F9D",
       "vintage": false,
       "ambient": true,
-      "makerCard": {
+      "fmhub": {
         "sha": "ac22ad76",
         "data": {
           "what": "Eight-voice experimental drone and polyphonic FM synthesizer with four interacting pairs, a 27-key keyboard, envelopes, legato glide, Hyper LFO, stereo motion, dual modulated delay, mutation, DISORDER and a 16-step arpeggiator. Artistically inspired by SOMA LYRA-8; independently developed.",
@@ -3274,7 +3313,8 @@
           "kind": "synth",
           "play": "https://khavld.github.io/ARTIHIVE/",
           "cheat": "https://github.com/KHAVld/ARTIHIVE/blob/ARTIHIVE/docs/artihive-2.0.3-manual-en.pdf",
-          "color": "#F06F9D"
+          "color": "#F06F9D",
+          "image": "docs/card.png"
         }
       },
       "stars": 5,
@@ -3327,7 +3367,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 14,
       "talk": "https://github.com/PatttF/fm-106/issues",
       "lic": "GPL-3.0",
@@ -3377,7 +3417,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 29,
       "talk": "https://github.com/RustyPawz/fm1-HYP1/discussions",
       "lic": "GPL-3.0",
@@ -3427,7 +3467,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 68,
       "talk": "https://github.com/charlesvestal/fm1-loom/issues",
       "lic": "MPL-2.0",
@@ -3485,7 +3525,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 23,
       "talk": "https://github.com/charlesvestal/fm1-ctl/issues",
       "lic": "MPL-2.0",
@@ -3544,7 +3584,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 6,
       "talk": "https://github.com/llozd/bytemania/issues",
       "lic": "GPL-3.0",
@@ -3604,7 +3644,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 27,
       "talk": "https://github.com/charlesvestal/fm1-polly/issues",
       "lic": "GPL-3.0",
@@ -3662,7 +3702,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 121,
       "talk": "https://github.com/charlesvestal/fm1-amb/issues",
       "lic": "MPL-2.0",
@@ -3720,7 +3760,7 @@
       "color": "#FF5FB4",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "68ab8310",
         "data": {
           "what": "KAWA is a pocket tracker for the M-VAVE FM-1, built for chiptune and IDM. Sequence six tracks with pulse, 4-bit wave, noise, 6-operator FM, drum kit and sample engines. Write patterns and songs, chop breaks, shape sounds with tables and groove, and perform with 32 live effects.",
@@ -3778,7 +3818,7 @@
       "color": "#04DFBF",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "307127bc",
         "data": {
           "what": "An eight-part multitimbral DX7 module. Every part has its own MIDI channel and up to eight layered DX7 voices, with key splits, velocity windows and 64 scenes. A master filter, shared reverb and delay, DX7 ROM import and a web configurator. Played and controlled over MIDI.",
@@ -3786,7 +3826,8 @@
           "kind": "synth",
           "play": "https://esbenvb.github.io/fm1-dx747/#device",
           "editor": "https://esbenvb.github.io/fm1-dx747/#configure",
-          "color": "#04DFBF"
+          "color": "#04DFBF",
+          "image": "docs/card.png"
         }
       },
       "stars": 1,
@@ -3847,7 +3888,7 @@
       "color": "#36454F",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "880545fb",
         "data": {
           "what": "A three-channel groovebox: a Polivoks-style duophonic synth (PLVKS), an Elka-style sample drum machine with a step sequencer, and a dub siren, with BBD echoes, per-channel character effects, arp, scales and a mixer with panning.",
@@ -3855,7 +3896,8 @@
           "kind": "groove",
           "play": "https://beatcult.github.io/CULTBOX/",
           "cheat": "https://cult-box.netlify.app/",
-          "color": "#36454F"
+          "color": "#36454F",
+          "image": "fmhub-image.png"
         }
       },
       "stars": 2,
@@ -3913,14 +3955,15 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": {
+      "fmhub": {
         "sha": "d323870a",
         "data": {
           "what": "A cinematic space drone you travel through, not one that plays itself. Five drone voices hold a pedal; turn PRESET and they glide to the next scene one voice at a time, or MORPH there by hand. Play VOX over it in key, loop it and the loop follows the key, or hold a key to bend and throw the sound.",
           "author": "Lunar Eclipse Forge",
           "kind": "synth",
           "play": "https://madmooneyham.github.io/Penumbra/emu/",
-          "cheat": "https://madmooneyham.github.io/Penumbra/cheatsheet/"
+          "cheat": "https://madmooneyham.github.io/Penumbra/cheatsheet/",
+          "image": "assets/card.png"
         }
       },
       "stars": 1,
@@ -3971,7 +4014,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 11,
       "talk": "https://github.com/charlesvestal/fm1-monk/issues",
       "lic": "GPL-3.0",
@@ -4029,7 +4072,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 79,
       "talk": "https://github.com/charlesvestal/fm1-fomni/issues",
       "lic": "GPL-3.0",
@@ -4087,7 +4130,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 224,
       "talk": "https://github.com/charlesvestal/fm1-x0x/issues",
       "lic": "GPL-3.0",
@@ -4145,7 +4188,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": null,
       "lic": "GPL-3.0",
@@ -4196,7 +4239,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 12,
       "talk": "https://github.com/leonardoMirabal/frodhes/issues",
       "lic": "GPL-3.0",
@@ -4246,14 +4289,15 @@
       "color": "#F26535",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "8d6621a3",
         "data": {
           "what": "A generative groovebox in the style of early-90s PC tracker music. Six lanes (lead, arp, pad, bass, drums and sfx) play parts composed live in eighteen styles. You don't program steps, you mix styles: blend the next one in lane by lane, shape each lane with tracker effects and call the drop.",
           "author": "delirioux",
           "kind": "groove",
           "play": "https://delirioux.github.io/makohai/try/",
-          "color": "#F26535"
+          "color": "#F26535",
+          "image": "docs/card.png"
         }
       },
       "stars": 0,
@@ -4306,7 +4350,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "03aeb403",
         "data": {
           "what": "SPAMPY 1.0: a five-track synthwave FM-1 firmware with 170 synth presets, 44 drum kits including KAVINSKY, scenes, effects, new NEON arpeggiator and Slicer modes, extended envelope controls for non-digital engines, and 5 built-in arcade games.",
@@ -4361,7 +4405,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 35,
       "talk": "https://github.com/ruppert/fmini-1/discussions",
       "lic": "GPL-3.0",
@@ -4411,14 +4455,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "ccb1f864",
         "data": {
           "what": "Multi-engine synth firmware with DRONE, STASIS texture capture, Pair Morph, and per-track Random Morph and Morph Journey for evolving, ambient and experimental sound design. Sequencer, MIDI Learn, USB audio.",
           "author": "BonszaiMusic",
           "kind": "synth",
           "play": "https://bonszaimusic.github.io/caravel/emulator/",
-          "editor": "https://bonszaimusic.github.io/caravel/webapp/editor/"
+          "editor": "https://bonszaimusic.github.io/caravel/webapp/editor/",
+          "image": "docs/tutorials/img/journey-off.png"
         }
       },
       "stars": 24,
@@ -4469,7 +4514,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 39,
       "talk": "https://github.com/dspaudio/orbit/issues",
       "lic": "GPL-3.0",
@@ -4522,7 +4567,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 685,
       "talk": "https://github.com/hugelton/Felucca/discussions",
       "lic": "GPL-3.0",
@@ -4570,7 +4615,7 @@
       "color": "#14B8B0",
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "a0c278d0",
         "data": {
           "what": "Four Track Groovebox with a dungeon crawler cooked into the home screen for the visualizer. Create your party from 8 heroes, store up to 6 sequences then string them together in Song mode!",
@@ -4579,7 +4624,8 @@
           "play": "https://bourbonwx.github.io/Dungeon-Tracker/webapp/emulator/",
           "editor": "https://bourbonwx.github.io/Dungeon-Tracker/webapp/editor/",
           "cheat": "https://github.com/BourbonWX/Dungeon-Tracker/blob/main/Dungeon%20Tracker%201.5%20%E2%80%94%20Quick%20Start.pdf",
-          "color": "#14B8B0"
+          "color": "#14B8B0",
+          "image": "docs/card.png"
         }
       },
       "stars": 0,
@@ -4630,7 +4676,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 767,
       "talk": "https://github.com/isod89/sloop-fm1/issues",
       "lic": "GPL-3.0",
@@ -4678,7 +4724,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 82,
       "talk": "https://github.com/isod89/clipper-fm1/issues",
       "lic": "GPL-3.0",
@@ -4728,7 +4774,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 7,
       "talk": "https://github.com/seajaysec/386-DX-FM1-KaraokeBot/issues",
       "lic": "GPL-3.0",
@@ -4776,14 +4822,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "658af15e",
         "data": {
           "what": "A generative drum machine on the LXR sound engine. Seven voices, kits grown from a seed in 16 characters, a 64-step sequencer with conditions and per-step pitch, patterns generated and mutated in 11 styles, MIDI notes and clock in, and nine named projects.",
           "author": "allmyfriendsaresynths",
           "kind": "drums",
           "play": "https://clatter-pocket.allmyfriendsaresynths.com/demo/",
-          "cheat": "https://github.com/clickysteve/clatter-pocket/blob/main/docs/POCKET-CONTROLS.md"
+          "cheat": "https://github.com/clickysteve/clatter-pocket/blob/main/docs/POCKET-CONTROLS.md",
+          "image": "docs/card.png"
         }
       },
       "stars": 2,
@@ -4834,7 +4881,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 57,
       "talk": "https://github.com/deadactive/hortator/issues",
       "lic": "GPL-3.0",
@@ -4883,7 +4930,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 57,
       "talk": "https://github.com/deadactive/hortator/issues",
       "lic": "GPL-3.0",
@@ -4915,55 +4962,6 @@
       "installs": 78
     },
     {
-      "id": "bb1",
-      "kind": "groove",
-      "name": "BB1",
-      "author": "Ole Big Beat / TexasRADIO",
-      "repo": "TexasRADIO/bb1-firmware",
-      "ident": "FM-1_922\\d{5}",
-      "what": "Two independent drum layers and Dillo, an Open303-derived acid bass, through tape echo and spring reverb: a synthesised 808 and seven sampled machines, 67 songs, 21 eras and 205 ACID phrases.",
-      "editor": null,
-      "play": "https://thebigbeat.app/fm1/emulator/",
-      "added": "2026-10-30",
-      "loader": null,
-      "cheat": null,
-      "install": "https://thebigbeat.app/fm1/install/",
-      "card": null,
-      "color": null,
-      "vintage": false,
-      "ambient": false,
-      "makerCard": null,
-      "stars": 6,
-      "talk": "https://github.com/TexasRADIO/bb1-firmware/issues",
-      "lic": "GPL-3.0",
-      "starsDay": "2026-11-09",
-      "site": "https://thebigbeat.app/fm1/",
-      "version": "2.1.1",
-      "date": "2026-11-03",
-      "published": "2026-11-03T21:47:24Z",
-      "pkg": "fw/bb1-2.1.1.fwsc",
-      "product": "FM-1_92200201",
-      "size": 610086,
-      "sha256": "c03fae90e0eb7a9379cacc7f29ac8ac8caa373259ecf09acb03675c786904338",
-      "release": "https://github.com/TexasRADIO/bb1-firmware/releases/tag/v2.1.1",
-      "tag": "v2.1.1",
-      "srcref": null,
-      "mirror": "src/bb1-2.1.1.tar.gz",
-      "beta": false,
-      "hid": {
-        "keyboard": false,
-        "mouse": false
-      },
-      "chip": "old",
-      "provCheck": "c03fae90e0eb7a9379cacc7f29ac8ac8caa373259ecf09acb03675c786904338 2026-11-09",
-      "externalInstall": true,
-      "asset": "707203860 2026-11-03T21:47:22Z",
-      "assetPkg": "bb1-[\\d.]+(?:-id)?\\.fwsc",
-      "base": [],
-      "dinghy": false,
-      "source": "https://github.com/TexasRADIO/bb1-firmware/tree/v2.1.1"
-    },
-    {
       "id": "blop",
       "kind": "chords",
       "name": "Blop",
@@ -4981,13 +4979,14 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "943012c4",
         "data": {
           "what": "Explore sound with your Blop: one-finger chords from 38 grids, chord rhythms, a bass with its own riffs and a few discreet drums with sidechain, while a little creature swims to your chords in an aquarium on the screen. Chords and bass go out as MIDI over USB.",
           "author": "Obsimo",
           "kind": "chords",
-          "play": "https://osr-experiment.github.io/OSR-1/emu/"
+          "play": "https://osr-experiment.github.io/OSR-1/emu/",
+          "image": "site/img/hub.webp"
         }
       },
       "stars": 2,
@@ -5038,7 +5037,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 149,
       "talk": "https://github.com/illuminus5/skiff/issues",
       "lic": "GPL-3.0",
@@ -5089,7 +5088,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": {
+      "fmhub": {
         "sha": "8f37e371",
         "data": {
           "what": "Dark ambient, dungeon synth and deathdream firmware: 4 tracks, 7 sound sources, real recorded choirs, tracks that play by themselves, and long tape, granular and reverb effects.",
@@ -5097,7 +5096,8 @@
           "kind": "groove",
           "play": "https://grimmbient.github.io/grimm/",
           "editor": "https://grimmbient.github.io/grimm/editor.html",
-          "cheat": "https://grimmbient.github.io/grimm/GRIMM-V2.0-manual.pdf"
+          "cheat": "https://grimmbient.github.io/grimm/GRIMM-V2.0-manual.pdf",
+          "image": "docs/card.png"
         }
       },
       "stars": 38,
@@ -5147,7 +5147,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 17,
       "talk": "https://github.com/genkigenki/Vector37/discussions",
       "lic": "GPL-3.0",
@@ -5195,7 +5195,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 27,
       "talk": null,
       "lic": "GPL-3.0",
@@ -5254,7 +5254,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 7,
       "talk": "https://github.com/hericdk/nomanskyFM/issues",
       "lic": "GPL-3.0",
@@ -5304,7 +5304,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 193,
       "talk": "https://github.com/keremimo/melodee/discussions",
       "lic": "GPL-3.0",
@@ -5362,7 +5362,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 6,
       "talk": "https://github.com/orbitator/LUXR/issues",
       "lic": "GPL-3.0",
@@ -5410,7 +5410,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 15,
       "talk": null,
       "lic": "GPL-3.0",
@@ -5460,7 +5460,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 5,
       "talk": "https://github.com/FBNFRTG/drift-fm1/issues",
       "lic": "GPL-3.0",
@@ -5511,13 +5511,14 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "8e30fb74",
         "data": {
           "what": "Wanderer 1.4: author-tested synth for low-vision musicians. Protect an Anchor, evolve two layers, play 100 sounds, eight Scatter modes and a 13-pattern arp. Adaptive/steady Zoom, clear knob controls, adjustable display hold and optional audio cues.",
           "author": "Nicholas James / Low Vision Music",
           "kind": "synth",
-          "cheat": "https://github.com/spinnicholas/lvm-wanderer-fm1/blob/main/docs/QUICK_START_1.4.md"
+          "cheat": "https://github.com/spinnicholas/lvm-wanderer-fm1/blob/main/docs/QUICK_START_1.4.md",
+          "image": "docs/screenshots-1.4/home.png"
         }
       },
       "stars": 0,
@@ -5570,7 +5571,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "dc08a598",
         "data": {
           "what": "B1 turns the M-VAVE FM1 into a compact drawbar rock organ with 91 shared tonewheels, nine drawbars per registration, percussion, Leslie, B3/ROCK tones, MIDI and expressive live controls.",
@@ -5625,14 +5626,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "a0d99a45",
         "data": {
           "what": "An experimental instrument with six tracks and eight sound engines. Play acid lines, trembling particles, fractured textures and percussion. Layer free loops or clocked sequences, shape them with grains and effects, and watch each engine come alive.",
           "author": "ryuji kanagawa",
           "kind": "synth",
           "play": "https://ianp06.github.io/bocjuhn/",
-          "cheat": "https://github.com/IanP06/bocjuhn/blob/codex/living-rc6/ACID-CLOCK-RC5.txt"
+          "cheat": "https://github.com/IanP06/bocjuhn/blob/codex/living-rc6/ACID-CLOCK-RC5.txt",
+          "image": "docs/card.png"
         }
       },
       "stars": 0,
@@ -5676,6 +5678,7 @@
       "ident": "FM-1_95[3-9]\\d",
       "what": "An 8-voice analog-style poly in the spirit of the classic American polys of 1979-84, now on four tracks: each its own sound, arp and sequence; a mixer with chorus, delay, plate reverb and drive sends, a master with DJ filter and compressor. Tracks start on the bar, patterns keep their sounds.",
       "editor": null,
+      "play": "https://thefirmwarehub.com/play/obervave/",
       "added": "2026-10-13",
       "loader": null,
       "cheat": null,
@@ -5684,7 +5687,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "ace1a052",
         "data": {
           "what": "An 8-voice analog-style poly in the spirit of the classic American polys of 1979-84, now on four tracks: each its own sound, arp and sequence; a mixer with chorus, delay, plate reverb and drive sends, a master with DJ filter and compressor. Tracks start on the bar, patterns keep their sounds.",
@@ -5751,7 +5754,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 17,
       "talk": "https://github.com/evanyerburgh/niagara-drift/issues",
       "lic": "GPL-3.0",
@@ -5799,7 +5802,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "c6d6985a",
         "data": {
           "what": "NEW: two drum tracks. Four synths (one a Minimoog-style MUUG with 100 sounds, plus a light LITE synth) and two drum kits play at once, and the FM-1 records 8 channels into your DAW over USB: the stereo master plus each of the six tracks. A SLOOP 2.8 groovebox with the fixes of 2.8.4, 64 steps…",
@@ -5856,13 +5859,14 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": {
+      "fmhub": {
         "sha": "8b4e23a2",
         "data": {
           "what": "An experimental, self-playing wavetable instrument for generative, evolving soundscapes. Four PPG-style oscillators, Serge-style function generators, sample-and-holds and logic, patched through mod and gate matrices. 12 bit, 22kHz, green phosphor CRT, Fairlight-style pages.",
           "author": "Zeptosecond DSP",
           "kind": "synth",
-          "cheat": "https://github.com/zeptosecond-dsp/Arcturus-S6/blob/main/docs/QUICKSTART.md"
+          "cheat": "https://github.com/zeptosecond-dsp/Arcturus-S6/blob/main/docs/QUICKSTART.md",
+          "image": "assets/card.png"
         }
       },
       "stars": 5,
@@ -5920,7 +5924,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "0610d418",
         "data": {
           "what": "A Eurorack-style modular synth: over 50 modules (VCOs, a Moog-style ladder, a low pass gate, Turing, Marbles, chaos, effects) patched with cables on the FM-1 itself, a 64-step sequencer with live recording, 33 factory patches, visuals, USB audio and MIDI.",
@@ -5979,7 +5983,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 11,
       "talk": "https://github.com/FartyPants/fm1-nachtfahrt/issues",
       "lic": "GPL-3.0",
@@ -6028,7 +6032,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 0,
       "talk": "https://github.com/jsopdebeeck/fm1-delrio/issues",
       "lic": "MPL-2.0",
@@ -6077,7 +6081,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "9689bf67",
         "data": {
           "what": "The 1981 Elka Synthex on the FM-1: all 80 factory sounds, Paul Wiffen's laser harp among them, checked sample by sample against the original. Two layers of 8 voices (single, split, double), poly, mono or unison, chorus and reverb, and the four knobs edit what is on the screen.",
@@ -6144,7 +6148,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "f04b277d",
         "data": {
           "what": "Six assignable synth tracks, or a Lo-Fi kit plus three synths. Explore 156 contrasting musical Biomes, 352 sounds and thirteen scales; shape generative rhythms, chord journeys and per-track MIDI; play and edit in your browser.",
@@ -6152,7 +6156,8 @@
           "kind": "synth",
           "play": "https://mutable-dreams.kidbee85.chatgpt.site/",
           "editor": "https://mutable-dreams.kidbee85.chatgpt.site/#device-editor",
-          "cheat": "https://mutable-dreams.kidbee85.chatgpt.site/Mutable-Dreams-1.4-Guide.pdf"
+          "cheat": "https://mutable-dreams.kidbee85.chatgpt.site/Mutable-Dreams-1.4-Guide.pdf",
+          "image": "Screen-1.4-Live-Biome.png"
         }
       },
       "stars": 21,
@@ -6203,7 +6208,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "6aeedb7a",
         "data": {
           "what": "A MULTIMORPHING bitimbral synth: two complete parts, three ways to play them together, and a morph that glides between two versions of every sound. Ten engines including wavetables, twin filters, effects and a mod matrix. Layer, dual or stereo mode. Velocity sensitivity and aftertouch. Dual core.",
@@ -6211,7 +6216,8 @@
           "kind": "synth",
           "play": "https://oscillr.github.io/DUELL/emu/",
           "editor": "https://oscillr.github.io/DUELL/editor/",
-          "cheat": "https://oscillr.github.io/DUELL/cheatsheet/"
+          "cheat": "https://oscillr.github.io/DUELL/cheatsheet/",
+          "image": "docs/duell-card.jpg"
         }
       },
       "stars": 20,
@@ -6261,7 +6267,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 37,
       "talk": "https://github.com/sbegueria/fm1-dub/issues",
       "lic": "GPL-3.0",
@@ -6309,7 +6315,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "fa89a35d",
         "data": {
           "what": "A MOD / XM tracker, sampler and groovebox: play, write and save FastTracker 2 and ProTracker songs on the FM-1, up to 32 channels, with a ProTracker mode for MODs and a song manager in the browser for moving songs to and from the computer.",
@@ -6317,7 +6323,8 @@
           "kind": "tracker",
           "play": "https://kotmorderca.github.io/XMOD/sim/",
           "editor": "https://kotmorderca.github.io/XMOD/",
-          "cheat": "https://github.com/KotMorderca/XMOD#controls"
+          "cheat": "https://github.com/KotMorderca/XMOD#controls",
+          "image": "docs/xmod.png"
         }
       },
       "stars": 4,
@@ -6378,14 +6385,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "bb62053c",
         "data": {
           "what": "Draw your own waveforms, morph between sounds, and bring them to life with modulation, evolving textures, and powerful effects. From warm analog-inspired tones to wild experimental soundscapes, ETCH puts sound design right at your fingertips.",
           "author": "Joppe Sikken (SikkenWorks)",
           "kind": "synth",
           "editor": "https://sikkenworks.github.io/ETCH/ETCH-Project-Preset-Manager.html",
-          "cheat": "https://sikkenworks.github.io/ETCH/CHEAT-SHEET.html"
+          "cheat": "https://sikkenworks.github.io/ETCH/CHEAT-SHEET.html",
+          "image": "SW-ETCH1.png"
         }
       },
       "stars": 10,
@@ -6435,7 +6443,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 23,
       "talk": "https://github.com/FicusFicusov/CoralFlower/issues",
       "lic": "GPL-3.0",
@@ -6483,7 +6491,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "94b49b6f",
         "data": {
           "what": "A six-voice JUNO-60 style polysynth with chorus, arpeggiator and a 16-step recorder. 56 factory sounds, a MIDI control for every knob, and a free browser editor that plays it over USB-MIDI.",
@@ -6549,7 +6557,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "c7dec01b",
         "data": {
           "what": "Jam Playground plays a new song the moment you turn the FM-1 on. Four synths and eleven drums sound together. Turn a knob to change the vibe, the scale, a sound, or an effect, and play along.",
@@ -6604,14 +6612,15 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "7dd7d385",
         "data": {
           "what": "CARNAC OS is a dual-timbral wavetable synth inspired by neolithic monuments and forgotten rituals. Built for deep sound design and immediate control, with a MAQ 16/3-style sequencer and a J6-style chord arp. The PCM waves need a separate installer: get it from my GitHub page.",
           "author": "OrbVorgis",
           "kind": "synth",
           "play": "https://owenkirby.github.io/carnac-os/play/",
-          "cheat": "https://owenkirby.github.io/carnac-os/guide/"
+          "cheat": "https://owenkirby.github.io/carnac-os/guide/",
+          "image": "carnac-os/web/site/splash.png"
         },
         "image_error": "image: carnac-os/web/site/splash.png not found in the repository (404)"
       },
@@ -6662,7 +6671,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "8deea6be",
         "data": {
           "what": "An ambient lofi machine on 64 of its author's own pedal recordings: three synths, each with a piano roll, eight patterns, its own reverb, delay or tape echo and motion; huge shared reverbs, colour and old media over the whole mix; a chord machine and an arpeggiator, sixteen scenes, a song mode.",
@@ -6718,7 +6727,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 11,
       "talk": "https://github.com/hitosu/ptfm/issues",
       "lic": "GPL-3.0",
@@ -6766,7 +6775,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "5304c796",
         "data": {
           "what": "SPELLBOX turns the FM-1 into a talking spelling toy after the 1978 Speak & Spell: an 8-character fluorescent display, a 10-pole LPC voice at 8 kHz through an 8-bit DAC, and the SPELL, LETTER, SAY IT, SECRET CODE and MYSTERY WORD games over four levels, with the keys as an A-to-Z keyboard. SPEAK…",
@@ -6822,7 +6831,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 9,
       "talk": "https://github.com/galfaroth/mnm1/issues",
       "lic": "GPL-3.0",
@@ -6873,7 +6882,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "d429a512",
         "data": {
           "what": "A generative Berlin School MIDI sequencer: a small ensemble of voices that repeat, phase against each other on loops of unequal length and earn their mutations over time. The FM-1 makes no sound with it: each voice goes out over USB on its own MIDI channel to your synths, as Berlinan for macOS…",
@@ -6929,7 +6938,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "c909ce75",
         "data": {
           "what": "A chord and string instrument: 16 synthesized sounds, 50 chord styles, editable voicings, guitar tunings, and Freeplay, Strum and Arp modes with partial-chord pulses.",
@@ -6985,7 +6994,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 10,
       "talk": "https://github.com/fvalente/GammaWave-FM1/issues",
       "lic": "GPL-3.0",
@@ -7033,7 +7042,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 12,
       "talk": "https://github.com/Gadlele/Golana/issues",
       "lic": "GPL-3.0",
@@ -7081,7 +7090,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 6,
       "talk": "https://github.com/eldontyrellcorp/Mini-Tone/issues",
       "lic": "GPL-3.0",
@@ -7131,7 +7140,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 5,
       "talk": "https://github.com/marksweiss/tastywaves/issues",
       "lic": "GPL-3.0",
@@ -7182,7 +7191,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "349f88d3",
         "data": {
           "what": "C64 music on the FM-1: a 6510 runs each tune's own code and reSID plays it, PSID and RSID. A GoatTracker 2 editor on the FM-1 itself with ten GT2 example songs, a SID synth with a sequencer and effects, and any .sid sent from the browser plays at once.",
@@ -7240,7 +7249,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": "https://github.com/markterm/monohull/issues",
       "lic": "GPL-3.0",
@@ -7272,55 +7281,6 @@
       "installs": 11
     },
     {
-      "id": "bubba",
-      "kind": "groove",
-      "name": "Bubba Machine",
-      "author": "Erbubar23",
-      "repo": "Erbubar23/bubba-machine",
-      "ident": "FM-1_003",
-      "what": "A six-track groovebox written from scratch: TR drums from Plaits' 808 and 909 models, a sampler with a 16-slice slicer, a bass and three free tracks (analog, 6-op FM, 303 acid), scenes and fills, all at 44.1 kHz.",
-      "editor": null,
-      "play": "https://erbubar23.github.io/bubba-machine/en/",
-      "added": "2026-10-13",
-      "loader": "mvave",
-      "cheat": null,
-      "install": null,
-      "card": null,
-      "color": null,
-      "vintage": false,
-      "ambient": false,
-      "makerCard": null,
-      "stars": 10,
-      "talk": "https://github.com/Erbubar23/bubba-machine/issues",
-      "lic": "GPL-3.0",
-      "starsDay": "2026-11-09",
-      "site": "https://erbubar23.github.io/bubba-machine/en/",
-      "version": "0.10.0-beta",
-      "date": "2026-10-25",
-      "published": "2026-10-25T00:44:28Z",
-      "pkg": "fw/bubba-0.10.0-beta.fwsc",
-      "product": "FM-1_003",
-      "size": 699956,
-      "sha256": "e1f444059553b7a8e9ea6b916fed0ea3c7d5404a6e913a130f11b9d3d9624e7d",
-      "release": "https://github.com/Erbubar23/bubba-machine/releases/tag/v0.10.0-beta",
-      "tag": "v0.10.0-beta",
-      "srcref": null,
-      "mirror": "src/bubba-0.10.0-beta.tar.gz",
-      "beta": true,
-      "hid": {
-        "keyboard": false,
-        "mouse": false
-      },
-      "chip": "any",
-      "provCheck": "e1f444059553b7a8e9ea6b916fed0ea3c7d5404a6e913a130f11b9d3d9624e7d 2026-11-09",
-      "asset": "673712849 2026-10-25T00:44:28Z",
-      "assetPkg": "bubba-machine-[^/\\\"]+\\.fwsc",
-      "base": [],
-      "dinghy": false,
-      "source": "https://github.com/Erbubar23/bubba-machine/tree/v0.10.0-beta",
-      "installs": 162
-    },
-    {
       "id": "ghoulbox",
       "kind": "groove",
       "name": "GHOULBOX",
@@ -7338,7 +7298,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 84,
       "talk": "https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/issues",
       "lic": "GPL-3.0",
@@ -7377,6 +7337,7 @@
       "ident": "FM-1_97[0-689]",
       "what": "A 12-bit sampler after the E-mu SP-1200: sample on the FM-1 itself (a computer or phone plays into it over USB) or in the browser (mic, line-in or a file), and it plays on its own. Gritty and unsmoothed, with loops and songs.",
       "editor": "https://zp12.designburgapps.com/editor/",
+      "play": "https://thefirmwarehub.com/play/zp12/",
       "added": "2026-10-08",
       "loader": null,
       "cheat": null,
@@ -7385,11 +7346,12 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "55602dec",
         "data": {
           "what": "A 12-bit sampler after the E-mu SP-1200: sample on the FM-1 itself (a computer or phone plays into it over USB) or in the browser (mic, line-in or a file), and it plays on its own. Gritty and unsmoothed, with loops and songs.",
           "kind": "drums",
+          "play": "https://thefirmwarehub.com/play/zp12/",
           "editor": "https://zp12.designburgapps.com/editor/"
         }
       },
@@ -7431,6 +7393,7 @@
       "ident": "FM-1_96[3-9]\\d",
       "what": "A string ensemble in the spirit of the late-70s machines, grown out of OberVave: divide-down keyers with 16', 8' and 4' footages, register filters, a BBD ensemble and a phaser per sound. Now on four tracks with a mixer, delay, reverb, drive, a master and the step sequencer.",
       "editor": null,
+      "play": "https://thefirmwarehub.com/play/shineon/",
       "added": "2026-10-18",
       "loader": null,
       "cheat": null,
@@ -7439,7 +7402,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": {
+      "fmhub": {
         "sha": "3344a7ae",
         "data": {
           "what": "A string ensemble in the spirit of the late-70s machines, grown out of OberVave: divide-down keyers with 16', 8' and 4' footages, register filters, a BBD ensemble and a phaser per sound. Now on four tracks with a mixer, delay, reverb, drive, a master and the step sequencer.",
@@ -7506,7 +7469,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 21,
       "talk": "https://github.com/cartesive/fumi-1/issues",
       "lic": "GPL-3.0",
@@ -7554,7 +7517,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 24,
       "talk": "https://github.com/adamcharleswilsonmusic-code/Fart-Machine-One/issues",
       "lic": "GPL-3.0",
@@ -7602,7 +7565,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 12,
       "talk": "https://github.com/apiel/fm1-tribe/issues",
       "lic": "GPL-3.0",
@@ -7652,7 +7615,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": "https://github.com/646timur-cell/pulhra_main/issues",
       "lic": "GPL-3.0",
@@ -7702,7 +7665,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 9,
       "talk": "https://github.com/twochannels/CS-1/issues",
       "lic": "GPL-3.0",
@@ -7752,7 +7715,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": "https://github.com/hirakos999/MODELAR/issues",
       "lic": "MPL-2.0",
@@ -7811,7 +7774,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 2,
       "talk": "https://github.com/DeadActive/FMDj/issues",
       "lic": "GPL-3.0",
@@ -7861,7 +7824,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": "https://github.com/benbadio/hera-fm1/issues",
       "lic": "GPL-3.0",
@@ -7922,7 +7885,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 11,
       "talk": "https://github.com/aceyprime/zen-1/issues",
       "lic": "GPL-3.0",
@@ -7969,7 +7932,7 @@
       "card": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 10,
       "talk": "https://github.com/TheShrimpBlimp/pigeon/issues",
       "lic": "GPL-3.0",
@@ -8032,7 +7995,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 7,
       "talk": "https://github.com/dspaudio/mc-1/issues",
       "lic": "GPL-3.0",
@@ -8079,7 +8042,7 @@
       "card": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 8,
       "talk": null,
       "lic": "GPL-3.0",
@@ -8130,7 +8093,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": "https://github.com/benbadio/morpheus-fm1/issues",
       "lic": "GPL-3.0",
@@ -8180,7 +8143,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 4,
       "talk": "https://github.com/kidbee85-beep/cut-a-dor-release/issues",
       "lic": "GPL-3.0",
@@ -8229,7 +8192,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 4,
       "talk": "https://github.com/Co-oscillator/Loom-FM-1/issues",
       "lic": "GPL-3.0",
@@ -8278,7 +8241,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 3,
       "talk": null,
       "lic": "GPL-3.0",
@@ -8328,7 +8291,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 0,
       "talk": "https://github.com/putchdev/sid-1/issues",
       "lic": "GPL-3.0",
@@ -8378,7 +8341,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": "https://github.com/putchdev/opn-1/issues",
       "lic": "GPL-3.0",
@@ -8428,7 +8391,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 6,
       "talk": "https://github.com/npi3pak/fm1-gator/issues",
       "lic": "GPL-3.0",
@@ -8477,7 +8440,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 1,
       "talk": "https://github.com/kidbee85-beep/bunker-evolved/issues",
       "lic": "GPL-3.0",
@@ -8527,7 +8490,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 0,
       "talk": null,
       "lic": "GPL-3.0",
@@ -8576,7 +8539,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 37,
       "talk": "https://github.com/zednaked/jangada/issues",
       "lic": "GPL-3.0",
@@ -8624,7 +8587,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 25,
       "talk": null,
       "lic": "GPL-3.0",
@@ -8672,7 +8635,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 7,
       "talk": "https://github.com/Reytian/fm1-min1/issues",
       "lic": "GPL-3.0",
@@ -8720,7 +8683,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 9,
       "talk": null,
       "lic": "GPL-3.0",
@@ -8768,7 +8731,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 11,
       "talk": "https://github.com/hericdk/winampFM/issues",
       "lic": "GPL-3.0",
@@ -8818,7 +8781,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 5,
       "talk": "https://github.com/megagott/mycelium-fm1/issues",
       "lic": "GPL-3.0",
@@ -8869,7 +8832,7 @@
       "color": null,
       "vintage": false,
       "ambient": true,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 6,
       "talk": "https://github.com/actuallysparky/FM-1-Unholy-Union-generative-drone-firmware/issues",
       "lic": "GPL-3.0",
@@ -8917,7 +8880,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 21,
       "talk": "https://github.com/jadamsowers/fm1-fimba/issues",
       "lic": "GPL-3.0",
@@ -8965,7 +8928,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 15,
       "talk": "https://github.com/math0ne/fm1-chord/issues",
       "lic": "GPL-3.0",
@@ -9013,7 +8976,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 9,
       "talk": null,
       "lic": "GPL-3.0",
@@ -9061,7 +9024,7 @@
       "color": null,
       "vintage": true,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 5,
       "talk": null,
       "lic": "GPL-3.0",
@@ -9109,7 +9072,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 3,
       "talk": null,
       "lic": "GPL-3.0",
@@ -9158,7 +9121,7 @@
       "color": null,
       "vintage": false,
       "ambient": false,
-      "makerCard": null,
+      "fmhub": null,
       "stars": 8,
       "talk": null,
       "lic": "GPL-3.0",
@@ -9347,7 +9310,7 @@
       "konsumer/fomajam": "https://github.com/konsumer/fomajam/issues"
     },
     "starsDay": "2026-11-09",
-    "makerCard": {}
+    "fmhub": {}
   },
   "creators": {
     "646timur-cell": {
@@ -9584,6 +9547,13 @@
       "avatar": "fw/creators/fartypants-3760ea09.png",
       "youtube": "https://www.youtube.com/@thecrankyman",
       "day": "2026-11-09"
+    },
+    "fatcatstudios-hub": {
+      "login": "fatcatstudios-hub",
+      "avatar": null,
+      "youtube": null,
+      "day": "2026-11-09",
+      "default": true
     },
     "fbnfrtg": {
       "login": "FBNFRTG",
@@ -9840,6 +9810,12 @@
       "login": "megagott",
       "avatar": "fw/creators/megagott-b3ffbff0.jpg",
       "youtube": null,
+      "day": "2026-11-09"
+    },
+    "miketsak": {
+      "login": "MikeTsak",
+      "avatar": "fw/creators/miketsak-8b992eb5.jpg",
+      "youtube": "https://www.youtube.com/@MikeTsak",
       "day": "2026-11-09"
     },
     "mr-roboto": {

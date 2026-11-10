@@ -173,7 +173,7 @@
     pop.querySelector("#midi-file").onclick = () => fileInput.click();
     fileInput.onchange = async () => { const f = fileInput.files[0]; if (!f) return; try { loadBuffer(await f.arrayBuffer(), f.name.replace(/\.midi?$/i, "")); } catch { status("Couldn't read that file."); } fileInput.value = ""; };
     window.FM1MidiPlayer = { parseSMF, loadBuffer };
-    const place = () => { const r = btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 282)) + "px"; };
+    const place = () => { const r = (window.FM1PopAnchor && window.FM1PopAnchor(btn)) || btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 282)) + "px"; };
     btn.onclick = (e) => { e.preventDefault(); pop.classList.toggle("open"); if (pop.classList.contains("open")) place(); };
     window.addEventListener("resize", () => { if (pop.classList.contains("open")) place(); });
     document.addEventListener("click", (e) => { if (e.target !== btn && !pop.contains(e.target)) pop.classList.remove("open"); });

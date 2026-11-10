@@ -102,7 +102,10 @@
       { n: "leaf", kw: "leaf plant green eco nature", svg: `<path d="M50 84C30 70 20 44 50 16c30 28 20 54 0 68z" fill="#2fb36b" stroke="#1a1a1a" stroke-width="4" stroke-linejoin="round"/><path d="M50 78V26M50 60l14-12M50 48L36 38M50 40l12-10" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>` },
     ],
     "Badges": [
-      { n: "FM-1", kw: "fm1 badge label", svg: BADGE("FM-1", "#fa5400", "#fff", 25) },
+      // Worker brand stickers (not painted onto the faceplate — place from Stickers).
+      { n: "Worker icon", kw: "worker icon png app mark rings tunnel vortex purple", url: "worker-icon.png" },
+      { n: "Worker", kw: "worker logo icon vortex purple briksquare brand", url: "worker-icon.png" },
+      { n: "FM-1", kw: "fm1 badge label", svg: BADGE("FM-1", "#d8d8d8", "#111", 25) },
       { n: "LO-FI", kw: "lofi chill tape", svg: BADGE("LO-FI", "#141414", "#39e0a0", 23) },
       { n: "808", kw: "808 bass drum", svg: BADGE("808", "#ff3b6b", "#fff", 27) },
       { n: "ACID", kw: "acid 303 squelch", svg: BADGE("ACID", "#c6ff00", "#141414", 24) },
@@ -122,8 +125,8 @@
       { n: "LFO", kw: "lfo modulation wobble", svg: BADGE("LFO", "#5a3bdc", "#fff", 26) },
     ],
   };
-  // precompute a data URL for each image sticker once
-  for (const arr of Object.values(IMG)) for (const it of arr) it.url = svgURL(SV(it.svg));
+  // precompute a data URL for each image sticker once (file-backed ones already have .url)
+  for (const arr of Object.values(IMG)) for (const it of arr) if (!it.url) it.url = svgURL(SV(it.svg));
 
   // search keywords for common stickers (emoji carry no searchable text). Query matches these
   // or a category name; e.g. "cat", "pizza", "heart", "fire", "car" all find something.
@@ -203,7 +206,7 @@
     document.head.appendChild(css);
 
     const btn = document.createElement("a"); btn.id = "stk-btn"; btn.href = "#";
-    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:5px"><path d="M9.5 1.5H3A1.5 1.5 0 0 0 1.5 3v10A1.5 1.5 0 0 0 3 14.5h5.5l6-6V3A1.5 1.5 0 0 0 13 1.5z" fill="var(--amber)"/><path d="M9 14.4V10a1 1 0 0 1 1-1h4.4z" fill="#b23c00"/><circle cx="5.3" cy="5.3" r="1.1" fill="#0c0d0f"/><circle cx="9.3" cy="5" r="1.1" fill="#0c0d0f"/></svg>Stickers`;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:5px"><path d="M9.5 1.5H3A1.5 1.5 0 0 0 1.5 3v10A1.5 1.5 0 0 0 3 14.5h5.5l6-6V3A1.5 1.5 0 0 0 13 1.5z" fill="var(--amber)"/><path d="M9 14.4V10a1 1 0 0 1 1-1h4.4z" fill="var(--amber-lo,#888)"/><circle cx="5.3" cy="5.3" r="1.1" fill="#0c0d0f"/><circle cx="9.3" cy="5" r="1.1" fill="#0c0d0f"/></svg>Stickers`;
     (document.querySelector(".sitenav") || nav).appendChild(btn);
 
     const pop = document.createElement("div"); pop.id = "stk-pop";
@@ -311,7 +314,8 @@
     };
     const place = () => {
       if (moved) { clampInView(); return; }
-      const r = btn.getBoundingClientRect(); pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 442)) + "px";
+      const r = (window.FM1PopAnchor && window.FM1PopAnchor(btn)) || btn.getBoundingClientRect();
+      pop.style.top = (r.bottom + 6) + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 442)) + "px";
     };
     // drag the header bar to shove the picker aside
     const topBar = pop.querySelector(".top"); let dragging = false, dsx = 0, dsy = 0;

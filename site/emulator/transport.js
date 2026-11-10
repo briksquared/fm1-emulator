@@ -111,7 +111,7 @@
   function syncUi() {
     if (!barEl) return;
     if (bpmInput && document.activeElement !== bpmInput) bpmInput.value = bpm;
-    if (bpmLbl) bpmLbl.textContent = bpm + " BPM";
+    if (bpmLbl) bpmLbl.textContent = String(bpm);
     if (metroBtn) metroBtn.classList.toggle("on", metroOn);
     if (clockBtn) clockBtn.classList.toggle("on", clockOn);
     if (meterSel) meterSel.value = String(beatsPerBar);
@@ -129,35 +129,35 @@
   ready(() => {
     const css = document.createElement("style");
     css.textContent = `
-      #fm1-transport{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:7px 16px;
+      #fm1-transport{display:flex;flex-wrap:nowrap;align-items:center;gap:4px 8px;padding:2px 10px;min-height:26px;
         background:var(--ui-bar,#121316);border-bottom:1px solid var(--ui-line,#232428);color:var(--ui-text,#e9edf2);
-        font:12.5px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;position:sticky;top:0;z-index:40}
-      #fm1-transport.live{box-shadow:inset 0 -2px 0 var(--amber,#fa5400)}
-      #fm1-transport .t-lab{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ui-dim,#8c93a0);margin-right:2px}
-      #fm1-transport .t-bpm{display:flex;align-items:center;gap:8px;min-width:180px;flex:1;max-width:280px}
-      #fm1-transport .t-bpm input[type=range]{flex:1;min-width:80px}
-      #fm1-transport .t-bpm b{font-variant-numeric:tabular-nums;min-width:4.5em;text-align:right}
-      #fm1-transport button{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;
-        padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
-      #fm1-transport button.on{border-color:var(--amber,#fa5400);color:var(--amber,#fa5400);background:color-mix(in srgb,var(--amber) 14%,var(--ui-surface,#17181b))}
-      #fm1-transport select{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:6px;padding:4px 6px;font:inherit;font-size:12px}
-      #fm1-transport .t-hint{margin-left:auto;font-size:11px;color:var(--ui-dim,#6d7380);white-space:nowrap}
-      #fm1-transport:has(.fm1-size.in-bar) .t-hint{display:none}
+        font:11px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;position:sticky;top:0;z-index:40}
+      #fm1-transport.live{box-shadow:inset 0 -1px 0 var(--amber,#d8d8d8)}
+      #fm1-transport .t-lab{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ui-dim,#8c93a0);margin-right:0}
+      #fm1-transport .t-bpm{display:flex;align-items:center;gap:5px;min-width:120px;flex:1;max-width:200px}
+      #fm1-transport .t-bpm input[type=range]{flex:1;min-width:60px;height:14px}
+      #fm1-transport .t-bpm b{font-variant-numeric:tabular-nums;min-width:3.6em;text-align:right;font-size:10.5px}
+      #fm1-transport button{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:5px;
+        padding:2px 7px;font:inherit;font-size:11px;cursor:pointer;line-height:1.2}
+      #fm1-transport button.on{border-color:var(--amber,#d8d8d8);color:var(--amber,#d8d8d8);background:color-mix(in srgb,var(--amber) 14%,var(--ui-surface,#17181b))}
+      #fm1-transport select{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:4px;padding:1px 3px;font:inherit;font-size:10.5px}
+      #fm1-transport .t-hint{display:none}
       #fm1-transport .fm1-size.in-bar{margin-left:auto}
-      @media (max-width:720px){#fm1-transport .t-hint{display:none}}`;
+      #fm1-transport .fm1-size input[type=range]{width:72px}
+      #fm1-transport .fm1-size label{font-size:8px}
+      @media (max-width:720px){#fm1-transport .t-lab:first-child{display:none}}`;
     document.head.appendChild(css);
 
     barEl = document.createElement("div");
     barEl.id = "fm1-transport";
     barEl.innerHTML = `
-      <span class="t-lab">Transport</span>
-      <div class="t-bpm"><input id="tp-bpm" type="range" min="40" max="240" value="${bpm}"><b id="tp-bpm-l">${bpm} BPM</b></div>
-      <label class="t-lab" style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ui-text2,#cfd4da)">
+      <span class="t-lab">TP</span>
+      <div class="t-bpm"><input id="tp-bpm" type="range" min="40" max="240" value="${bpm}"><b id="tp-bpm-l">${bpm}</b></div>
+      <label class="t-lab" style="display:flex;align-items:center;gap:3px;text-transform:none;letter-spacing:0;font-size:10.5px;color:var(--ui-text2,#cfd4da)">
         <select id="tp-meter"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>/bar
       </label>
       <button type="button" id="tp-metro" title="Audible metronome click">Click</button>
-      <button type="button" id="tp-clock" title="Send MIDI clock (0xF8) so the firmware sequencer / arp follows this tempo">Clock</button>
-      <span class="t-hint">Shared with Rec + MIDI</span>`;
+      <button type="button" id="tp-clock" title="Send MIDI clock (0xF8) so the firmware sequencer / arp follows this tempo">Clock</button>`;
     const header = document.querySelector("header.site");
     if (header && header.parentNode) header.parentNode.insertBefore(barEl, header.nextSibling);
     else document.body.prepend(barEl);

@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.1.2 — 2026-11-10
+
+- Generative Eurorack-style patch bay under the machine: one rack, cartoon cables, Livewire
+  opacity / Glow / Fat, and cable motion (Off / Wave / Beat / Wiggle).
+- Deep rack engines (GATE, PIANIST, QUANT, EUCLID, BASS, DRONE, ARP, PROG, RIFF, MARKOV, POLYR)
+  with factory presets, grooves, swing clock, user save slots, and live meters.
+- Desktop MIDI in/out to a paired FM-1 (Bluetooth or USB): Link, A/B listen, FX CC, panel host, bank/voice SysEx, Identify.
+- Focus Mode for the LCD; session export/import for UI prefs.
+- Clearer recovery wording in Advanced recovery (bundled flash recovery tool on Windows).
+- Stronger disclaimer: author not responsible for bricked or damaged hardware.
+- Wave OS icons; Worker vortex mark for in-app identifiers. Shorter Install confirm copy.
+
+## 1.1.1 — 2026-11-09
+
+- Ported the private-app update set into the public tree while keeping the **open-license-only**
+  catalog (259 packages). Closed / unlicensed firmwares stay private.
+- Fixed Apple Silicon audio noise (issue #1): worker + stream queue (`engine.js` /
+  `stream-worklet.js`). Fallback: `?engine=worklet`. Worker JIT on by default (`?jit=0` off).
+- Neutral catalog naming (no “Firmware Hub” branding); open-license radar still filters licenses.
+- Hide/show every bar and panel (`layout.js`); MIDI/Tape/Scope start folded.
+- Compact install / recovery flow, Advanced recovery for M-Flasher only, USB check IPC,
+  flash-core troubleshooting.
+- Play-assist chain (transpose / chords / arp / scale), command palette, help, themes, scope,
+  tuner, MIDI monitor, notes, and related tools.
+- Desktop app update check against this public repo’s Releases; Mac ad-hoc codesign unchanged.
+
 ## 1.1.0 — 2026-11-09
 
 - Expanded the public offline library from 115 to 259 unique, explicitly open-licensed FM-1 firmware packages.

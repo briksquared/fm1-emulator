@@ -105,7 +105,7 @@ await test("already-remembered live finds count as already, not new", async () =
   const again = await scanCatalog(bundled, answer({ firmwares: [listed("stay")] }), { previous: first.remember });
   assert.equal(again.newCount, 0);
   assert.equal(again.already, 1);
-  const rows = classifyScan(again, first.remember);
+  const rows = classifyScan(again, first.remember, { includeKept: true });
   assert.equal(rows.length, 1);
   assert.equal(rows[0].kind, "kept");
 });

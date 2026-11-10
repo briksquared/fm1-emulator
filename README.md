@@ -47,7 +47,7 @@ Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 
 ## Features
 
-- **Open-source firmwares bundled** — newest first, unique, fully offline
+- **Open-source firmwares bundled** — 257 packages, newest first, unique, fully offline
 - **Search every firmware** — names, IDs, versions, authors, licenses, products, descriptions
 - **Update radar** — finds newly published open-license packages; downloads only when you pick one
 - **Load your own** — drag any `.fwsc` onto the window

@@ -88,14 +88,47 @@ async function openDeckMod(label) {
   await sleep(600);
 }
 
+async function dismissOverlays() {
+  await page.keyboard.press("Escape");
+  await sleep(200);
+  await page.keyboard.press("Escape");
+  await sleep(200);
+  await page.evaluate(() => {
+    for (const sel of [
+      "[data-close]", ".modal-close", ".drawer-close", ".panel-close",
+      "button[aria-label*=close i]", "button[title*=close i]",
+    ]) {
+      document.querySelectorAll(sel).forEach((el) => {
+        try { el.click(); } catch {}
+      });
+    }
+    // Close Customize / Browser / Keys drawers by their explicit close controls
+    for (const lab of [/^Close$/i, /^×$/, /^✕$/]) {
+      [...document.querySelectorAll("button,a,[role=button]")].forEach((b) => {
+        const t = (b.textContent || "").trim();
+        if (lab.test(t) && b.offsetParent) {
+          try { b.click(); } catch {}
+        }
+      });
+    }
+    document.querySelectorAll(".modal,.drawer,.overlay,[aria-modal=true]").forEach((el) => {
+      el.classList.remove("open", "show", "active", "visible");
+      if (el.style) el.style.display = "none";
+    });
+  });
+  await sleep(400);
+}
+
 try {
   await startFw("felucca");
+  await dismissOverlays();
 
-  // One clean shot per interface colour
+  // One clean shot per interface colour — machine only, no menus
   let n = 1;
   for (const theme of THEMES) {
+    await dismissOverlays();
     await setTheme(theme);
-    await sleep(300);
+    await sleep(350);
     const file = `${String(n).padStart(2, "0")}-${theme.toLowerCase()}.png`;
     await shot(file);
     n++;
@@ -109,6 +142,7 @@ try {
   });
   await sleep(700);
   await shot("09-cobalt-customize.png");
+  await dismissOverlays();
 
   await setTheme("Emerald");
   await page.evaluate(() => {
@@ -126,6 +160,7 @@ try {
   });
   await sleep(700);
   await shot("10-emerald-browser.png");
+  await dismissOverlays();
 
   await setTheme("Ice");
   await openDeckMod("GATE");
@@ -139,14 +174,16 @@ try {
   });
   await sleep(700);
   await shot("12-vaporwave-keys.png");
+  await dismissOverlays();
 
-  // Hero for README top
+  // Hero for README top: clean running machine, Midnight, no menus
+  await startFw("felucca");
+  await dismissOverlays();
   await setTheme("Midnight");
-  await sleep(800);
+  await sleep(900);
   const hero = resolve(root, "docs/screenshot.jpg");
   await page.screenshot({ path: hero, type: "jpeg", quality: 90 });
   console.log("ok screenshot.jpg");
-  // Also keep a PNG hero copy of Midnight
   copyFileSync(resolve(outDir, "01-midnight.png"), resolve(outDir, "hero-midnight.png"));
 } finally {
   await browser.close();

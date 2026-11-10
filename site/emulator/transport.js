@@ -16,7 +16,7 @@
   const listeners = new Set();
   function emit(type, detail) {
     const d = Object.assign({ bpm, beatsPerBar, metroOn, clockOn }, detail || {});
-    listeners.forEach((fn) => { try { fn(type, d); } catch {} });
+    listeners.forEach((fn) => { try { fn(type, d); } catch (e) { console.error("transport listener failed", e); } });
     try { window.dispatchEvent(new CustomEvent("fm1-transport", { detail: { type, ...d } })); } catch {}
   }
   function persist() {
@@ -44,7 +44,6 @@
     const ac = FM() && FM().context && FM().context();
     if (!ac || !metroOn) return;
     clickRunning = true;
-    const beatDur = 60 / bpm;
     let beat = 0, nextTime = ac.currentTime + 0.08;
     clickTimer = setInterval(() => {
       if (!clickRunning || !metroOn) { stopMetro(); return; }
@@ -131,18 +130,20 @@
     const css = document.createElement("style");
     css.textContent = `
       #fm1-transport{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:7px 16px;
-        background:#121316;border-bottom:1px solid #232428;color:#e9edf2;
+        background:var(--ui-bar,#121316);border-bottom:1px solid var(--ui-line,#232428);color:var(--ui-text,#e9edf2);
         font:12.5px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;position:sticky;top:0;z-index:40}
       #fm1-transport.live{box-shadow:inset 0 -2px 0 var(--amber,#fa5400)}
-      #fm1-transport .t-lab{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:#8c93a0;margin-right:2px}
+      #fm1-transport .t-lab{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ui-dim,#8c93a0);margin-right:2px}
       #fm1-transport .t-bpm{display:flex;align-items:center;gap:8px;min-width:180px;flex:1;max-width:280px}
       #fm1-transport .t-bpm input[type=range]{flex:1;min-width:80px}
       #fm1-transport .t-bpm b{font-variant-numeric:tabular-nums;min-width:4.5em;text-align:right}
-      #fm1-transport button{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:7px;
+      #fm1-transport button{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:7px;
         padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
-      #fm1-transport button.on{border-color:var(--amber,#fa5400);color:var(--amber,#fa5400);background:#2a2116}
-      #fm1-transport select{background:#17181b;border:1px solid #2a2c31;color:#e9edf2;border-radius:6px;padding:4px 6px;font:inherit;font-size:12px}
-      #fm1-transport .t-hint{margin-left:auto;font-size:11px;color:#6d7380}
+      #fm1-transport button.on{border-color:var(--amber,#fa5400);color:var(--amber,#fa5400);background:color-mix(in srgb,var(--amber) 14%,var(--ui-surface,#17181b))}
+      #fm1-transport select{background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);border-radius:6px;padding:4px 6px;font:inherit;font-size:12px}
+      #fm1-transport .t-hint{margin-left:auto;font-size:11px;color:var(--ui-dim,#6d7380);white-space:nowrap}
+      #fm1-transport:has(.fm1-size.in-bar) .t-hint{display:none}
+      #fm1-transport .fm1-size.in-bar{margin-left:auto}
       @media (max-width:720px){#fm1-transport .t-hint{display:none}}`;
     document.head.appendChild(css);
 
@@ -151,11 +152,11 @@
     barEl.innerHTML = `
       <span class="t-lab">Transport</span>
       <div class="t-bpm"><input id="tp-bpm" type="range" min="40" max="240" value="${bpm}"><b id="tp-bpm-l">${bpm} BPM</b></div>
-      <label class="t-lab" style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:#cfd4da">
+      <label class="t-lab" style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ui-text2,#cfd4da)">
         <select id="tp-meter"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>/bar
       </label>
-      <button type="button" id="tp-metro" title="Audible metronome click">🔔 Click</button>
-      <button type="button" id="tp-clock" title="Send MIDI clock (0xF8) so the firmware sequencer / arp follows this tempo">⏱ Clock</button>
+      <button type="button" id="tp-metro" title="Audible metronome click">Click</button>
+      <button type="button" id="tp-clock" title="Send MIDI clock (0xF8) so the firmware sequencer / arp follows this tempo">Clock</button>
       <span class="t-hint">Shared with Rec + MIDI</span>`;
     const header = document.querySelector("header.site");
     if (header && header.parentNode) header.parentNode.insertBefore(barEl, header.nextSibling);

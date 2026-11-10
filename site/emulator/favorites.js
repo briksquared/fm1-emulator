@@ -13,7 +13,7 @@
     catch { return []; }
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(ids)); } catch (e) { console.warn("favorites: could not save", e); } }
-  function emit() { for (const cb of subs) { try { cb(); } catch {} } }
+  function emit() { for (const cb of subs) { try { cb(); } catch (e) { console.error("favorites listener failed", e); } } }
 
   // public API (extras.js reads this for its filter chip)
   const Fav = window.FM1Fav = {
@@ -115,8 +115,8 @@
     el.textContent = `
       .fw-fav-star{background:none;border:0;cursor:pointer;font-size:15px;line-height:1;color:var(--dim);
         padding:0 4px;vertical-align:-1px;transition:color .12s,transform .08s}
-      .fw-fav-star:hover{color:var(--amber);transform:scale(1.12)}
-      .fw-fav-star.on{color:var(--amber)}
+      .fw-fav-star:hover{color:var(--amber-ink, var(--amber));transform:scale(1.12)}
+      .fw-fav-star.on{color:var(--amber-ink, var(--amber))}
       .fw-fav-dd{width:100%;background:var(--well);border:1px solid var(--line);color:var(--ink);
         border-radius:7px;padding:5px 8px;font:inherit;font-size:12px;margin-bottom:6px;cursor:pointer;outline:none}
       .fw-fav-dd:focus{border-color:var(--amber)}

@@ -2,7 +2,8 @@
 // Serves the static emulator over a FIXED custom origin (fm1://app) so localStorage — favorites,
 // customize, stickers, the last firmware — lives in the app's own profile and persists every launch,
 // regardless of any dev-server port. Fully offline: the emulator, firmware archive and fw/ are bundled.
-const { app, BrowserWindow, protocol, shell, ipcMain, session } = require("electron");
+const { app, BrowserWindow, Menu, dialog, protocol, screen, shell, ipcMain, session } = require("electron");
+const updates = require("./updater");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -14,6 +15,9 @@ const softwareRendering = process.env.FM1_SOFTWARE_RENDERING !== "0";
 if (softwareRendering) app.disableHardwareAcceleration();
 // Automated checks can use an isolated profile so they never contend with a
 // user's running installed copy or alter its favorites and saved firmware.
+// The installer's shortcuts carry the appId as their AppUserModelID. The window must use the
+// same one, or Windows groups it apart from a pinned shortcut and keeps the pin's old icon.
+if (process.platform === "win32") app.setAppUserModelId("com.briksquared.fm1emulator");
 if (process.env.FM1_SELFTEST_PROFILE) app.setPath("userData", path.resolve(process.env.FM1_SELFTEST_PROFILE));
 
 function desktopLog(event, details) {
@@ -32,8 +36,8 @@ const ROOT = app.isPackaged ? path.join(process.resourcesPath, "site") : (fs.exi
 // also hands recovery work to M-Flasher.  Keep this allow-listed: renderer code
 // never supplies a command or a path to execute.
 function mFlasherPath() {
-  // M-Flasher is an optional, Windows-only third-party tool and is NOT bundled.
-  // If a user has dropped it next to the app, use it; otherwise the UI offers a download link.
+  // M-Flasher is a Windows-only third-party tool, bundled with the Windows build (resources/M-Flasher).
+  // From a source checkout it is used from vendor/; anywhere else the UI offers a download link.
   const candidates = [
     path.join(process.resourcesPath, "M-Flasher", "M-Flasher.exe"),
     path.join(__dirname, "vendor", "M-Flasher", "M-Flasher.exe"),
@@ -60,9 +64,18 @@ protocol.registerSchemesAsPrivileged([
   { scheme: "fm1", privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } },
 ]);
 
+// Open at most as large as the screen's work area (the taskbar/dock excluded). A fixed
+// 1300x900 window, or a 640 px minimum height, is taller than a 1366x768 screen at 125% or
+// 150% scaling (614 or 512 px), which put the bottom of the window off screen.
+function windowBounds() {
+  const area = screen.getPrimaryDisplay().workAreaSize;
+  const minWidth = Math.min(800, area.width), minHeight = Math.min(520, area.height);
+  return { width: Math.max(minWidth, Math.min(1300, area.width)), height: Math.max(minHeight, Math.min(900, area.height)), minWidth, minHeight };
+}
+
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1300, height: 900, minWidth: 900, minHeight: 640,
+    ...windowBounds(),
     backgroundColor: "#0b0c0e", title: "FM-1 Emulator", autoHideMenuBar: true,
     icon: path.join(__dirname, "icon.png"),
     webPreferences: {
@@ -94,6 +107,18 @@ function createWindow() {
     desktopLog("page-loaded", { url });
   });
   win.webContents.on("unresponsive", () => desktopLog("renderer-unresponsive", {}));
+  // the page blocks unloading only while a firmware install is writing to a real FM-1
+  win.webContents.on("will-prevent-unload", (event) => {
+    const choice = dialog.showMessageBoxSync(win, {
+      type: "warning",
+      buttons: ["Keep the install running", "Close anyway"],
+      defaultId: 0,
+      cancelId: 0,
+      message: "A firmware install is writing to your FM-1.",
+      detail: "Closing now interrupts it. The FM-1 stays in update mode, and Resume interrupted install finishes it the next time you open the app.",
+    });
+    if (choice === 1) event.preventDefault();
+  });
   win.webContents.on("will-navigate", (event, url) => {
     try {
       const target = new URL(url);
@@ -122,6 +147,38 @@ function createWindow() {
   return win;
 }
 
+// FM1_SELFTEST=typing: real key presses (not synthetic DOM events). Letters that are also note
+// keys must type into text fields; the same keys from the page must still play; a focused slider
+// keeps its arrow keys.
+async function typingSelfTest(win) {
+  const wc = win.webContents, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const js = (code) => wc.executeJavaScript(`(async()=>{ const $=s=>document.querySelector(s); ${code} })()`, true);
+  const press = async (k, hold = false) => {
+    wc.sendInputEvent({ type: "keyDown", keyCode: k });
+    if (k.length === 1) wc.sendInputEvent({ type: "char", keyCode: k });
+    if (!hold) { await sleep(30); wc.sendInputEvent({ type: "keyUp", keyCode: k }); }
+    await sleep(40);
+  };
+  const type = async (text) => { for (const c of text) await press(c); };
+  for (let i = 0; i < 80; i++) { if (await js(`return !!($('#gal-side') && window.FM1 && window.FM1Keys && !$('#start').disabled)`)) break; await sleep(250); }
+  await js(`$('#start').click()`);
+  for (let i = 0; i < 60; i++) { if (await js(`return window.FM1.running()`)) break; await sleep(250); }
+  win.focus(); wc.focus();
+  await js(`$('#fw-search').focus()`); await type("aws");
+  const sideTyped = await js(`const v=$('#fw-search').value; $('#fw-search').value=''; $('#fw-search').dispatchEvent(new Event('input')); $('#fw-search').blur(); return v`);
+  await js(`$('#gal-side').click()`); await sleep(400); await js(`$('#gal-q').focus()`); await type("dr");
+  const galleryTyped = await js(`const v=$('#gal-q').value; $('#gal-q').value=''; return v`);
+  await press("Escape"); await sleep(200);
+  await js(`window.FM1Keys.routePc(false); document.activeElement && document.activeElement.blur()`);
+  await press("a", true); const heldFromPage = await js(`return window.FM1.heldKeys()`);
+  wc.sendInputEvent({ type: "keyUp", keyCode: "a" }); await sleep(80);
+  const releasedAfter = await js(`return window.FM1.heldKeys()`);
+  const sliderBefore = await js(`const r=document.querySelector('input[type=range]'); r.focus(); return Number(r.value)`);
+  await press("Right");
+  const slider = await js(`const r=document.querySelector('input[type=range]'); const v=Number(r.value); r.blur(); window.FM1Keys.routePc(true); return v`);
+  return { sideTyped, galleryTyped, heldFromPage, releasedAfter, sliderBefore, slider };
+}
+
 // Automated end-to-end check (set FM1_SELFTEST=write|read). Proves assets load, a firmware boots,
 // and that localStorage survives a full app restart — logs one JSON line, then quits.
 function runSelfTest(win, mode) {
@@ -131,14 +188,16 @@ function runSelfTest(win, mode) {
     try {
       const js = mode === "layout"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<60;i++){ const s=document.getElementById('fw'); if(s&&s.options.length>1) break; await sleep(250); }
-             const st=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Start'); st&&st.click(); await sleep(3500);
-             const r=el=>el?(b=>({x:Math.round(b.left),w:Math.round(b.width),h:Math.round(b.height),top:Math.round(b.top)}))(el.getBoundingClientRect()):null;
-             const L=document.getElementById('side-left'),deck=document.querySelector('.deck'),R=document.querySelector('.side.bar');
-             return { vw:innerWidth, vh:innerHeight, left:r(L), deck:r(deck), right:r(R),
-               flashInLeft:!!L?.querySelector('.install-box'), saveInLeft:!!L?.querySelector('.save-box'),
-               threeInaRow: L&&deck&&R ? (L.getBoundingClientRect().left<deck.getBoundingClientRect().left && deck.getBoundingClientRect().left<R.getBoundingClientRect().left && Math.abs(L.getBoundingClientRect().top-R.getBoundingClientRect().top)<60) : false,
-               pageScrolls: document.documentElement.scrollHeight>innerHeight+2, scrollH: document.documentElement.scrollHeight }; })()`
+             for(let i=0;i<60;i++){ const s=document.getElementById('fw'); if(s&&s.options.length>1&&document.querySelector('.future-install')) break; await sleep(250); }
+             const st=document.getElementById('start'); st&&st.click(); await sleep(3500);
+             const r=el=>el?(b=>({x:Math.round(b.left),w:Math.round(b.width),h:Math.round(b.height),top:Math.round(b.top),bottom:Math.round(b.bottom)}))(el.getBoundingClientRect()):null;
+             const L=document.querySelector('.side-left'),deck=document.querySelector('.deck'),R=document.querySelector('.side-right'),cv=window.FM1&&window.FM1.panelCanvas;
+             const lb=L&&L.getBoundingClientRect(),db=deck&&deck.getBoundingClientRect(),rb=R&&R.getBoundingClientRect(),cb=cv&&cv.getBoundingClientRect();
+             return { vw:innerWidth, vh:innerHeight, left:r(L), deck:r(deck), right:r(R), canvas:r(cv),
+               flashInRight:!!R?.querySelector('.future-install'), firmwareInLeft:!!L?.querySelector('#fw'),
+               threeInaRow: lb&&db&&rb ? (lb.right<=db.left+1 && db.right<=rb.left+1 && Math.abs(lb.top-rb.top)<60) : false,
+               machineInView: !!cb && cb.top>=0 && cb.bottom<=innerHeight+1 && cb.left>=0 && cb.right<=innerWidth+1,
+               noSideScroll: document.documentElement.scrollWidth<=innerWidth+1 }; })()`
         : mode === "search"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
              for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&(document.getElementById('fw')?.options.length||0)>=259) break; await sleep(200); }
@@ -149,7 +208,7 @@ function runSelfTest(win, mode) {
              return {fwCount:document.getElementById('fw')?.options.length,aurora,accent,version,cleared:results.hidden}; })()`
         : mode === "updates"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<80;i++){ if(document.getElementById('scan-open-source')) break; await sleep(200); }
+             for(let i=0;i<80;i++){ const b=document.getElementById('scan-open-source'); if(b&&!b.disabled) break; await sleep(200); }
              const button=document.getElementById('scan-open-source'), status=document.getElementById('open-source-status');
              button.click(); for(let i=0;i<120&&button.classList.contains('scanning');i++) await sleep(250);
              return {finished:!button.classList.contains('scanning'),error:status.dataset.error==='true',status:status.textContent}; })()`
@@ -202,7 +261,7 @@ function runSelfTest(win, mode) {
              try{ localStorage.setItem('fm1.__selftest','persisted'); }catch(e){ out.lsErr=String(e); }
              out.favNow=(()=>{try{return localStorage.getItem('fm1.favs.v1')}catch{return 'ERR'}})();
              return out; })()`;
-      const res = await win.webContents.executeJavaScript(js, true);
+      const res = mode === "typing" ? await typingSelfTest(win) : await win.webContents.executeJavaScript(js, true);
       console.log("SELFTEST_RESULT " + JSON.stringify(res));
       const passed = mode === "search"
         ? Number(res.fwCount) === 259 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
@@ -218,8 +277,10 @@ function runSelfTest(win, mode) {
           ? res.initial && res.recovered && res.running
         : mode === "ports"
           ? !res.error && Array.isArray(res.inputs) && Array.isArray(res.outputs)
+        : mode === "typing"
+          ? res.sideTyped === "aws" && res.galleryTyped === "dr" && res.heldFromPage.length === 1 && res.releasedAfter.length === 0 && res.slider > res.sliderBefore
         : mode === "layout"
-          ? res.flashInLeft && res.saveInLeft && res.threeInaRow && !res.pageScrolls
+          ? res.flashInRight && res.firmwareInLeft && res.threeInaRow && res.machineInView && res.noSideScroll
           : Number(res.fwCount) > 1 && res.hasFavApi && res.hasGallery && res.hasLoader &&
             res.hasDeviceLab && res.hasRecovery && res.hasStart && res.running;
       if (!passed) {
@@ -236,6 +297,20 @@ function runSelfTest(win, mode) {
   });
 }
 
+// The standard menus plus "Check for App Updates…" (the desktop app itself, from GitHub
+// Releases; firmware updates are the page's own update radar).
+function appMenu() {
+  const check = { label: "Check for App Updates…", click: () => updates.checkForUpdates({ interactive: true, log: desktopLog }) };
+  const releases = { label: "Release Notes", click: () => shell.openExternal(updates.RELEASES) };
+  const mac = process.platform === "darwin";
+  return Menu.buildFromTemplate([
+    ...(mac ? [{ label: app.name, submenu: [{ role: "about" }, check, { type: "separator" }, { role: "services" },
+      { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { role: "quit" }] }] : []),
+    { role: "fileMenu" }, { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" },
+    { role: "help", submenu: [...(mac ? [] : [check]), releases] },
+  ]);
+}
+
 // Single-instance: clicking the icon again focuses the existing window instead of
 // spawning a second one (second windows never pick up new files and look "stuck").
 if (!app.requestSingleInstanceLock()) {
@@ -249,13 +324,14 @@ if (!app.requestSingleInstanceLock()) {
   desktopLog("startup", { softwareRendering, gpuCompositing: app.getGPUFeatureStatus().gpu_compositing });
   // The installer uses Web MIDI SysEx.  Electron otherwise treats this as an
   // ungranted browser permission, so scope it to our local, packaged origin.
+  // (a check passes the bare origin, "fm1://app"; a request the page's URL)
+  const ours = (url) => /^fm1:\/\/app(?:\/|$)/.test(String(url || ""));
   const permitDeviceAccess = (_webContents, permission, callback, details) => {
-    const origin = details?.requestingUrl || "";
-    callback((permission === "midi" || permission === "midiSysex") && origin.startsWith("fm1://app/"));
+    callback((permission === "midi" || permission === "midiSysex") && ours(details?.requestingUrl));
   };
   session.defaultSession.setPermissionRequestHandler(permitDeviceAccess);
   session.defaultSession.setPermissionCheckHandler((_webContents, permission, requestingOrigin) =>
-    (permission === "midi" || permission === "midiSysex") && requestingOrigin.startsWith("fm1://app/"));
+    (permission === "midi" || permission === "midiSysex") && ours(requestingOrigin));
   ipcMain.handle("fm1:open-flasher", async () => {
     const executable = mFlasherPath();
     if (!executable) {
@@ -275,7 +351,9 @@ if (!app.requestSingleInstanceLock()) {
   });
   protocol.handle("fm1", async (req) => {
     const u = new URL(req.url);
-    let p = decodeURIComponent(u.pathname || "/");
+    let p;
+    try { p = decodeURIComponent(u.pathname || "/"); }
+    catch { return new Response("bad request", { status: 400 }); }   // a malformed %-escape
     if (p === "/" || p === "") p = "/emulator/index.html";
     const file = path.normalize(path.join(ROOT, p));
     if (!isInsideRoot(file)) return new Response("forbidden", { status: 403 });
@@ -287,8 +365,12 @@ if (!app.requestSingleInstanceLock()) {
       return new Response("not found", { status: 404 });
     }
   });
+  Menu.setApplicationMenu(appMenu());
   const win = createWindow();
   if (process.env.FM1_SELFTEST) runSelfTest(win, process.env.FM1_SELFTEST);
+  // a quiet check shortly after launch: it only speaks up when a newer release exists
+  else if (app.isPackaged && process.env.FM1_NO_UPDATE_CHECK !== "1")
+    setTimeout(() => updates.checkForUpdates({ log: desktopLog }), 15000);
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
   });
 }

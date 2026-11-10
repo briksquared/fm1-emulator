@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Import the non-Hub firmware set that was individually reviewed on 2026-11-09.
+// Import the non-catalog firmware set that was individually reviewed on 2026-11-09.
 // This maintainer tool deliberately requires the private, audited checkout as input;
 // normal public builds only consume the resulting manifest and packages.
 import { createHash } from "node:crypto";
@@ -14,11 +14,12 @@ const site = resolve(root, "site");
 const privateEmulator = resolve(privateRoot, "emulator");
 const firmware = JSON.parse(readFileSync(resolve(privateEmulator, "firmwares.json"), "utf8")).firmwares;
 const health = JSON.parse(readFileSync(resolve(privateEmulator, "boot-health.json"), "utf8")).entries;
-const hub = await fetch("https://thefirmwarehub.com/catalog.json").then(r => {
-  if (!r.ok) throw new Error(`Firmware Hub catalog: HTTP ${r.status}`);
+const { CATALOG_URL } = await import(new URL("../site/emulator/catalog-updates.js", import.meta.url));
+const live = await fetch(CATALOG_URL).then(r => {
+  if (!r.ok) throw new Error(`firmware catalog: HTTP ${r.status}`);
   return r.json();
 });
-const hubIds = new Set(hub.firmwares.map(f => f.id));
+const catalogIds = new Set(live.firmwares.map(f => f.id));
 const openLicense = /^(?:GPL-|LGPL-|AGPL-|MPL-|Apache-|BSD-|MIT$|ISC$)/;
 
 // Each exclusion is evidence-based, not a blanket dislike of the project.
@@ -54,7 +55,7 @@ function inside(base, target) {
 
 const selected = [];
 for (const entry of firmware) {
-  if (hubIds.has(entry.id) || (entry.hub && hubIds.has(entry.hub))) continue;
+  if (catalogIds.has(entry.id) || (entry.catalogId && catalogIds.has(entry.catalogId))) continue;
   if (!openLicense.test(entry.license || "") || !/^https:\/\/github\.com\/[^/]+\/[^/]+/.test(entry.repo || "")) continue;
   if (excluded.has(entry.id)) continue;
   if (health[entry.id]?.status !== "ok") throw new Error(`${entry.id}: expected a passing boot audit`);
@@ -81,5 +82,5 @@ for (const entry of firmware) {
 
 selected.sort((a, b) => String(b.released || "").localeCompare(String(a.released || "")) || a.name.localeCompare(b.name));
 writeFileSync(resolve(root, "ci", "manual-firmwares.json"), JSON.stringify(selected, null, 2) + "\n");
-console.log(`Imported ${selected.length} individually reviewed, non-Hub firmware packages.`);
+console.log(`Imported ${selected.length} individually reviewed, non-catalog firmware packages.`);
 console.log(`Excluded ${excluded.size}: ${[...excluded].map(([id, reason]) => `${id} (${reason})`).join("; ")}`);

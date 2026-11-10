@@ -18,7 +18,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="style.css?v=81">
+<link rel="stylesheet" href="style.css?v=83">
+<script src="ui-theme.js?v=2"></script>
 <script>if (new URLSearchParams(location.search).get("embed") === "1") document.documentElement.setAttribute("data-embed", "");</script>
 </head>
 <body>
@@ -52,8 +53,8 @@
           <span class="update-radar" aria-hidden="true"><i></i></span>
           <div><h2 class="eyebrow" id="h-updates">Open-source radar</h2><strong>Live firmware scan</strong></div>
         </div>
-        <p>Checks the Firmware Hub for new, explicitly open-licensed FM-1 releases. Nothing downloads until you select it.</p>
-        <button type="button" id="scan-open-source">Scan open-source updates</button>
+        <p>Checks the open firmware catalog for new, explicitly open-licensed FM-1 releases. Nothing downloads until you select it.</p>
+        <button type="button" id="scan-open-source" disabled>Scan open-source updates</button>
         <button type="button" id="apply-open-source" class="primary" hidden>Use catalog updates</button>
         <span id="open-source-status" role="status" aria-live="polite">Bundled catalog: 259 verified packages</span>
       </section>
@@ -62,15 +63,6 @@
       <div class="deck-head">
         <h1 id="title">M-VAVE FM-1 (emulated)</h1>
         <span id="status">Preparing emulator…</span>
-      </div>
-      <div id="perfwarn" role="alert" hidden>
-        <p id="perfwarn-text"></p>
-        <div class="acts">
-          <button type="button" id="perfwarn-fix" class="primary"></button>
-          <button type="button" id="perfwarn-copy" title="A short text about this device and how it kept up, to paste into a bug report">Copy a report</button>
-          <a href="https://github.com/briksquared/fm1-emulator/issues/new" target="_blank" rel="noopener">Report on GitHub ↗</a>
-          <button type="button" id="perfwarn-close" aria-label="Dismiss">✕</button>
-        </div>
       </div>
       <div class="stage">
         <canvas id="panel" aria-label="FM-1 front panel"></canvas>
@@ -115,7 +107,7 @@
 
       <section class="box" aria-labelledby="h-play-from">
         <h2 class="eyebrow" id="h-play-from">Play from</h2>
-        <label id="midiin">MIDI in <span class="sel"><span id="midiact" aria-hidden="true"></span><select id="midi" aria-label="MIDI input"><option value="">off</option><option value="*">all inputs</option></select></span></label>
+        <label id="midiin" title="Plug in your FM-1 over USB and pick it here to play the emulator from its keys">MIDI in <span class="sel"><span id="midiact" aria-hidden="true"></span><select id="midi" aria-label="MIDI input"><option value="">off</option><option value="*">all inputs</option></select></span></label>
         <label id="midichl" title="Played notes and controllers go to this channel (M-VAVE's firmware listens on 2, Felucca's parts on 1–4)">Channel
           <select id="midich" aria-label="MIDI channel"><option value="0">as sent</option></select></label>
       </section>
@@ -125,8 +117,8 @@
   <section id="firmwares" class="library" aria-labelledby="h-fw">
     <h2 id="h-fw">Firmwares</h2>
     <p>259 unique, boot-checked packages with explicit open-source licenses: the current redistributable
-      <a href="https://thefirmwarehub.com/">FM-1 Firmware Hub ↗</a> catalog plus independently verified GitHub releases.
-      The desktop app keeps the bundled set offline; update-radar additions download only when selected.</p>
+      firmware catalog plus independently verified GitHub releases.
+      The desktop app keeps the bundled set offline; firmware-radar additions download only when selected.</p>
     <ul class="cards" id="fwlist"></ul>
   </section>
 
@@ -150,9 +142,11 @@
           cores of JieLi's own 32-bit pi32v2 CPU, together with the screen, keys, knobs and audio, and runs the FM-1's
           firmwares on it unchanged, in WebAssembly in your browser: the same update packages you would install on a
           real one.</p>
+        <p><b>Then flash any firmware to your FM-1 in a few clicks, and recover if anything goes wrong:</b> connect it
+          with a USB data cable and use the <b>Firmware uplink</b> panel.</p>
         <ol class="steps">
           <li><b>Pick a firmware</b>Felucca, the original open firmware, is the default. Bundled releases work offline;
-            a release found later by the update radar downloads on first use. The <a href="#firmwares">firmware list</a> says what each one does.</li>
+            a release found later by the firmware radar downloads on first use. The <a href="#firmwares">firmware list</a> says what each one does.</li>
           <li><b>Press Start</b>A browser only plays sound after a click. Changing the firmware or the clock later
             reboots the synth.</li>
           <li><b>Play</b>Use the computer keyboard, the mouse or a touch screen, or a MIDI keyboard
@@ -238,6 +232,11 @@
           <li>Choose it under <b>MIDI in</b>, or choose “all inputs”.</li>
           <li>Allow MIDI access when the browser asks. It only asks once you pick an input.</li>
         </ol>
+        <p><b>Your real FM-1</b> works the same way: plug it in over USB and pick it here (the desktop app picks a
+          connected FM-1 by itself the first time). Its notes play the emulator; controllers, pitch bend and MIDI
+          clock / start / stop reach the emulated firmware unchanged, so what they do depends on that firmware.
+          Knob moves arrive only if the firmware on your FM-1 sends them as MIDI, and they do not turn the
+          on-screen knobs.</p>
         <p>The dot next to the list lights up amber while messages arrive. The page remembers the input and connects
           it again on Start next time; devices plugged in later appear in the list.</p>
         <p><b>Channel</b> “as sent” passes every message on unchanged. A number from 1 to 16 moves every note and
@@ -307,8 +306,8 @@
           pi32v2 instruction set and models the parts of the chip the firmwares use: timers, interrupts, the flash,
           the 240×240 screen, the key matrix and encoders, the MASTER knob, the audio output and the MIDI IN port.
           The stable interpreter is the default; an optional JIT can be enabled for diagnostics with <code>?jit=1</code>.</p>
-        <p>Each firmware boots from its whole update package (<code>.fwsc</code>). Bundled packages stay local; update-radar
-          additions are fetched from the Firmware Hub on first use and kept with their saved flash. “Check for firmware updates” fetches a new copy; a changed
+        <p>Each firmware boots from its whole update package (<code>.fwsc</code>). Bundled packages stay local; firmware-radar
+          additions are fetched from the firmware catalog on first use and kept with their saved flash. “Check for firmware updates” fetches a new copy; a changed
           package starts a separate save so an update cannot overwrite an older version’s patches. Packages are unpacked by the page's own unpacker, <code>fwsc.js</code>; Felucca's GPL
           package code (<code>fm1pkg.js</code>) stays out of the page.</p>
         <p>The whole story, from recovering an undocumented CPU from its firmware to the two JITs and how each
@@ -338,8 +337,7 @@
           <a href="https://github.com/briksquared/fm1-emulator">github.com/briksquared/fm1-emulator</a>, based on
           Joakim Eriksson's <a href="https://github.com/joakimeriksson/fm1-emu">fm1-emu</a>.</p>
         <p>The firmwares are their authors' work, under the licences shown on each card; the list follows
-          <a href="https://thefirmwarehub.com/">the FM-1 Firmware Hub</a> (thanks to zvenson for opening its packages to
-          other pages) and <a href="https://fm1-editor.com/firmware/">fm1-editor.com/firmware</a>.</p>
+          the open firmware catalog and <a href="https://fm1-editor.com/firmware/">fm1-editor.com/firmware</a>.</p>
         <p>Built on public reverse engineering of the FM-1:
           <a href="https://github.com/AL-255/FM-1-RE">AL-255/FM-1-RE</a>,
           <a href="https://github.com/ip2k/lunar-modulator">ip2k/lunar-modulator</a>,
@@ -358,8 +356,8 @@
       <b>FM-1 Emulator</b>
       <span>The M-VAVE FM-1 in your browser. Not made by or affiliated with M-VAVE. The emulator's code is
         MIT; each firmware is its author's, under its own licence. No firmware is hosted on this page.</span>
-      <span>Firmware lists from <a href="https://thefirmwarehub.com/">the FM-1 Firmware Hub ↗</a>, with thanks to
-        zvenson, and <a href="https://fm1-editor.com/firmware/">fm1-editor.com/firmware ↗</a>.</span>
+      <span>Firmware lists from the open firmware catalog and
+        <a href="https://fm1-editor.com/firmware/">fm1-editor.com/firmware ↗</a>.</span>
     </div>
     <div class="col">
       <b>Code</b>
@@ -374,22 +372,24 @@
     </div>
   </div>
 </footer>
-<script src="overlay.js?v=79"></script>
-<script src="customize.js?v=61"></script>
-<script src="favorites.js?v=40"></script>
-<script src="gallery.js?v=64"></script>
-<script src="extras.js?v=62"></script>
-<script src="transport.js?v=1"></script>
-<script src="midiplayer.js?v=62"></script>
-<script src="keys.js?v=80"></script>
-<script src="recorder.js?v=5"></script>
-<script src="tape.js?v=62"></script>
-<script src="banks.js?v=60"></script>
-<script src="stickers.js?v=79"></script>
-<script src="deck.js?v=78"></script>
-<script src="loader.js?v=1"></script>
-<script type="module" src="main.js?v=81"></script>
-<script type="module" src="install.js?v=78"></script>
+<script src="issues.js?v=3"></script>
+<script src="overlay.js?v=80"></script>
+<script src="customize.js?v=64"></script>
+<script src="favorites.js?v=42"></script>
+<script src="gallery.js?v=68"></script>
+<script src="shortcuts.js?v=1"></script>
+<script src="extras.js?v=64"></script>
+<script src="transport.js?v=3"></script>
+<script src="midiplayer.js?v=64"></script>
+<script src="keys.js?v=82"></script>
+<script src="recorder.js?v=7"></script>
+<script src="tape.js?v=65"></script>
+<script src="banks.js?v=61"></script>
+<script src="stickers.js?v=80"></script>
+<script src="deck.js?v=81"></script>
+<script src="loader.js?v=2"></script>
+<script type="module" src="main.js?v=85"></script>
+<script type="module" src="install.js?v=81"></script>
 <style>#bmac{position:fixed;right:12px;bottom:9px;z-index:40;font:12px 'Space Grotesk',-apple-system,Segoe UI,Roboto,sans-serif;color:var(--dim,#9aa0ab);opacity:.4;text-decoration:none;transition:opacity .15s;user-select:none}#bmac:hover{opacity:.95}</style>
 <a id="bmac" href="https://cash.app/$BRIKSQUARE" target="_blank" rel="noopener" title="Buy me a coffee (Cash App)">☕ buy me a coffee</a>
 </body>

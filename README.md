@@ -18,8 +18,8 @@
 The FM-1 has a huge community firmware scene, and this app is the easy way into it. It ships with
 **259 open-source FM-1 firmwares**, lets you search them and spot new releases, and runs any of them
 in a faithful emulator so you can **try a firmware before it goes anywhere near your unit**. When
-you find one you like, flash it to your real FM-1 over USB from the same window, with backup and
-recovery tools one click away.
+you find one you like, flash it to your real FM-1 over USB from the same window. **Flash any
+firmware to your FM-1 in a few clicks, and recover if anything goes wrong.**
 
 ## How it works
 
@@ -28,9 +28,11 @@ recovery tools one click away.
 2. **Try.** Press **Start** and play the firmware in the emulator with your computer keyboard, the
    mouse, a MIDI controller, or your FM-1 itself.
 3. **Flash.** Connect the FM-1 with a USB data cable, pick the firmware in the **Firmware uplink**
-   panel, and press **Deploy selected firmware**.
-4. **Recover.** If an install is interrupted, **Resume interrupted install** finishes it. On
-   Windows, the bundled M-Flasher backs up, restores, and reinstalls the whole flash.
+   panel, and press **Deploy selected firmware**. The package is checked before a single byte is
+   sent, and the app keeps a record of every step of the install.
+4. **Recover.** If an install is cut off, the app notices the next time it opens and offers to
+   **resume** it or **roll back** to the firmware you had before. On Windows, the bundled M-Flasher
+   backs up, restores, and reinstalls the whole flash.
 
 ## Screenshots
 
@@ -49,6 +51,12 @@ recovery tools one click away.
   all available offline
 - **Search** by name, author, version, license, product identity, or description (try "drum",
   "bass", "ambient"), plus **Samplers** and **Favorites** filters and a full **Browse all** view
+- **Star favorites** from the sidebar or the browser; starred firmwares get their own chip in
+  **Browse all**
+- **Details** for each firmware (press **I**): author, license, source, release date, SHA-256, and
+  whether the running package matches it
+- **Keyboard shortcuts**: press **?** for the list; **[** and **]** step through firmwares, **M**
+  stars the current one. Shortcuts stay out of the way while you type in a field
 - **Open-source firmware radar**: one button scans for newly published open-license FM-1 releases; nothing
   downloads until you pick one
 - **Load your own**: open or drag in any `.fwsc` package, including M-VAVE's stock firmware
@@ -62,22 +70,60 @@ recovery tools one click away.
 ### Flash and recover
 - **Firmware uplink**: scan for the connected FM-1, pick any bundled firmware or your own `.fwsc`,
   and deploy it over USB-MIDI (desktop app, or Chrome and Edge)
-- The unit's product identity is checked before the write, and again after it restarts
-- **Resume interrupted install** finishes a write that was cut off; the unit stays in update mode
-  until it completes
+- **Checked before it's written**: every package's size, FM-1 product identity, and published
+  SHA-256 are verified first, and the unit's identity is checked again after it restarts
+- **A confirmation step** names the firmware and the unit before anything is sent, with a reminder
+  to back up the flash first
+- **Install journal**: each step of a flash is recorded, so an install interrupted by an unplugged
+  cable, a closed window, or a crash is picked up the next time the app opens
+- **Resume or roll back**: finish the interrupted install, or put back the last firmware that
+  installed cleanly; the unit stays in update mode until one of them completes
+- **Retries and timeouts** on every USB-MIDI step, and a warning if you try to close the app
+  mid-flash
 - **Windows:** the bundled **M-Flasher** backs up, restores, and reinstalls the whole flash, and
   reaches a unit in download mode when nothing else can
 - Step-by-step recovery guide in the app and in [docs/Recovery.md](docs/Recovery.md)
 
 ### Play
 - Computer keyboard, mouse, or any USB MIDI controller; plug in your real FM-1 and the desktop app
-  picks it as the MIDI input so its keys play the emulator
+  picks it as the MIDI input so its keys play the emulator (see below)
+- **Smooth audio**: the emulator runs on its own thread, separate from audio output, so playback
+  stays clean on Apple Silicon and other fast machines; a dropout, if one happens, shows as a
+  small notice in the toolbar
 - **Keys** module with scales, chords, and an arpeggiator, a MIDI file player, and a scope
 - **Rec** records what you play to a `.mid` file; the **Tape** deck records the FM-1's output to
   `.wav` and feeds samples into firmwares that take audio in
 - **DX7 banks** for DX7-capable firmwares
 - **Customize** the case with presets of the real FM-1 colourways and many more, your own pictures,
   and hundreds of **stickers**
+- **Interface themes**: dark and light themes for the app itself (Midnight, Graphite, Cobalt,
+  Emerald, Crimson, Vaporwave, Ice, Paper), or pick your own background, panel, control, text, and
+  accent colours; text contrast is kept readable
+
+### Stays up to date
+- **Update check**: the desktop app checks GitHub Releases and tells you when a new version is
+  out, with a button that opens its release page. It never downloads or installs anything itself;
+  you install the new version over the old one, as the first time
+- **Clean upgrades**: install a new version over the old one with no uninstall; favorites, saved
+  firmware, and settings are kept
+
+## Control it with your real FM-1
+
+Plug your FM-1 into the computer over USB and pick it under **MIDI in** (the desktop app selects
+a connected FM-1, M-VAVE or SMK-37 input by itself the first time). Everything the hardware sends
+then goes into the emulated FM-1's MIDI IN, the same as a cable into a real one:
+
+- **Notes** from the keys play the emulated firmware.
+- **Controllers, pitch bend and MIDI clock / start / stop** are passed through unchanged; what they
+  do is up to the firmware running in the emulator (see each firmware's *Plays MIDI* and
+  *Clock-sync* tags).
+- **Channel** next to MIDI in moves every note and controller to one channel, for firmwares that
+  listen on a fixed one (M-VAVE's own firmware: channel 2).
+
+What reaches the emulator is whatever the firmware on your physical FM-1 sends over USB: knob moves
+arrive only if that firmware sends them as MIDI controllers, and they are not mirrored onto the
+emulated knobs. SysEx is not passed through. Safari has no Web MIDI; the desktop app and Chrome,
+Edge and Firefox do.
 
 ## Download
 
@@ -102,7 +148,7 @@ here's how to get past it:
 - **Linux** — the `.deb` is easiest. For the AppImage, if it won't start: `sudo apt install libfuse2`
   (Ubuntu 24.04: `libfuse2t64`), and on Ubuntu 24.04 run with `--no-sandbox` if you hit a sandbox error.
 
-Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
+Full per-platform detail, including upgrading: **[Installation & first run](docs/Installation.md)**.
 
 ## Help
 

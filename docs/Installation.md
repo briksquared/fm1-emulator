@@ -3,6 +3,10 @@
 Download the build for your system from the
 [Releases](https://github.com/briksquared/fm1-emulator/releases/latest) page.
 
+**Flash any firmware to your FM-1 in a few clicks, and recover if anything goes wrong.** Once the app is
+installed, the **Firmware uplink** panel sends any firmware to a connected FM-1, and
+[Hardware flashing & recovery](Recovery.md) covers getting back from a failed install.
+
 The builds are **not code-signed**, so each OS shows a one-time warning the first time you open
 the app. This is normal for independent software — nothing is wrong with the download.
 
@@ -30,6 +34,8 @@ the app. This is normal for independent software — nothing is wrong with the d
   ```bash
   codesign --force --deep --sign - "/Applications/FM-1 Emulator.app"
   ```
+
+## Linux
 
 The Linux builds are unsigned (normal for Linux — there's no Gatekeeper), so they just run. If one
 **won't launch**, it's almost always one of the two system issues below, not the app.
@@ -64,3 +70,41 @@ The Linux builds are unsigned (normal for Linux — there's no Gatekeeper), so t
   ```
 
   (`--no-sandbox` disables one Chromium security layer — fine for a local, offline tool.)
+
+## Control it with your real FM-1
+
+Plug your FM-1 into the computer over USB and pick it under **MIDI in** (the desktop app selects
+a connected FM-1, M-VAVE or SMK-37 input by itself the first time). Everything the hardware sends
+then goes into the emulated FM-1's MIDI IN, the same as a cable into a real one:
+
+- **Notes** from the keys play the emulated firmware.
+- **Controllers, pitch bend and MIDI clock / start / stop** are passed through unchanged; what they
+  do is up to the firmware running in the emulator (see each firmware's *Plays MIDI* and
+  *Clock-sync* tags).
+- **Channel** next to MIDI in moves every note and controller to one channel, for firmwares that
+  listen on a fixed one (M-VAVE's own firmware: channel 2).
+
+What reaches the emulator is whatever the firmware on your physical FM-1 sends over USB: knob moves
+arrive only if that firmware sends them as MIDI controllers, and they are not mirrored onto the
+emulated knobs. SysEx is not passed through. Safari has no Web MIDI; the desktop app and Chrome,
+Edge and Firefox do.
+
+## Upgrading
+
+The app checks GitHub Releases for a newer version shortly after it starts, and **Help → Check
+for App Updates…** (on macOS, in the **FM-1 Emulator** menu) checks on demand. This is the app
+itself, separate from the firmware update radar. When there's a newer release it says so and
+offers **Open release page**; nothing opens unless you choose it, and the app never downloads or
+installs an update itself. Download the new version from that page and install it over the old
+one as below. The check at startup stays quiet when you're up to date or offline.
+
+To update by hand, install the new version over the old one; there's no need to uninstall first. Favorites, saved
+firmware, settings and logs live in the app's own profile folder, which upgrades never touch.
+
+- **Windows installer:** the new setup removes the previous version and puts its shortcuts back.
+  If you change the install folder, the old folder is still cleaned up. Keep the same install mode
+  (just me / all users) as before; the setup preselects it. The portable `.exe` never installs
+  anything, so delete old copies yourself.
+- **macOS:** drag the new app to Applications and choose **Replace**.
+- **Debian / Ubuntu:** `sudo apt install ./FM-1-Emulator-*.deb` upgrades the installed package.
+- **AppImage:** delete the old `.AppImage` file and use the new one.

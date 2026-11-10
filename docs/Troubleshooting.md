@@ -29,6 +29,15 @@ stale, quit fully and reopen.
 Settings are stored locally by the app. They won't persist if it's run from a read-only or
 sandboxed location.
 
+## "Couldn't check for updates"
+**Check for App Updates…** asks GitHub for the latest release. It needs a connection, and GitHub
+limits how often one network can ask; if it says so, try again later or open the
+[releases page](https://github.com/briksquared/fm1-emulator/releases) directly. The app never
+downloads or installs updates itself: install a new version over the old one.
+
 ## Something else
 Open an [issue](https://github.com/briksquared/fm1-emulator/issues) with your OS and a short
-description of what you saw.
+description of what you saw. If a notice is showing, its **Copy diagnostics** button copies a
+short report you can paste in: app or browser, the browser's user-agent string (OS and version),
+CPU core count, the running firmware, its notices and recent audio stats. It leaves out your
+names, file paths and firmware files; read it before you post.

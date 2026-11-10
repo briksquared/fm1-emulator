@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 — 2026-11-09
+
+- Finalized the local public update prep for FM-1 Emulator without pushing to the remote.
+- Polished the release branch with a clean version bump and release notes entry for the next public rollout.
+- Verified the bundled firmware catalog, manifest checks, and resource-loader validation still pass before release.
+
 ## 1.1.0 — 2026-11-09
 
 - Expanded the public offline library from 115 to 259 unique, explicitly open-licensed FM-1 firmware packages.

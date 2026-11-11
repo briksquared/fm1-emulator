@@ -7,6 +7,10 @@ npm-debug.log*
 Thumbs.db
 *.tmp
 tools/_geom/
+tools/_measure*.py
+tools/_remeasure*.py
+tools/_ui_*.py
+tools/_verify_*.py
 .worker/
 logs/
 memory/

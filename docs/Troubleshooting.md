@@ -25,6 +25,12 @@ The app is offline-first and loads its firmware list on launch; give it a few se
 the icon again focuses the existing window instead of opening a second one. If it ever looks
 stale, quit fully and reopen.
 
+## The panel goes black after Start (desktop)
+The desktop app uses your GPU for the LCD repaint by default. On a few Windows setups the whole
+window can stay black after **Start**. Quit the app, set the environment variable
+`FM1_SOFTWARE_RENDERING=1` for **FM-1 Emulator** (shortcut → Properties → Target, or System
+environment variables), then launch again. That trades some CPU headroom for a software renderer.
+
 ## Colors, stickers, or favorites didn't save
 Settings are stored locally by the app. They won't persist if it's run from a read-only or
 sandboxed location.

@@ -117,7 +117,7 @@ class Fm1 extends AudioWorkletProcessor {
     // The interpreter is the default and the JIT is opt-in (?jit=1): it can
     // stall the audio thread on newer firmware. Default to the interpreter when
     // the flag is missing too, so a dropped field cannot silently turn it on.
-    x.fm1_jit(m.jit === true ? 1 : 0, 16);
+    x.fm1_jit(m.jit === true ? 1 : 0, m.jitMax ?? 16);
     const ahead = x.fm1_ahead ? m.ahead ?? AHEAD_FRAMES : 0;
     x.fm1_ahead?.(ahead);               // (?ahead=0: each quantum runs for its own frames only)
     // the whole update package (.fwsc): the machine unpacks it, gets the flash chip and the

@@ -79,14 +79,24 @@ for (const excluded of ["modfm1", "fm1-operator", "fm1-doom", "core-fm1", "fm1-n
 const host = text("main.js");
 const page = text("site/emulator/main.js");
 const worklet = text("site/emulator/worklet.js");
-assert.match(host, /app\.disableHardwareAcceleration\(\)/, "software-rendering default");
+assert.match(host, /FM1_SOFTWARE_RENDERING === "1"/, "software rendering is opt-in");
+assert.match(host, /app\.disableHardwareAcceleration\(\)/, "software-rendering switch");
+assert.match(page, /defaultMhz.*FM1Desktop.*240/, "desktop defaults to hardware FM-1 clock");
+assert.match(page, /STREAM_PREFILL_DESKTOP/, "desktop uses a deeper audio queue");
 assert.match(host, /render-process-gone/, "renderer recovery hook");
 assert.match(host, /showRecovery/, "visible renderer recovery page");
 // Worker engine (default): JIT on, queue absorbs compiles. Audio-thread fallback
 // (?engine=worklet): interpreter default, ?jit=1 opts in. Fixes Mac Apple Silicon
 // "noise instead of sound" underruns (issue #1).
-assert.match(page, /return worker \? params\.get\("jit"\) !== "0" : params\.get\("jit"\) === "1"/,
-  "JIT on with worker engine; interpreter default in audio-thread fallback");
+assert.match(page, /async function ensurePlaying/, "firmware picks start audio and boot");
+assert.match(page, /sessionLive\(\).*ensurePlaying/, "firmware change auto-plays only after Start");
+assert.match(page, /from "\.\/session-play\.js/, "session-play module wires Start-once flow");
+assert.match(text("site/emulator/index.html"), /fm1-session/, "session hides Start before JS loads");
+assert.match(page, /jitEnabled/, "JIT policy module wires worker defaults");
+assert.ok(existsSync(resolve(emulator, "jit-policy.js")), "jit policy module is shipped");
+assert.match(text("site/emulator/worklet.js"), /m\.jitMax/, "desktop can raise JIT compile budget");
+assert.match(host, /powerSaveBlocker/, "desktop blocks OS sleep while audio runs");
+assert.match(text("preload.js"), /setPowerActive/, "renderer can hold power save off");
 assert.match(page, /stream-worklet\.js/, "threaded audio reader is wired");
 assert.match(page, /new Worker\("engine\.js/, "emulator runs off the audio thread by default");
 assert.ok(existsSync(resolve(emulator, "engine.js")), "engine.js is shipped");
@@ -186,6 +196,13 @@ assert.match(flashTests.stdout, /PASS: \d+ flash tests/, "flash unit tests repor
 const perfTests = spawnSync(process.execPath, [resolve(root, "ci/perf-tests.mjs")], { encoding: "utf8" });
 assert.equal(perfTests.status, 0, `perf judge unit tests failed:\n${perfTests.stdout}\n${perfTests.stderr}`);
 assert.match(perfTests.stdout, /perf tests: \d+ passed/, "perf judge unit tests report a pass count");
+const jitTests = spawnSync(process.execPath, [resolve(root, "ci/jit-policy-tests.mjs")], { encoding: "utf8" });
+assert.equal(jitTests.status, 0, `jit policy unit tests failed:\n${jitTests.stdout}\n${jitTests.stderr}`);
+assert.match(jitTests.stdout, /jit-policy tests: \d+ passed/, "jit policy unit tests report a pass count");
+const sessionTests = spawnSync(process.execPath, [resolve(root, "ci/session-play-tests.mjs")], { encoding: "utf8" });
+assert.equal(sessionTests.status, 0, `session-play unit tests failed:\n${sessionTests.stdout}\n${sessionTests.stderr}`);
+assert.match(sessionTests.stdout, /session-play tests: \d+ passed/, "session-play unit tests report a pass count");
+assert.ok(existsSync(resolve(emulator, "session-play.js")), "session-play module is shipped");
 
 const readme = text("README.md");
 assert.match(readme, new RegExp(`\\b${entries.length}\\b`), "README firmware count");

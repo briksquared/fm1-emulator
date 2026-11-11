@@ -2,16 +2,16 @@
 // Serves the static emulator over a FIXED custom origin (fm1://app) so localStorage — favorites,
 // customize, stickers, the last firmware — lives in the app's own profile and persists every launch,
 // regardless of any dev-server port. Fully offline: the emulator, firmware archive and fw/ are bundled.
-const { app, BrowserWindow, Menu, protocol, screen, shell, ipcMain, session } = require("electron");
+const { app, BrowserWindow, Menu, protocol, screen, shell, ipcMain, session, powerSaveBlocker } = require("electron");
 const updates = require("./updater");
 const path = require("path");
 const fs = require("fs");
 const { spawn, execFile } = require("child_process");
 
-// Hardware acceleration made the full window turn black after Start on a real
-// Windows installation. Keep the reliable renderer by default; the override
-// remains available for graphics diagnostics.
-const softwareRendering = process.env.FM1_SOFTWARE_RENDERING !== "0";
+// GPU rendering is the default on a desktop PC: it keeps the panel repaint cheap while
+// the worker chews through heavy firmware. Set FM1_SOFTWARE_RENDERING=1 if the window
+// goes blank after Start (a rare GPU/driver path); CI keeps software rendering on.
+const softwareRendering = process.env.FM1_SOFTWARE_RENDERING === "1";
 if (softwareRendering) app.disableHardwareAcceleration();
 // Windows: WinRT MIDI is opt-in (FM1_WINRT_MIDI=1). Default Chromium MIDI keeps USB
 // SysEx handshakes reliable; WinRT sometimes exposes a mute "FM-1" SoftwareDevice.
@@ -141,6 +141,7 @@ function createWindow() {
   }
   win.webContents.on("render-process-gone", (_event, details) => {
     desktopLog("renderer-gone", details);
+    stopPowerBlock();
     if (details.reason !== "clean-exit") showRecovery("The desktop renderer closed unexpectedly. Reload the emulator to continue.");
   });
   win.webContents.on("did-fail-load", (_event, code, description, url, mainFrame) => {
@@ -325,6 +326,14 @@ function runSelfTest(win, mode) {
 
 // Single-instance: clicking the icon again focuses the existing window instead of
 // spawning a second one (second windows never pick up new files and look "stuck").
+let powerBlock = null;
+function stopPowerBlock() {
+  if (powerBlock?.isStarted?.()) {
+    powerBlock.stop();
+    powerBlock = null;
+  }
+}
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
@@ -394,6 +403,12 @@ if (!app.requestSingleInstanceLock()) {
   ipcMain.handle("fm1:check-updates", async () => {
     await updates.checkForUpdates({ interactive: true, log: desktopLog });
     return { ok: true };
+  });
+  ipcMain.handle("fm1:power-active", (_event, on) => {
+    if (on) {
+      if (!powerBlock?.isStarted?.()) powerBlock = powerSaveBlocker.start("prevent-app-suspension");
+    } else stopPowerBlock();
+    return { ok: true, active: !!powerBlock?.isStarted?.() };
   });
   // The standard menus plus "Check for App Updates…" (this desktop app itself, from GitHub Releases).
   const check = { label: "Check for App Updates…", click: () => updates.checkForUpdates({ interactive: true, log: desktopLog }) };

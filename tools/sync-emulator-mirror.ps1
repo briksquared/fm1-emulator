@@ -22,7 +22,7 @@ $emuFiles = @(
   "chords.js", "customize.js", "deck.js", "engine.js", "extras.js", "favorites.js",
   "flash-core.js", "flash-vault.js", "fm1ota.js", "fm1pkg.js", "focus-lcd.js", "play-bar.js", "fxcc.js", "fwinfo.js", "fwsc.js",
   "gallery.js", "help.js", "howto.js", "host-panel.js", "index.html", "install.js", "issues.js", "jit.js", "keys.js",
-  "layout.js", "loader.js", "main.js", "middrop.js", "midi-bridge.js", "midimon.js", "midiplayer.js",
+  "jit-policy.js", "session-play.js", "layout.js", "loader.js", "main.js", "middrop.js", "midi-bridge.js", "midimon.js", "midiplayer.js",
   "notes.js", "og.png", "overlay.js", "package-resources.js", "palette.js", "panic.js", "perf-judge.js",
   "persistence.js", "radar.js", "rack-gens.js", "recorder.js", "samples.json", "scale.js", "scope.js", "session-io.js", "shortcuts.js",
   "snapshot.js", "stickers.js", "stream-worklet.js", "style.css", "tape.js", "toolgroup.js",

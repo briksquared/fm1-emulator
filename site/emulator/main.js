@@ -7,6 +7,11 @@ import { fetchPackage } from "./fwsc.js";
 import { SaveStore, packageHash, changedSectors, packSectors, exportSave, importSave } from "./persistence.js";
 import "./catalog-source.js";
 import { judgeSecond, recovered } from "./perf-judge.js?v=3";
+import { jitEnabled } from "./jit-policy.js?v=2";
+import {
+  sessionLive, markSessionLive, clearSession, hideStartForSession,
+  mayEnsurePlaying, autostartFromParams,
+} from "./session-play.js?v=1";
 import { mergeCatalog, isSafeRemembered } from "./catalog-updates.js?v=5";
 import { wireRadar } from "./radar.js?v=2";
 import {
@@ -61,10 +66,11 @@ for (const f of catalog.firmwares) { const id = source.idOf(f); if (id && !byId.
 // firmware this browser starts with on the full page.
 const EMBED = document.documentElement.hasAttribute("data-embed");
 let fw = byId.get(params.get("fw")) || byId.get(stored(DEV.key + "fw")) || byId.get(catalog.default) || catalog.firmwares[0];
-let mhz = Number(params.get("mhz") || stored("fm1.mhz") || 100);
+const defaultMhz = () => (window.FM1Desktop ? 240 : 100);
+let mhz = Number(params.get("mhz") || stored("fm1.mhz") || defaultMhz());
 // the audio buffer: "interactive" (small: keys answer quickly) unless this device needed a larger
 // one ("playback", offered when the sound drops out with time to spare; ?latency= overrides)
-const defaultLatency = () => (window.FM1Desktop ? "balanced" : "interactive");
+const defaultLatency = () => (window.FM1Desktop ? "playback" : "interactive");
 let latency = params.get("latency") || stored("fm1.latency") || defaultLatency();
 
 const canvas = document.getElementById("panel");
@@ -347,24 +353,25 @@ function showFirmware() {
 }
 showFirmware();
 
-fwSel.addEventListener("change", () => {
+function onFirmwareChanged() {
   fw = byId.get(fwSel.value) || localFw;
   loadedUrl = null;
   if (!EMBED) store(DEV.key + "fw", fw.id);
   showFirmware();
   fwSel.blur();                 // back to playing from the keyboard
   // Tell the Install panel (right bar) to mirror this pick — Random / Browse / #fw all land here.
-  // Install never writes back into #fw, so browsing firmwares only on the right stays independent.
   try { document.dispatchEvent(new CustomEvent("fm1-fw-selected", { detail: { id: fw.id } })); } catch {}
   try { window.FM1Install?.followEmulator?.(fw.id); } catch {}
-  if (node) boot();
-});
+  hideStartForSession(startBtn);
+  if (sessionLive()) void ensurePlaying();
+}
+fwSel.addEventListener("change", onFirmwareChanged);
 mhzSel.addEventListener("change", () => {
   mhz = Number(mhzSel.value);
   store("fm1.mhz", mhz);
   showFirmware();
   mhzSel.blur();
-  if (node) boot();
+  if (sessionLive()) void ensurePlaying();
 });
 if (bufSel) {
   bufSel.value = latency;                         // reflect the stored buffer size
@@ -389,8 +396,7 @@ async function openLocal(file) {
     if (!EMBED) store(DEV.key + "fw", mv.id);
     loadedUrl = null;
     showFirmware();
-    if (node) boot();
-    else status.textContent = `${file.name} ready: click Start`;
+    if (sessionLive()) void ensurePlaying();
     return;
   }
   localFw = { id: "local", name: file.name.replace(/\.fwsc$/i, ""), version: "", bytes: new Uint8Array(await file.arrayBuffer()) };
@@ -402,8 +408,7 @@ async function openLocal(file) {
   if (!EMBED) store(DEV.key + "fw", "local");
   loadedUrl = null;
   showFirmware();
-  if (node) boot();
-  else status.textContent = `${file.name} ready: click Start`;
+  if (sessionLive()) void ensurePlaying();
 }
 const fileFailure = error => {
   status.textContent = `Could not open file: ${error.message || error}`;
@@ -418,7 +423,7 @@ bankInput.addEventListener("change", async () => {
     if (file.size > (8 << 20)) throw new Error("DX7 bank is larger than 8 MB");
     bank = new Uint8Array(await file.arrayBuffer());
     bankName.textContent = file.name;
-    if (node) await boot();
+    if (sessionLive()) await ensurePlaying();
   } catch (error) { fileFailure(error); }
 });
 const stage = document.querySelector(".stage");
@@ -1127,7 +1132,7 @@ const perf = {
     if (Array.isArray(window.FM1PerfTrace)) window.FM1PerfTrace.push({ secs: this.secs, dry: worker && stream ? stream.underruns : null, drift, gap: Math.round(gap), state: ac?.state, load: this.load(), ...j });   // (opt-in, for tests)
     if (j.late) this.drops++;
     if (j.warn && !this.shown && !this.dismissed) {
-      if (j.over && !this.autoClockTried) {
+      if (j.over && !this.autoClockTried && !window.FM1Desktop) {
         const pick = this.lowerClock(this.load());
         if (pick) {
           this.autoClockTried = true;
@@ -1255,7 +1260,7 @@ function setClock(c) {
   mhzSel.value = c;
   store("fm1.mhz", c);
   showFirmware();
-  boot();
+  if (sessionLive()) void ensurePlaying();
 }
 // A change asked for while one is under way waits and runs next (the newest one wins); it used to
 // be dropped, leaving the list, the stored setting and the running buffer disagreeing.
@@ -1277,6 +1282,7 @@ async function setLatency(l) {
     await startAudio();
     if (!(await boot())) throw new Error(status.textContent);
     await ac.resume();
+    window.FM1Desktop?.setPowerActive?.(true);
     store("fm1.latency", l);
     return true;
   } catch (error) {
@@ -1290,15 +1296,16 @@ async function setLatency(l) {
       if (ac) { await ac.close().catch(() => {}); ac = null; }
       await startAudio();
       restored = await boot();
-      if (restored) await ac.resume();
+      if (restored) {
+        await ac.resume();
+        window.FM1Desktop?.setPowerActive?.(true);
+      }
     } catch { restored = false; }
-    if (!running) {
-      startBtn.hidden = false;
-      startBtn.disabled = false;
-    }
+    if (!running && !restored) clearSession(startBtn);
+    else hideStartForSession(startBtn);
     const why = error.message || String(error);
     status.textContent = restored ? `Audio buffer change failed: ${why}. Kept the previous buffer.`
-      : `Audio buffer change failed: ${why}. Click Start to retry.`;
+      : `Audio buffer change failed: ${why}. Press Start to retry.`;
     issue.show("audio", { title: "Buffer change failed", text: status.textContent, level: "error" });
     return false;
   } finally {
@@ -1427,6 +1434,7 @@ function boot(options = {}) {
       engine.postMessage({ type: "boot", seq, wasm: wasm.slice(0), package: got.bytes.slice().buffer,
         sectors: packSectors(sectors).buffer, syx: importedBank ? importedBank.slice().buffer : null,
         mhz: clock, jit: jitOn(),
+        jitMax: window.FM1Desktop ? 32 : 16,
         // (?ahead=0: each quantum emulates only for its own frames, as before the even pace)
         ahead: params.has("ahead") ? Number(params.get("ahead")) : undefined });
       status.textContent = `booting ${f.name}…`;
@@ -1441,7 +1449,8 @@ function boot(options = {}) {
       if (seq === bootSeq) {
         window.FM1Loader?.fail(error instanceof NeedFile ? "package required" : "boot error");
         showFirmware();
-        if (!running) { startBtn.hidden = false; startBtn.disabled = false; }
+        if (!running) clearSession(startBtn);
+        else hideStartForSession(startBtn);
         const why = String(error?.message || error).replace(new RegExp(`^${f.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}: `), "")
           .replace(/^boot: /, "").replace(/^Error: /, ""); // the engine's own prefixes say nothing to a player
         status.textContent = error instanceof NeedFile
@@ -1470,14 +1479,20 @@ function boot(options = {}) {
 // (stream-worklet.js), so a slow stretch of emulation is absorbed by a short queue instead of
 // being a gap in the sound. ?engine=worklet runs it in the audio thread itself, as before.
 const STREAM_PREFILL = { interactive: 2048, balanced: 3072, playback: 4096 };
+const STREAM_PREFILL_DESKTOP = { interactive: 4096, balanced: 6144, playback: 8192 };
+function streamPrefillFrames() {
+  const map = window.FM1Desktop ? STREAM_PREFILL_DESKTOP : STREAM_PREFILL;
+  return map[latency] || (Number(latency) >= 0.25 ? 12288 : 8192);
+}
 // The JIT compiles hot code while it runs, which can take longer than one audio quantum: in the
 // audio thread that is a gap, so there the interpreter stays the default (?jit=1 opts in). The
 // worker's queue absorbs the compiles, and the interpreter alone cannot keep up with busier
 // firmware at the default clock, so with the worker the JIT is on (?jit=0 turns it off).
 function jitOn() {
-  return worker ? params.get("jit") !== "0" : params.get("jit") === "1";
+  return jitEnabled({ worker: !!worker, fwId: fw?.id, params });
 }
 function stopAudioGraph() {
+  window.FM1Desktop?.setPowerActive?.(false);
   if (engine) engine.onmessage = null;
   worker?.terminate();
   worker = null;
@@ -1494,9 +1509,9 @@ async function startAudio() {
   try {
     if (params.get("engine") !== "worklet" && typeof Worker === "function") {
       await ac.audioWorklet.addModule("stream-worklet.js?v=1");
-      const prefill = STREAM_PREFILL[latency] || 8192;
+      const prefill = streamPrefillFrames();
       node = new AudioWorkletNode(ac, "fm1-stream", { numberOfInputs: 0, outputChannelCount: [2], processorOptions: { prefill } });
-      worker = new Worker("engine.js?v=1", { type: "module" });
+      worker = new Worker("engine.js?v=2", { type: "module" });
       worker.onerror = (e) => {
         status.textContent = `the emulator worker failed: ${e.message || "unknown error"}`;
         issue.show("boot", { title: "Emulator stopped", text: status.textContent + ". Press Start to run it again.", level: "error", persist: true });
@@ -1507,7 +1522,7 @@ async function startAudio() {
       node.port.onmessage = (e) => { if (e.data?.type === "stream") stream = e.data; };
       engine = worker;
     } else {
-      await ac.audioWorklet.addModule("worklet.js?v=29");
+      await ac.audioWorklet.addModule("worklet.js?v=30");
       node = new AudioWorkletNode(ac, "fm1", { numberOfInputs: 0, outputChannelCount: [2] });
       engine = node.port;
     }
@@ -1609,28 +1624,60 @@ function onWorklet(e) {
   }
 }
 
-startBtn.addEventListener("click", async () => {
-  startBtn.disabled = true;
-  status.textContent = "starting audio…";
+let starting = false;
+let pendingPlay = null;
+function autostartWanted() { return autostartFromParams(params, EMBED); }
+// Start audio if needed, then boot the selected firmware. Start (fromUser) opens a session;
+// later firmware picks reuse it without showing Start again (including after a Turbo reload).
+async function ensurePlaying(bootOpts, fromUser = false) {
+  if (starting) {
+    pendingPlay = { bootOpts, fromUser };
+    return false;
+  }
+  const cold = !node;
+  if (!mayEnsurePlaying({ cold, fromUser, live: sessionLive() })) return false;
+  starting = true;
+  hideStartForSession(startBtn);
+  if (cold) startBtn.disabled = true;
   try {
+    if (cold) status.textContent = "starting audio…";
     if (!node) await startAudio();
-    const started = await boot();
-    if (!started) return;
-    if (midiSel.value) midiOpen();                  // (an input picked on an earlier visit)
+    const started = await boot(bootOpts);
+    if (!started) {
+      if (!running) clearSession(startBtn);
+      return false;
+    }
+    if (midiSel.value) midiOpen();
     await ac.resume();
-    startBtn.hidden = true;
-    // a phone on its side: the synth fills the screen, so bring all of it into view
-    if (matchMedia("(orientation: landscape) and (max-height: 560px) and (pointer: coarse)").matches) canvas.scrollIntoView({ block: "center" });
+    window.FM1Desktop?.setPowerActive?.(true);
+    markSessionLive(startBtn);
+    const saveStatus = document.getElementById("save-status");
+    if (saveStatus && saveStatus.textContent.startsWith("Start to")) saveStatus.textContent = "Saved settings restore while the firmware runs";
+    if (cold && matchMedia("(orientation: landscape) and (max-height: 560px) and (pointer: coarse)").matches) canvas.scrollIntoView({ block: "center" });
+    return true;
   } catch (error) {
+    if (!running) clearSession(startBtn);
     status.textContent = `Could not start audio: ${error.message || error}`;
     issue.show("audio", { title: "No audio", text: `${status.textContent}. Check that an output device is connected, then press Start again.`, level: "error" });
+    return false;
   } finally {
+    starting = false;
     if (!startBtn.hidden) startBtn.disabled = false;
+    const next = pendingPlay;
+    pendingPlay = null;
+    if (next) queueMicrotask(() => ensurePlaying(next.bootOpts, next.fromUser));
   }
-});
+}
+startBtn.addEventListener("click", () => ensurePlaying(undefined, true));
 startBtn.dataset.ready = "true";
 startBtn.disabled = false;
-if (status.textContent === "Preparing emulator…") status.textContent = "click Start to boot";
+if (autostartWanted()) queueMicrotask(() => ensurePlaying(undefined, true));
+else if (sessionLive() && !node) {
+  hideStartForSession(startBtn);
+  queueMicrotask(() => ensurePlaying());
+} else if (status.textContent === "Preparing emulator…") status.textContent = "pick a firmware, then press Start once";
+hideStartForSession(startBtn);
+window.FM1Start = { go: (opts) => ensurePlaying(opts, true), autostartWanted, sessionLive };
 
 // Persistence controls use the running machine's identity, even while another firmware is selected.
 const action = fn => async () => { try { await fn(); } catch (error) { saveFailure(error); } };
@@ -1679,8 +1726,7 @@ document.getElementById("import-save").addEventListener("change", action(async (
   bank = null;
   loadedUrl = null;
   showFirmware();
-  if (node) await boot({ imported: record });
-  else status.textContent = `${record.name} backup ready: click Start`;
+  if (sessionLive()) await ensurePlaying({ imported: record });
 }));
 document.getElementById("reset-save").addEventListener("click", action(async () => {
   if (!running || running.entry !== DEV.key + fw.id) throw new Error("start the selected firmware first");
@@ -1698,8 +1744,7 @@ document.getElementById("update-firmware").addEventListener("click", action(asyn
   noteVersion(selected, got.version);
   if (fw !== selected) return;
   if (running?.record.hash === hash) { saveMessage("Firmware is up to date"); return; }
-  if (node) await boot();
-  else saveMessage("Firmware ready: click Start");
+  if (sessionLive()) await ensurePlaying();
 }));
 wireRadar({ bundledCatalog, radarRemembered, radarKey, legacyRadarKey, store });
 document.addEventListener("visibilitychange", () => {
@@ -1737,8 +1782,7 @@ document.getElementById("open-saved-version").addEventListener("click", action(a
   fw = localFw; fwSel.value = "local";
   if (!EMBED) store(DEV.key + "fw", "local");
   bank = null; loadedUrl = null; showFirmware();
-  if (node) await boot();
-  else status.textContent = `${record.name} saved version ready: click Start`;
+  if (sessionLive()) await ensurePlaying();
 }));
 
 // First-launch flash risk notice (once). Install still asks Yes/Cancel; journal/vault fail-safes stay.

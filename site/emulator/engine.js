@@ -9,7 +9,7 @@
 // frame it plays, so exactly that much audio is in flight and the emulation stays paced by the
 // audio device, as before, just `prefill` frames ahead of it.
 const QUANTUM = 128;
-const CHUNK = 512;                       // frames per message to the reader
+const CHUNK = 1024;                      // frames per message to the reader (more = less thread overhead)
 
 let proc = null, audio = null, credit = 0;
 const pending = [];                      // page messages that arrive before the machine is loaded
@@ -23,7 +23,7 @@ self.onmessage = async (e) => {
     globalThis.AudioWorkletProcessor = class {
       constructor() { this.port = { postMessage: (msg, transfer) => self.postMessage(msg, transfer || []), onmessage: null, onmessageerror: null }; }
     };
-    await import("./worklet.js?v=29");
+    await import("./worklet.js?v=30");
     proc = new Processor();
     audio = m.audio;
     audio.onmessage = (a) => { if (a.data?.type === "need") { credit += a.data.frames; render(); } };

@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("FM1Desktop", {
   openFlasher: () => ipcRenderer.invoke("fm1:open-flasher"),
   usbCheck: () => ipcRenderer.invoke("fm1:usb-check"),
   checkUpdates: () => ipcRenderer.invoke("fm1:check-updates"),
+  setPowerActive: (on) => ipcRenderer.invoke("fm1:power-active", !!on),
   // One-shot: Tape → Mic → Feed confirm arms mic permission for the next prompt only.
   allowMicOnce: () => ipcRenderer.invoke("fm1:allow-mic-once"),
 });

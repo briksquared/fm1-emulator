@@ -21,6 +21,8 @@
 <link rel="stylesheet" href="style.css?v=105">
 <script src="ui-theme.js?v=4"></script>
 <script>if (new URLSearchParams(location.search).get("embed") === "1") document.documentElement.setAttribute("data-embed", "");</script>
+<script>try { if (sessionStorage.getItem("fm1.audio") === "1") document.documentElement.classList.add("fm1-session"); } catch {}</script>
+<style>html.fm1-session #start{display:none!important;pointer-events:none}</style>
 </head>
 <body>
 <header class="site">
@@ -319,7 +321,8 @@
       <section id="limits" aria-labelledby="h-limits">
         <h2 id="h-limits">Known limits</h2>
         <ul>
-          <li><b>Speed.</b> The real FM-1 runs at 240 MHz. The page starts at 100 MHz, which keeps slower machines in
+          <li><b>Speed.</b> The real FM-1 runs at 240 MHz. The web page starts at 100 MHz; the desktop app starts at
+            240 MHz. That keeps slower machines in
             real time. The status line shows the speed (emulated time per time spent emulating: below 1× the sound
             breaks up) and the load: the share of the audio thread's time the emulator takes. When a device can't keep
             up and the sound breaks up, the page says so and offers a lower clock where one helps, or a larger audio
@@ -413,7 +416,7 @@
 <script src="shortcuts.js?v=5"></script>
 <script src="extras.js?v=73"></script>
 <script src="transport.js?v=5"></script>
-<script src="turbo.js?v=2"></script>
+<script type="module" src="turbo.js?v=4"></script>
 <script src="wavrec.js?v=4"></script>
 <script src="snapshot.js?v=1"></script>
 <script src="scope.js?v=6"></script>
@@ -447,7 +450,7 @@
 <script src="rack-gens.js?v=4"></script>
 <script src="deck.js?v=110"></script>
 <script src="loader.js?v=2"></script>
-<script type="module" src="main.js?v=111"></script>
+<script type="module" src="main.js?v=113"></script>
 <script type="module" src="install.js?v=95"></script>
 <script type="module" src="layout.js?v=3"></script>
 </body>

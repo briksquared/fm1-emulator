@@ -4,6 +4,7 @@
 
 - Focus and fullscreen buttons on the header next to Flash.
 - Focus scale fits the viewport instead of a fixed zoom.
+- Release CI uploads all platform builds in one step; MIDI bridge tests run in verify.
 
 ## 1.1.2 — 2026-11-10
 

@@ -68,6 +68,7 @@
         ${row(["?"], "This list")}${row(["Esc"], "Close a dialog or a tool panel")}
         ${row(["Ctrl", "Shift", "H"], "Show every hidden bar and panel")}
         ${row(["Ctrl", "K"], "Command palette (also hides or shows bars)")}
+        ${row(["Ctrl", "K", "focus"], "Focus — enlarged panel (header ✕ or Esc to close)")}
       </table>
       <h3>Play assists</h3><table>
         ${row(["Studio", "Play"], "Transpose / chord / scale lock / arp panel (saved on this device)")}

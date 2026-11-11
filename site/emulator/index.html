@@ -328,7 +328,7 @@
             developer tools, when open, slow the emulator down 3–4×. "Copy a report" gives a short text about the
             device to paste into a bug report.</li>
           <li><b>Safari</b> has no Web MIDI, so no MIDI in or out there.</li>
-          <li><b>Bluetooth MIDI</b> needs a paired FM-1 in the OS (Windows Bluetooth settings). The desktop app enables WinRT MIDI so BLE ports show up; flashing still requires USB.</li>
+          <li><b>Bluetooth MIDI</b> needs a paired FM-1 in the OS (Windows Bluetooth settings). On Windows, set <code>FM1_WINRT_MIDI=1</code> before launch if BLE ports do not appear; flashing still requires USB.</li>
           <li><b>MIDI out / host</b> tees Keys, player, assist, panic and clock to the chosen port (A/B can mute out or emu audio). Banks can send bank or voice SysEx. <b>Panel host</b> maps hardware panel MIDI into the emulated panel (screen draw-back onto the unit is not implemented). <b>FX CC</b> drives stock Effect Chn maps (V15/V16). Use <b>Focus</b> in the header for enlarged play; Session exports UI prefs.</li>
           <li><b>M-VAVE's MIDI channel 2</b> is what the emulator shows; it has not been checked on a real FM-1.</li>
           <li><b>ChoralRoot, Hortator, SLOOP ALG and X0X</b> give no note from a plain MIDI note-on.</li>
@@ -410,7 +410,7 @@
 <script src="customize.js?v=66"></script>
 <script src="favorites.js?v=42"></script>
 <script src="gallery.js?v=73"></script>
-<script src="shortcuts.js?v=4"></script>
+<script src="shortcuts.js?v=5"></script>
 <script src="extras.js?v=73"></script>
 <script src="transport.js?v=5"></script>
 <script src="turbo.js?v=2"></script>
@@ -427,10 +427,10 @@
 <script src="notes.js?v=1"></script>
 <script src="fwinfo.js?v=5"></script>
 <script src="audition.js?v=2"></script>
-<script src="palette.js?v=14"></script>
+<script src="palette.js?v=15"></script>
 <script src="panic.js?v=2"></script>
 <script src="focus-lcd.js?v=4"></script>
-<script src="play-bar.js?v=3"></script>
+<script src="play-bar.js?v=4"></script>
 <script src="host-panel.js?v=1"></script>
 <script src="fxcc.js?v=1"></script>
 <script src="session-io.js?v=1"></script>

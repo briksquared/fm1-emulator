@@ -172,6 +172,11 @@ const playBarTests = spawnSync(process.execPath, [resolve(root, "ci/play-bar-tes
 assert.equal(playBarTests.status, 0, `play-bar unit tests failed:\n${playBarTests.stdout}\n${playBarTests.stderr}`);
 assert.match(playBarTests.stdout, /PASS: \d+ play-bar tests/, "play-bar unit tests report a pass count");
 
+const midiTests = spawnSync(process.execPath, [resolve(root, "ci/test-midi-bridge.mjs")], { encoding: "utf8" });
+assert.equal(midiTests.status, 0, `midi bridge unit tests failed:\n${midiTests.stdout}\n${midiTests.stderr}`);
+assert.match(midiTests.stdout, /PASS: \d+ midi-bridge tests/, "midi bridge unit tests report a pass count");
+assert.match(text("updater.js"), /release\.draft/, "app update check skips draft GitHub releases");
+
 const radarTests = spawnSync(process.execPath, [resolve(root, "ci/test-radar.mjs")], { encoding: "utf8" });
 assert.equal(radarTests.status, 0, `radar unit tests failed:\n${radarTests.stdout}\n${radarTests.stderr}`);
 assert.match(radarTests.stdout, /PASS: \d+ radar tests/, "radar unit tests report a pass count");

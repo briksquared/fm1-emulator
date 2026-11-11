@@ -56,10 +56,17 @@
       .panel-stack.focus-lcd, .stage.focus-lcd{z-index:10030;position:relative}
       .panel-stack.focus-lcd canvas, .stage.focus-lcd canvas{
         position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(var(--focus-lcd-scale, 1.35));
-        transform-origin:center center;z-index:10031;box-shadow:0 24px 80px rgba(0,0,0,.65);
+        transform-origin:center center;z-index:10031;
+        box-shadow:0 24px 80px rgba(0,0,0,.65),0 0 0 1px color-mix(in srgb, var(--amber, #e8a020) 22%, transparent);
         border-radius:8px;cursor:default}
-      #focus-lcd-veil{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10029;display:none;pointer-events:none}
+      @media (prefers-reduced-motion: no-preference){
+        .panel-stack.focus-lcd canvas, .stage.focus-lcd canvas{
+          transition:transform .14s ease-out,box-shadow .14s ease-out}}
+      #focus-lcd-veil{position:fixed;inset:0;z-index:10029;display:none;pointer-events:none;
+        background:radial-gradient(ellipse 115% 95% at 50% 42%,rgba(0,0,0,.5),rgba(0,0,0,.88))}
       #focus-lcd-veil.on{display:block}
+      body.fm1-focus-on .player .deck-head{opacity:.55;transition:opacity .14s ease}
+      @media (prefers-reduced-motion: reduce){body.fm1-focus-on .player .deck-head{transition:none}}
       #focus-lcd-close{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));
         z-index:10034;display:none;align-items:center;justify-content:center;width:40px;height:40px;padding:0;
         font:700 18px/1 'Space Grotesk',sans-serif;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#2a2c31);
@@ -92,6 +99,7 @@
         document.documentElement.style.removeProperty("--focus-lcd-scale");
       }
       stage.classList.toggle("focus-lcd", focused);
+      document.body.classList.toggle("fm1-focus-on", focused);
       veil.classList.toggle("on", focused);
       closeBtn.classList.toggle("on", focused);
       canvas.title = "FM-1 front panel";

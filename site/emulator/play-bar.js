@@ -18,15 +18,18 @@
     const css = document.createElement("style");
     css.id = "emulator-head-ctls-css";
     css.textContent = `
-      .emulator-head-ctls{display:inline-flex;flex:none;align-items:center;gap:6px;margin-left:4px}
-      .emulator-head-ctls .epb-divider{width:1px;height:18px;background:var(--ui-line,#2a2c31);opacity:.85;margin:0 2px 0 4px}
+      .emulator-head-ctls{display:inline-flex;flex:none;align-items:center;gap:5px;margin-left:6px}
+      .emulator-head-ctls .epb-divider{width:1px;align-self:stretch;min-height:22px;max-height:26px;
+        background:var(--ui-line,#2a2c31);opacity:.7;margin:0 2px 0 0}
       .emulator-head-ctls button{flex:0 0 auto;font:600 11.5px 'Space Grotesk',-apple-system,sans-serif;
         background:var(--ui-surface,#17181b);border:1px solid var(--ui-line,#2a2c31);color:var(--ui-text,#e9edf2);
-        border-radius:7px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+        border-radius:7px;padding:4px 11px;cursor:pointer;white-space:nowrap;line-height:1.25}
       .emulator-head-ctls button:hover{border-color:var(--amber);color:var(--ink,#fff)}
+      .emulator-head-ctls button:active{transform:translateY(1px)}
       .emulator-head-ctls button[aria-pressed="true"]{background:var(--amber);color:var(--ui-on-accent,#180a02);border-color:transparent}
       .emulator-head-ctls button.epb-primary{background:var(--ui-surface,#17181b)}
-      .emulator-head-ctls button.epb-primary[aria-pressed="true"]{background:var(--amber);color:var(--ui-on-accent,#180a02);border-color:transparent}`;
+      .emulator-head-ctls button.epb-primary[aria-pressed="true"]{background:var(--amber);color:var(--ui-on-accent,#180a02);border-color:transparent}
+      body.fm1-focus-on .emulator-head-ctls #epb-focus{border-color:color-mix(in srgb,var(--amber) 55%,var(--ui-line))}`;
     document.head.appendChild(css);
 
     const group = document.createElement("div");

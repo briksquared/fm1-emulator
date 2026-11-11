@@ -1,5 +1,6 @@
-// Focus Mode: enlarge the panel LCD; optional spoken status via speechSynthesis
+// Focus Mode: enlarge the panel for easier play; optional spoken status via speechSynthesis
 // and an aria-live region (screen-reader style, inspired by FM-1 Screen Reader / ESTAMPIE).
+// Open from the toolbar above the panel; close via the Focus ✕ or Escape — never canvas clicks.
 (function () {
   "use strict";
   const SPEAK_KEY = "fm1.speak.v1";
@@ -9,6 +10,7 @@
   }
   function setSpeak(on) {
     try { localStorage.setItem(SPEAK_KEY, on ? "1" : "0"); } catch {}
+    window.dispatchEvent(new CustomEvent("fm1-focus-speak-change", { detail: { on: !!on } }));
   }
 
   function ready(fn) {
@@ -37,33 +39,38 @@
       .panel-stack.focus-lcd canvas, .stage.focus-lcd canvas{
         position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(2.4);
         transform-origin:center center;z-index:10031;box-shadow:0 24px 80px rgba(0,0,0,.65);
-        border-radius:8px;cursor:zoom-out}
-      #focus-lcd-veil{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10029;display:none}
+        border-radius:8px;cursor:default}
+      #focus-lcd-veil{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10029;display:none;pointer-events:none}
       #focus-lcd-veil.on{display:block}
-      #focus-lcd-bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:10032;display:none;
-        gap:8px;align-items:center;background:#0c0d0f;border:1px solid #232428;border-radius:999px;padding:6px 12px;
-        font:12px 'Space Grotesk',sans-serif;color:#e9edf2}
-      #focus-lcd-bar.on{display:flex}
-      #focus-lcd-bar button{font:inherit;font-size:12px;background:#17181b;border:1px solid #2a2c31;color:inherit;border-radius:7px;padding:4px 9px;cursor:pointer}`;
+      #focus-lcd-close{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));
+        z-index:10034;display:none;align-items:center;justify-content:center;width:40px;height:40px;padding:0;
+        font:700 18px/1 'Space Grotesk',sans-serif;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#2a2c31);
+        color:var(--ui-text,#e9edf2);border-radius:10px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.5)}
+      #focus-lcd-close:hover{border-color:var(--amber);color:var(--ink,#fff)}
+      #focus-lcd-close.on{display:flex}
+      #focus-lcd-close:focus-visible{outline:2px solid var(--amber);outline-offset:2px}`;
     document.head.appendChild(css);
 
     const veil = document.createElement("div");
     veil.id = "focus-lcd-veil";
     document.body.appendChild(veil);
-    const bar = document.createElement("div");
-    bar.id = "focus-lcd-bar";
-    bar.innerHTML = `<span>Focus LCD</span><button type="button" id="focus-exit">Exit</button>
-      <button type="button" id="focus-speak">${speakOn() ? "Voice: on" : "Voice: off"}</button>`;
-    document.body.appendChild(bar);
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.id = "focus-lcd-close";
+    closeBtn.setAttribute("aria-label", "Close Focus");
+    closeBtn.title = "Close Focus";
+    closeBtn.textContent = "✕";
+    document.body.appendChild(closeBtn);
 
     let focused = false;
     function setFocus(on) {
       focused = !!on;
       stage.classList.toggle("focus-lcd", focused);
       veil.classList.toggle("on", focused);
-      bar.classList.toggle("on", focused);
-      canvas.title = focused ? "Click to exit Focus Mode" : "Double-click LCD for Focus Mode";
-      announce(focused ? "Focus mode on. Double-click or press Escape to exit." : "Focus mode off.");
+      closeBtn.classList.toggle("on", focused);
+      canvas.title = "FM-1 front panel";
+      announce(focused ? "Focus mode on. Close with ✕ or press Escape." : "Focus mode off.");
+      window.dispatchEvent(new CustomEvent("fm1-focus-change", { detail: { on: focused } }));
     }
 
     function announce(text) {
@@ -81,18 +88,25 @@
     }
     window.FM1Announce = announce;
 
-    canvas.addEventListener("dblclick", (e) => {
-      e.preventDefault();
-      setFocus(!focused);
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setFocus(false);
     });
-    veil.onclick = () => setFocus(false);
-    bar.querySelector("#focus-exit").onclick = () => setFocus(false);
-    bar.querySelector("#focus-speak").onclick = () => {
-      const on = !speakOn();
-      setSpeak(on);
-      bar.querySelector("#focus-speak").textContent = on ? "Voice: on" : "Voice: off";
-      announce(on ? "Voice on" : "Voice off");
+
+    window.FM1Focus = {
+      isOn: () => focused,
+      set: setFocus,
+      open: () => { if (!focused) setFocus(true); },
+      close: () => { if (focused) setFocus(false); },
+      speakOn,
+      toggleSpeak: () => {
+        const on = !speakOn();
+        setSpeak(on);
+        announce(on ? "Voice on" : "Voice off");
+        return on;
+      },
     };
+
     addEventListener("keydown", (e) => {
       if (e.key === "Escape" && focused) { e.preventDefault(); setFocus(false); }
     });

@@ -6,68 +6,102 @@ The FM-1 Emulator bundles work by many people. Thank you to all of them.
 
 - **fm1-emu** by Joakim Eriksson — the Rust/WebAssembly pi32v2 emulation engine and base player page this project forks. License: MIT. https://github.com/joakimeriksson/fm1-emu
 
-## Bundled firmware (257)
+## Bundled firmware (278)
 
 Every package below has an explicit open-source license and an available source repository. Packages are redistributed unchanged. Exact package paths, full SHA-256 hashes, FM-1 product identities, versions, and source URLs are recorded in [FIRMWARE-SOURCES.json](FIRMWARE-SOURCES.json). License texts are in [LICENSES](LICENSES/).
 
-The 165 catalog packages use the license and checksum published in the live firmware catalog. The 94 additional GitHub packages were individually repository-license-reviewed and boot-audited on 9 November 2026.
+The 187 Firmware Hub packages use the license and checksum published in the live Hub catalog. The 94 additional GitHub packages were individually repository-license-reviewed and boot-audited on 9 November 2026.
 
 | Firmware | Version | Author | License | Corresponding source |
 | --- | --- | --- | --- | --- |
-| JIANT FM | V10.6z2 | juanjiant-bit | GPL-3.0 | [source](https://github.com/juanjiant-bit/JIANT/tree/main) |
+| Smileyface | 1.2.0-midimayhem | pbarilla | GPL-3.0 | [source](https://github.com/pbarilla/smileyface/tree/v1.2.0-midimayhem) |
+| AISLING | 1.3.1 | CU_STE | GPL-3.0 | [source](https://github.com/stephencummins/fm1-aisling/tree/v1.3.1) |
+| Chipbox | 1.6.0-midimayhem | pbarilla | GPL-3.0 | [source](https://github.com/pbarilla/chipbox/tree/v1.6.0-midimayhem) |
+| KARMA | 3.1.1 | Ariel Muchnik | GPL-3.0 | [source](https://github.com/eatyourgreensstudio-dotcom/karma-fm1/tree/v3.1.1) |
+| Quartet | 1.2 | MammothCheese | GPL-3.0 | [source](https://github.com/MammothCheese/quartet/tree/v1.2) |
+| Guru-600 | 1.0.1 | Marc Massé | GPL-3.0 | [source](https://github.com/MarcGoudy/guru-600/tree/v1.0.1) |
+| Ravel | 1.34.0 | De-Pattern | GPL-3.0 | [source](https://github.com/De-Pattern/Ravel_FM1/tree/v1.34.0) |
+| B3 ORGAN | 0.3 | R-Jeb | GPL-3.0 | [source](https://github.com/R-Jeb/setBfree-fm1/tree/v0.3) |
+| Pocket Band | 0.4 | elpabl0 | GPL-3.0 | [source](https://github.com/elpabl0/pocketband/tree/v0.4) |
+| FM-FAM | 0.2.9 | David Amo | MPL-2.0 | [source](https://github.com/davidamomusic/fm-fam/tree/v0.2.9) |
+| ChoralRoot | 0.40 | Quixotic7 | GPL-3.0 | [source](https://github.com/Quixotic7/ChoralRootFM1/tree/v0.40) |
+| bocjuhn | 1.0.0-rc10 | ryuji kanagawa | GPL-3.0 | [source](https://github.com/IanP06/bocjuhn/tree/v1.0.0-rc10) |
+| Elixir | 1.3.1 | Dan Majka | GPL-3.0 | [source](https://github.com/dmajka/elixir/tree/v1.3.1) |
+| RAMBEAVER | 745-hub | Trust This Mechanism | GPL-3.0 | [source](https://github.com/adamcharleswilsonmusic-code/RAMBEAVER/tree/v745-hub) |
+| Trumpagotchi | 1.0.1 | Trust This Mechanism | GPL-3.0 | [source](https://github.com/adamcharleswilsonmusic-code/Trumpagotchi/tree/v1.0.1) |
+| Kris Jangle | 0.9 | w33tSnx | MPL-2.0 | [source](https://github.com/doohinkus/kris-jangle/tree/v0.9) |
+| ASS-ID | 1.0 | altessproduction | GPL-3.0 | [source](https://github.com/altessproduction/ASS-ID_FM1/tree/v1.0) |
+| Felucca 8 Patterns | 1.8.2 | echoe | GPL-3.0 | [source](https://github.com/echoe/Felucca_8_patterns/tree/1.8.2) |
+| SATIE-1 | 0.1.3-beta | OCKM Studio | GPL-3.0 | [source](https://github.com/OCKM-STUDIO/SATIE-1/tree/v0.1.3-beta) |
+| PLAYA | 0.1 | JFS | GPL-3.0 | [source](https://github.com/juan-ms2lab/playa/tree/playa-v0.1) |
+| JIANT FM | V10.7.17 | juanjiant-bit | GPL-3.0 | [source](https://github.com/juanjiant-bit/JIANT/tree/main) |
+| M-PYRE | 1.0.3 | History Of Sky | GPL-3.0 | [source](https://github.com/HistoryOfSky/m-pyre/tree/v1.0.3) |
+| DUELL | 1.2 | OSCILL/R | GPL-3.0 | [source](https://github.com/oscillr/DUELL/tree/v1.2) |
+| hawk-chua | 2.1.3 | plieuwski | GPL-3.0 | [source](https://github.com/Plieuw/hawk-chua/tree/v2.1.3) |
+| Veffbox | 0.8.0 | Veff | GPL-3.0 | [source](https://github.com/galfaroth/veffbox/tree/v0.8.0) |
+| Kitten Rack | 1.4.0 | Black Kitten Devices | GPL-3.0 | [source](https://github.com/BlackKittenDevices/kitten-rack/tree/v1.4.0) |
+| Frodhes | 0.9.10 | Leonardo Mirabal | GPL-3.0 | [source](https://github.com/leonardoMirabal/frodhes/tree/v0.9.10) |
+| CoralFlower | 0.7.1 | FicusFicusov | GPL-3.0 | [source](https://github.com/FicusFicusov/CoralFlower/tree/v0.7.1) |
+| fm1-amy | 0.1.0 | Dan Ellis | GPL-3.0 | [source](https://github.com/dpwe/fm1-amy/tree/v0.1.0) |
+| Miku-FM | 0.8 | Michael Perry | GPL-3.0 | [source](https://github.com/MichaelAPerry/MIKU-FM1/tree/v0.8) |
+| keySTEP ONE | 0.5.42 | dzwerg | MPL-2.0 | [source](https://github.com/dzwerg/keySTEP-ONE/tree/v0.5.42) |
+| Drumlab | 0.1.3-beta | pbarilla | GPL-3.0 | [source](https://github.com/pbarilla/drumlab/tree/v0.1.3-beta) |
+| Bytemania | 1.3.1 | lloyd (llozd) | GPL-3.0 | [source](https://github.com/llozd/bytemania/tree/v1.3.1) |
+| Caravel | 0.12.0 | BonszaiMusic | GPL-3.0 | [source](https://github.com/bonszaimusic/caravel/tree/v0.12.0) |
+| Tonitor | 2026.11.10 | Nuno Zimas | GPL-3.0 | [source](https://github.com/nzimas/tonitor/tree/main) |
+| Matryoshka | 1.13.0 | michael glaviano | GPL-3.0 | [source](https://github.com/glvno/matryoshka/tree/v1.13.0) |
+| sloop-DUB | 1.0.0 | altessproduction | GPL-3.0 | [source](https://github.com/altessproduction/sloop-dub-fm1/tree/v1.0.0) |
+| XENOLITH | 1.0 | Unit_v743 | GPL-3.0 | [source](https://github.com/CaptainChronosis/XENOLITH/tree/v1.0) |
+| FOMAJAM | 0.1.12 | konsumer | GPL-3.0 | [source](https://github.com/konsumer/fomajam/tree/v0.1.12) |
+| Hungry Travis | 2026.11.10 | Trust This Mechanism | GPL-3.0 | [source](https://github.com/adamcharleswilsonmusic-code/Hungry-Travis/tree/fm1-797) |
+| DARK-1 | 1.0.6 | Polystellarflow | GPL-3.0 | [source](https://github.com/sparky480v/Dark-1/tree/v1.0.6) |
+| Arctic Scream | 1.5.2 | PolarPatch | GPL-3.0 | [source](https://github.com/PolarPatch/Arctic-scream-FM-1/tree/v1.5.2) |
+| Mutable Dreams | 1.5 | Kid Bunka | GPL-3.0 | [source](https://github.com/kidbee85-beep/mutable-dreams/tree/v1.5) |
+| CORD | 1.0.3 | Chase DeAnda | GPL-3.0 | [source](https://github.com/chasedeanda/cord-fm1/tree/v1.0.3) |
+| Penumbra | 1.3 | Lunar Eclipse Forge | GPL-3.0 | [source](https://github.com/MadMooneyham/Penumbra/tree/v1.3) |
+| Sill | 1.0.4-beeebd6 | delirioux | GPL-3.0 | [source](https://github.com/delirioux/sill/tree/beeebd6) |
+| Tuna | 1.2-6f9a6dd | delirioux | GPL-3.0 | [source](https://github.com/delirioux/tuna/tree/6f9a6dd) |
+| Skiff | 2.5.1 | illuminus5 | GPL-3.0 | [source](https://github.com/illuminus5/skiff/tree/v2.5.1) |
+| FM1 Audio Router | 0.2.0 | MAX RAVE | MPL-2.0 | [source](https://github.com/maxravedj/fm1-audio-router/tree/v0.2.0) |
+| JAMTRACK | 0.2.3 | PhilipsKnobs | MIT | [source](https://github.com/Philip-Bos/jamtrack-fm1/tree/v0.2.3) |
+| FiMba-1 | 0.7.0 | jadamsowers | GPL-3.0 | [source](https://github.com/jadamsowers/fm1-fimba/tree/v0.7.0) |
+| FMini-1 | 2.5.0 | Ruppert | GPL-3.0 | [source](https://github.com/ruppert/fmini-1/tree/v2.5.0) |
 | Bigorna | 2026.11.09 | Nuno Zimas | GPL-3.0 | [source](https://github.com/nzimas/bigorna/tree/main) |
-| Ravel | 1.29.0 | De-Pattern | GPL-3.0 | [source](https://github.com/De-Pattern/Ravel_FM1/tree/v1.29.0) |
-| KARMA | 3.0.5 | Ariel Muchnik | GPL-3.0 | [source](https://github.com/eatyourgreensstudio-dotcom/karma-fm1/tree/v3.0.5) |
 | MONO2K | 1.9.1 | Iñigo Hernandez | GPL-3.0 | [source](https://github.com/InigoHernandez/mono2k/tree/v1.9.1) |
 | BEETLE BLUE | 1.3.1 | Joppe Sikken (SikkenWorks) | GPL-3.0 | [source](https://github.com/SikkenWorks/BEETLE-BLUE/tree/V1.3.1) |
 | BEETLE | 1.8.3 | Joppe Sikken (SikkenWorks) | GPL-3.0 | [source](https://github.com/SikkenWorks/BEETLE/tree/V1.8.3) |
 | RUPTURE | 1.85.2 | Joppe Sikken (SikkenWorks) | GPL-3.0 | [source](https://github.com/SikkenWorks/RUPTURE/tree/V1.85.2) |
-| ChoralRoot | 0.33 | Quixotic7 | GPL-3.0 | [source](https://github.com/Quixotic7/ChoralRootFM1/tree/v0.33) |
-| Chipbox | 1.5.3 | pbarilla | GPL-3.0 | [source](https://github.com/pbarilla/chipbox/tree/v1.5.3) |
-| Elixir | 1.0 | Dan Majka | GPL-3.0 | [source](https://github.com/dmajka/elixir/tree/v1.0) |
-| Felucca 8 Patterns | 1.8.1 | echoe | GPL-3.0 | [source](https://github.com/echoe/Felucca_8_patterns/tree/1.8.1) |
-| Smileyface | 1.1.1 | pbarilla | GPL-3.0 | [source](https://github.com/pbarilla/smileyface/tree/v1.1.1) |
-| Matryoshka | 1.11.1 | michael glaviano | GPL-3.0 | [source](https://github.com/glvno/matryoshka/tree/v1.11.1) |
 | RemoteFM1 | 0.3.6 | Quixotic7 | MPL-2.0 | [source](https://github.com/Quixotic7/RemoteFM1/tree/v0.3.6) |
 | K-WASUB | 1.1.02 | Omnipotard (Guizmoh) | GPL-3.0 | [source](https://github.com/Guizmoh/K-WASUB_Firmware_for_FM1/tree/v1.1.02) |
 | FRASIL | 3.2 | Styves Goupil | MPL-2.0 | [source](https://github.com/styvesgoupil/frasil/tree/v3.2) |
+| KAWA | 0.9 | Omnipotard | GPL-3.0 | [source](https://github.com/Guizmoh/Kawa-Tracker-Fm1/tree/v0.9) |
 | Piterfly | 1.0.1 | Piotr Woźniak | GPL-3.0 | [source](https://github.com/piotrwozniak/piterfly/tree/1.0.1) |
 | FM1 Wheel | 0.2.1 | ograndebe | GPL-3.0 | [source](https://github.com/ograndebe/fm1wheel) |
 | OG Synth | 1.5.1 | mikejohnsonbeats | MPL-2.0 | [source](https://github.com/mikejohnsonbeats/OG-Synth-source) |
 | saadet | 1.0.4 | keremimo | MPL-2.0 | [source](https://github.com/keremimo/saadet) |
-| FOMAJAM | 0.1.11 | konsumer | GPL-3.0 | [source](https://github.com/konsumer/fomajam/tree/v0.1.11) |
-| hawk-chua | 2.0.5 | plieuwski | GPL-3.0 | [source](https://github.com/Plieuw/hawk-chua/tree/v2.0.5) |
+| Patchwerk | 1.0.3 | Matt Kuebrich | GPL-3.0 | [source](https://github.com/MattKuebrich/patchwerk/tree/v1.0.3) |
 | Sardine | 1.0.6 | delirioux | GPL-3.0 | [source](https://github.com/delirioux/sardine/tree/v1.0.6) |
 | Amenity | 2.0.0 | Presethead | GPL-3.0 | [source](https://github.com/ejtb76/amenity/tree/v2.0.0) |
-| Tuna | 1.2-fca9be4 | delirioux | GPL-3.0 | [source](https://github.com/delirioux/tuna/tree/fca9be4) |
 | Flyfish | 1.1.1-fc4974e | delirioux | GPL-3.0 | [source](https://github.com/delirioux/flyfish/tree/fc4974e) |
 | Daurade | 1.0.1-01d6bd0 | delirioux | GPL-3.0 | [source](https://github.com/delirioux/daurade/tree/01d6bd0) |
-| Sill | 1.0.3-8f3b429 | delirioux | GPL-3.0 | [source](https://github.com/delirioux/sill/tree/8f3b429) |
-| AISLING | 1.2 | CU_STE | GPL-3.0 | [source](https://github.com/stephencummins/fm1-aisling/tree/v1.2) |
 | LSDJ Burrito | 0.9.97 | Dreamy_bacon | GPL-3.0 | [source](https://github.com/dreamsofbacon/lsdj-burrito-src/tree/v0.9.97) |
 | SIDOU | 1.9.0 | Denis Sablić | GPL-3.0 | [source](https://github.com/dsablic/sidou/tree/v1.9.0) |
 | ATEK303 | 1.2 | Animatek | GPL-3.0 | [source](https://github.com/animatek/FM1-Animatek/tree/atek303-v1.2) |
-| Veffbox | 0.6.0 | Veff | GPL-3.0 | [source](https://github.com/galfaroth/veffbox/tree/v0.6.0) |
-| Drumlab | 0.1.1-beta | pbarilla | GPL-3.0 | [source](https://github.com/pbarilla/drumlab/tree/v0.1.1-beta) |
 | fm1-ripple | 0.6.1 | charlesvestal | MPL-2.0 | [source](https://github.com/charlesvestal/fm1-ripple) |
 | FM1-TRAX | 0.9.5 | jartificer | GPL-3.0 | [source](https://github.com/jartificer/fm1-trax/tree/v0.9.5) |
 | FM1-GM | 1.2.0 | jartificer | GPL-3.0 | [source](https://github.com/jartificer/fm1-gm/tree/v1.2.0) |
 | PurpleMonkey | 0.12 | Quixotic7 | GPL-3.0 | [source](https://github.com/Quixotic7/PurpleMonkeyFM1/tree/v0.12) |
 | FIZZ | 0.12.0-beta.14 | Quixotic7 | MPL-2.0 | [source](https://github.com/Quixotic7/FIZZ/tree/v0.12.0-beta.14) |
-| Arctic Scream | 1.5.1 | p0larpatch | GPL-3.0 | [source](https://github.com/PolarPatch/Arctic-scream-FM-1/tree/v1.5.1) |
 | Rainbow Mode | 1.1.5-rb | joshbartlettband-web | GPL-3.0 | [source](https://github.com/joshbartlettband-web/felucca-rainbow/tree/main) |
 | CHOPPAH | 1.2 | Laurens Profittlich | MPL-2.0 | [source](https://github.com/profikid/fm1-break-choppah/tree/v1.2) |
 | MIDIMON | 0.5 | ignis32 | MPL-2.0 | [source](https://github.com/ignis32/midimonitor_fm1/tree/v0.5) |
 | OPLBend Tracker | 0.4 | AudrenThibault | GPL-3.0 | [source](https://github.com/AudrenThibault/OPLBend-Tracker) |
-| DARK-1 | 1.0.5 | Polystellarflow | GPL-3.0 | [source](https://github.com/sparky480v/Dark-1/tree/v1.0.5) |
 | PERF-1 | 0.17.0 | deamonSLINKY | GPL-3.0 | [source](https://github.com/deamonSLINKY/PERF-1/tree/v0.17.0) |
 | MOPE-1 | 0.4.1 | slothpallas | GPL-3.0-only | [source](https://github.com/slothpallas/mope-1/tree/v0.4.1) |
 | S1Vave | 1.12.3 | Andrew GG | GPL-3.0 | [source](https://github.com/AndrewGG88/S1Vave/tree/v1.12.3) |
-| FM1 Audio Router | 0.1.1 | MAX RAVE | MPL-2.0 | [source](https://github.com/maxravedj/fm1-audio-router/tree/v0.1.1) |
 | VIBE FM Link | 0.4 | zvenson | GPL-3.0 | [source](https://github.com/zvenson/vibe-link/tree/v0.4) |
 | COQUÍ | 1.1.1 | saulofilho | GPL-3.0 | [source](https://github.com/saulofilho/coqui-fm1/tree/v1.1.1) |
 | fm1-dock | 0.8 | Joakim Eriksson | GPL-3.0 | [source](https://github.com/joakimeriksson/fm1-dock/tree/v0.8) |
-| Tonitor | 2026.11.07 | Nuno Zimas | GPL-3.0 | [source](https://github.com/nzimas/tonitor/tree/main) |
 | fm1-radio | 1.3.1 | charlesvestal | MPL-2.0 | [source](https://github.com/charlesvestal/fm1-radio) |
 | Dinghy | 0.5 | zvenson | GPL-3.0 | [source](https://github.com/zvenson/dinghy/tree/v0.5) |
 | Rhythmer | 0.1.1-beta3 | Jazzy Rhythmer | GPL-3.0 | [source](https://github.com/JazzyRhythmer/Rhythmer/tree/v0.1.1-beta3) |
@@ -79,28 +113,25 @@ The 165 catalog packages use the license and checksum published in the live firm
 | HYP-1 | 1.5.62 | RedtailWorks | GPL-3.0 | [source](https://github.com/RustyPawz/fm1-HYP1/tree/main) |
 | LOOM-8 | 0.14 | Charles Vestal | MPL-2.0 | [source](https://github.com/charlesvestal/fm1-loom/tree/v0.14) |
 | CTL-1 | 1.0.3 | Charles Vestal | MPL-2.0 | [source](https://github.com/charlesvestal/fm1-ctl/tree/v1.0.3) |
+| ECHOFIELD | 0.2.10 | PhilipsKnobs | MIT | [source](https://github.com/Philip-Bos/echofield-fm1/tree/v0.2.10) |
+| Skiff Atlatl | 1.1 | LIkst4 | GPL-3.0 | [source](https://github.com/LIkst4/skiff-atlatl/tree/V1.1) |
 | AURORA | 0.9.1 | twochannels | GPL-3.0-only | [source](https://github.com/twochannels/AURORA/tree/v0.9.1) |
-| Bytemania | 1.3.0 | lloyd (llozd) | GPL-3.0 | [source](https://github.com/llozd/bytemania/tree/v1.3.0) |
 | Polly | 0.6.2 | Charles Vestal | GPL-3.0 | [source](https://github.com/charlesvestal/fm1-polly/tree/v0.6.2) |
 | AMB-1 | 1.3.2 | Charles Vestal | MPL-2.0 | [source](https://github.com/charlesvestal/fm1-amb/tree/v1.3.2) |
-| KAWA | 0.7 | Omnipotard | GPL-3.0 | [source](https://github.com/Guizmoh/Kawa-Tracker-Fm1/tree/b57f8c52a79170bdb904e124251d7f6015ea0625) |
 | DX747 | 0.1 | Esben von Buchwald | GPL-3.0 + SDK exception | [source](https://github.com/esbenvb/fm1-dx747/tree/v0.1) |
 | CULTBOX | 1.2 | beatcult | GPL-3.0 | [source](https://github.com/beatcult/CULTBOX/tree/v1.2) |
-| Penumbra | 1.2.1 | Lunar Eclipse Forge | GPL-3.0 | [source](https://github.com/MadMooneyham/Penumbra/tree/v1.2.1) |
+| Ombak | 1.2 | Lunar Eclipse Forge | GPL-3.0 | [source](https://github.com/MadMooneyham/Ombak/tree/v1.2) |
 | MONK-1 | 0.10 | Charles Vestal | GPL-3.0 | [source](https://github.com/charlesvestal/fm1-monk/tree/v0.10) |
 | FoMni | 0.4.1 | Charles Vestal | GPL-3.0 | [source](https://github.com/charlesvestal/fm1-fomni/tree/v0.4.1) |
 | X0X | 1.2.1 | Charles Vestal | GPL-3.0 | [source](https://github.com/charlesvestal/fm1-x0x/tree/v1.2.1) |
 | Nauclerus | 1.0.0 | Mr. Roboto | GPL-3.0 | [source](https://github.com/Mr-Roboto/nauclerus/tree/v1.0.0) |
-| Frodhes | 0.9.8 | Leonardo Mirabal | GPL-3.0 | [source](https://github.com/leonardoMirabal/frodhes/tree/v0.9.8) |
 | Makohai | 1.4 | delirioux | GPL-3.0 | [source](https://github.com/delirioux/makohai/tree/v1.4) |
 | SPAMPY | 1.0 | Spampy-Droid | GPL-3.0 | [source](https://github.com/Spampy-Droid/SPAMPY-0.0-r949/tree/v1.0) |
 | JAN3000 | 0.2-alpha | JanSchulten | GPL-3.0 | [source](https://github.com/JanSchulten/JAN3000-M-Wave-Firmware) |
-| FMini-1 | 2.2.0 | Ruppert | GPL-3.0 | [source](https://github.com/ruppert/fmini-1/tree/v2.2.0) |
 | boopbox | 1.5.0 | Josh-McFarlin | GPL-3.0 | [source](https://github.com/Josh-McFarlin/boopbox) |
 | Mighty Arp | 1.1 | NickCulbertson | MPL-2.0 | [source](https://github.com/NickCulbertson/FM1-Mighty-Arp) |
 | MIKU-FM1 | 0.6 | MichaelAPerry | GPL-3.0 | [source](https://github.com/MichaelAPerry/MIKU-FM1) |
 | miaou | 0.1 | pjac1810 | GPL-3.0 | [source](https://github.com/pjac1810/miaou) |
-| Caravel | 0.11.0 | BonszaiMusic | GPL-3.0 | [source](https://github.com/bonszaimusic/caravel/tree/v0.11.0) |
 | ORBIT | 1.0.1B | dspaudio | GPL-3.0 | [source](https://github.com/dspaudio/orbit/tree/v1.0.1B) |
 | Maestro | 0.6.1 | node56 | GPL-3.0 | [source](https://github.com/node56/fm1-maestro) |
 | Felucca | 1.8.2-beta | Leo Kuroshita (Hügelton Instruments) | GPL-3.0 | [source](https://github.com/hugelton/Felucca/tree/v1.8.2-beta) |
@@ -116,7 +147,6 @@ The 165 catalog packages use the license and checksum published in the live firm
 | Blop | 1.1.0 | Obsimo | GPL-3.0 | [source](https://github.com/OSR-Experiment/OSR-1/tree/v1.1.0) |
 | SynthMaven | 4.1.4 | KingXeryus | GPL-3.0 | [source](https://github.com/KingXeryus/SynthMaven) |
 | fm1-yoga | 1.0-rc2 | michamilz | MPL-2.0 | [source](https://github.com/michamilz/fm1-yoga) |
-| Skiff | 2.2 | illuminus5 | GPL-3.0 | [source](https://github.com/illuminus5/skiff/tree/v2.2) |
 | GR!MM | 2.0.2 | GR!MM | GPL-3.0 | [source](https://github.com/GRiMMBIENT/grimm/tree/v2.0.2) |
 | Vector37 | 0.3.2 | genkigenki | GPL-3.0 | [source](https://github.com/genkigenki/Vector37) |
 | sloopDX | 4.0.1 | zvenson | GPL-3.0 | [source](https://github.com/zvenson/dxsloop/tree/v4.0.1) |
@@ -131,7 +161,6 @@ The 165 catalog packages use the license and checksum published in the live firm
 | Quasar | 2026-11-02 | nzimas | GPL-3.0 | [source](https://github.com/nzimas/quasar) |
 | Wanderer | 1.4.0 | Nicholas James / Low Vision Music | GPL-3.0 | [source](https://github.com/spinnicholas/lvm-wanderer-fm1/tree/v1.4.0) |
 | B1 | 5.6 | Joppe Sikken (SikkenWorks) | GPL-3.0 | [source](https://github.com/SikkenWorks/B1-Drawbar-Organ/tree/V5.6) |
-| bocjuhn | 1.0.0-rc7 | ryuji kanagawa | GPL-3.0 | [source](https://github.com/IanP06/bocjuhn/tree/v1.0.0-rc7) |
 | moondaw-fm1 | 0.3 | jaeggerr | GPL-3.0 | [source](https://github.com/jaeggerr/moondaw-fm1) |
 | lax32 | 0.2 | pjac1810 | GPL-3.0 | [source](https://github.com/pjac1810/lax32) |
 | grana-fm1 | 1.6.3 | mongio | GPL-3.0 | [source](https://github.com/mongio/grana-fm1) |
@@ -144,7 +173,6 @@ The 165 catalog packages use the license and checksum published in the live firm
 | fm-1-impressionism | 0.0.1-1793572764-06d2561 | darrenjaworski | GPL-3.0 | [source](https://github.com/darrenjaworski/fm-1-impressionism) |
 | keySTEP-ONE | 0.5.35-beta | dzwerg | MPL-2.0 | [source](https://github.com/dzwerg/keySTEP-ONE) |
 | bass-something-2 | 0.6 | imijes | MPL-2.0 | [source](https://github.com/imijes/bass-something-2) |
-| Kitten Rack | 1.3.0 | Black Kitten Devices | GPL-3.0 | [source](https://github.com/BlackKittenDevices/kitten-rack/tree/v1.3.0) |
 | NACHTFAHRT | 1.0.0 | Cranky Man | GPL-3.0 | [source](https://github.com/FartyPants/fm1-nachtfahrt/tree/v1.0.0) |
 | theory1 | 1.2 | wave00066 | MPL-2.0 | [source](https://github.com/wave00066/theory1) |
 | Red Mass Vampire OS | 0.5.2-beta | karlalex732-dotcom | GPL-3.0 | [source](https://github.com/karlalex732-dotcom/RED-MASS-VAMPIRE-OS-FOR-M-VAVE-FM1) |
@@ -155,14 +183,11 @@ The 165 catalog packages use the license and checksum published in the live firm
 | fm1-nc-companion | 0.5 | fenderberg | GPL-3.0 | [source](https://github.com/fenderberg/fm1-nc-companion) |
 | Scintilla | 0.2.0 | Joakim Eriksson | GPL-3.0 | [source](https://github.com/joakimeriksson/scintilla-fm1/tree/v0.2.0) |
 | numetal-skratchmaster-pro-fm1 | 3.0 | mhellar | GPL-3.0 | [source](https://github.com/mhellar/numetal-skratchmaster-pro-fm1) |
-| Mutable Dreams | 1.4 | Kid Bunka | GPL-3.0 | [source](https://github.com/kidbee85-beep/mutable-dreams/tree/v1.4) |
-| DUELL | 1.1 | OSCILL/R | GPL-3.0 | [source](https://github.com/oscillr/DUELL/tree/v1.1) |
 | DUB-1 | 1.4.3 | sbegueria | GPL-3.0 | [source](https://github.com/sbegueria/fm1-dub/tree/v1.4.3) |
 | cyma-1 | 1.1.3 | TEG-Lizard-Man | MPL-2.0 | [source](https://github.com/TEG-Lizard-Man/cyma-1) |
 | synthesthetic | 0.3-beta | michaeljsmalley | GPL-3.0 | [source](https://github.com/michaeljsmalley/synthesthetic) |
 | XMOD | 1.2.0 | Kot Morderca | GPL-3.0 | [source](https://github.com/KotMorderca/XMOD/tree/v1.2.0) |
 | ETCH | 1.88 | Joppe Sikken (SikkenWorks) | GPL-3.0 | [source](https://github.com/SikkenWorks/ETCH/tree/V1.88) |
-| CoralFlower | 0.6.1 | FicusFicusov | GPL-3.0 | [source](https://github.com/FicusFicusov/CoralFlower/tree/v0.6.1) |
 | FMLarynx | 0.1.1 | ejtb76 | GPL-3.0 | [source](https://github.com/ejtb76/FMLarynx) |
 | J6 | 1.4.0 | JackieAlacrity2373 | MPL-2.0 | [source](https://github.com/JackieAlacrity2373/fm1-j6/tree/v1.4.0) |
 | CINCO | 2.5 | mrjoshida | GPL-3.0 | [source](https://github.com/mrjoshida/CINCO) |
@@ -184,7 +209,6 @@ The 165 catalog packages use the license and checksum published in the live firm
 | MNM-1 | 1.0.1 | Veff | GPL-3.0 | [source](https://github.com/galfaroth/mnm1/tree/v1.0.1) |
 | Berlinan | 0.5.1 | Jiří Píša | GPL-2.0-or-later | [source](https://github.com/jiripisa/fm1-berlinan/tree/v0.5.1) |
 | Crepuscular_Homunculus | 0.26.19 | TerkWerX | GPL-3.0 | [source](https://github.com/TerkWerX/Crepuscular_Homunculus) |
-| Hungry Travis | 2026-10-27 | adamcharleswilsonmusic-code | GPL-3.0 | [source](https://github.com/adamcharleswilsonmusic-code/Hungry-Travis) |
 | GuitChordi | 0.1.0-beta.1 | Stoogs | GPL-3.0 | [source](https://github.com/stoogs/guitchordi/tree/v0.1.0-beta.1) |
 | Pocket GammaWave | 1.2.1-GW | ShadowTune (GammaWave Audio) | GPL-3.0 | [source](https://github.com/fvalente/GammaWave-FM1/tree/v1.2.1-GW) |
 | Golana | 1.3 | Gadlele | GPL-3.0 | [source](https://github.com/Gadlele/Golana/tree/golana-v1.3) |
@@ -239,7 +263,6 @@ The 165 catalog packages use the license and checksum published in the live firm
 | TransitFM1 | 0.1.3 | Quixotic7 | GPL-3.0 | [source](https://github.com/Quixotic7/TransitFM1) |
 | SID-1 | 1.0.0 | putchdev | GPL-3.0 | [source](https://github.com/putchdev/sid-1/tree/v1.0.0) |
 | ambwave | 0.1.0 | mentalcells | GPL-3.0 | [source](https://github.com/mentalcells/ambwave) |
-| RAMBEAVER | 745 | adamcharleswilsonmusic-code | GPL-3.0 | [source](https://github.com/adamcharleswilsonmusic-code/RAMBEAVER) |
 | OPN-1 | 2.0.0 | putchdev | GPL-3.0 | [source](https://github.com/putchdev/opn-1/tree/v2.0.0) |
 | ROM-1 | 0.1.1 | devrvega | GPL-3.0 | [source](https://github.com/devrvega/ROM-1) |
 | GATOR | 0.6 | ivanvoid | GPL-3.0 | [source](https://github.com/npi3pak/fm1-gator/tree/v0.6) |
@@ -262,8 +285,6 @@ The 165 catalog packages use the license and checksum published in the live firm
 | MYCELIUM | 1.0-test | Mandalars | GPL-3.0 | [source](https://github.com/megagott/mycelium-fm1/tree/v1.0-test) |
 | Unholy Union | 0.2.3 | actuallysparky | GPL-3.0 | [source](https://github.com/actuallysparky/FM-1-Unholy-Union-generative-drone-firmware/tree/v0.2.3) |
 | ChoralRootj-6 | 0.23-j6 | EremanSim | GPL-3.0 | [source](https://github.com/EremanSim/ChoralRootj-6) |
-| FiMba-1 | 0.6.1 | jadamsowers | GPL-3.0 | [source](https://github.com/jadamsowers/fm1-fimba/tree/v0.6.1) |
-| Trumpagotchi | 1.0.0 | adamcharleswilsonmusic-code | GPL-3.0 | [source](https://github.com/adamcharleswilsonmusic-code/Trumpagotchi) |
 | sardab | microtonal-v1.4-preview2 | jrdntnnr | GPL-3.0 | [source](https://github.com/jrdntnnr/sardab) |
 | fm1-chord | 0.3 | math0ne | GPL-3.0 | [source](https://github.com/math0ne/fm1-chord/tree/v0.3) |
 | WaveLoop FM-1 | 1.0.5.2-midi23 | ELI7VH | GPL-3.0 | [source](https://github.com/ELI7VH/Felucca/tree/1.0.5.2-midi23) |

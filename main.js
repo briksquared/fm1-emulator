@@ -200,7 +200,7 @@ function runSelfTest(win, mode) {
                pageScrolls: document.documentElement.scrollHeight>innerHeight+2, scrollH: document.documentElement.scrollHeight }; })()`
         : mode === "search"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&document.getElementById('fw-search-results')&&window.FM1?.fwText&&(document.getElementById('fw')?.options.length||0)>=257) break; await sleep(200); }
+             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&document.getElementById('fw-search-results')&&window.FM1?.fwText&&(document.getElementById('fw')?.options.length||0)>=278) break; await sleep(200); }
              const q=document.getElementById('fw-search'), results=document.getElementById('fw-search-results');
              if(!q||!results) return {fwCount:document.getElementById('fw')?.options.length,aurora:[],accent:[],version:[],cleared:true,missing:true};
              const run=async value=>{q.value=value;q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(80);return [...results.querySelectorAll('.fw-search-hit[data-id]')].map(b=>b.dataset.id);};
@@ -286,7 +286,7 @@ function runSelfTest(win, mode) {
       const res = await win.webContents.executeJavaScript(js, true);
       console.log("SELFTEST_RESULT " + JSON.stringify(res));
       const passed = mode === "search"
-        ? Number(res.fwCount) === 257 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
+        ? Number(res.fwCount) === 278 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
         : mode === "install"
         ? res.hasBox && res.hasFlash && res.hasResume && res.hasRecovery && res.hasRollback
           && res.hasCopy && res.hasTriage && res.hasDeviceLab && res.hasDesktopBridge

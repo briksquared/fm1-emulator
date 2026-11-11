@@ -43,6 +43,21 @@ async function fetchBytes(url) {
   return Buffer.from(await response.arrayBuffer());
 }
 
+const pkgOnSite = /^(?:fw\/[^/]+\.fwsc|archive\/[a-z0-9._-]+\/[^/]+\.fwsc)$/i;
+const githubReleasePkg = /^https:\/\/github\.com\/[^/]+\/[^/]+\/releases\/download\/[^/]+\/[^/]+\.fwsc$/i;
+
+function localPkgPath(entry) {
+  const pkg = String(entry.pkg || "");
+  if (pkgOnSite.test(pkg)) return pkg;
+  if (githubReleasePkg.test(pkg)) return `archive/${entry.id}/${pkg.split("/").pop()}`;
+  throw new Error(`${entry.id}: unsafe Hub package path`);
+}
+
+function packageFetchUrl(entry) {
+  const pkg = String(entry.pkg || "");
+  return githubReleasePkg.test(pkg) ? pkg : `${hubOrigin}/${pkg}`;
+}
+
 const response = await fetch(`${hubOrigin}/catalog.json`, { headers: { "user-agent": "fm1-emulator-release-sync/1.1" } });
 if (!response.ok) throw new Error(`Firmware Hub catalog: HTTP ${response.status}`);
 const hub = await response.json();
@@ -52,13 +67,14 @@ const hubFirmware = hub.firmwares
 const omitted = hub.firmwares.filter(entry => !openLicense.test(entry.lic || "") || excludedHub.has(entry.id));
 
 const entries = [];
+const ids = new Set(), hashes = new Set();
 for (const entry of hubFirmware) {
-  if (!/^fw\/[^/]+\.fwsc$/.test(entry.pkg || "")) throw new Error(`${entry.id}: unsafe Hub package path`);
-  const destination = resolve(site, entry.pkg);
+  const rel = localPkgPath(entry);
+  const destination = resolve(site, rel);
   if (!inside(site, destination)) throw new Error(`${entry.id}: package escapes the public site`);
   let bytes = existsSync(destination) ? readFileSync(destination) : null;
   if (!bytes || sha256(bytes) !== String(entry.sha256).toLowerCase()) {
-    bytes = await fetchBytes(`${hubOrigin}/${entry.pkg}`);
+    bytes = await fetchBytes(packageFetchUrl(entry));
     const digest = sha256(bytes);
     if (digest !== String(entry.sha256).toLowerCase()) throw new Error(`${entry.id}: Hub SHA-256 mismatch`);
     productOf(bytes);
@@ -79,29 +95,37 @@ for (const entry of hubFirmware) {
     author: entry.author || "community",
     license: entry.lic,
     about: entry.what || "Open-source FM-1 firmware.",
-    package: `../${entry.pkg}`,
+    package: `../${rel}`,
     repo: entry.source || `https://github.com/${entry.repo}`,
     hub: entry.id,
     sha256: digest,
     product,
   });
+  ids.add(entry.id);
+  hashes.add(digest);
 }
 
 for (const entry of manual) {
+  if (ids.has(entry.id) || hashes.has(entry.sha256)) continue;
   const file = resolve(emulator, entry.package);
   if (!inside(site, file) || !existsSync(file)) throw new Error(`${entry.id}: missing reviewed package ${entry.package}`);
   const bytes = readFileSync(file);
   if (sha256(bytes) !== entry.sha256 || productOf(bytes) !== entry.product) throw new Error(`${entry.id}: reviewed package changed`);
   entries.push(entry);
+  ids.add(entry.id);
+  hashes.add(entry.sha256);
 }
 
 entries.sort((a, b) => String(b.released || "").localeCompare(String(a.released || "")) || a.name.localeCompare(b.name));
-const ids = new Set(), hashes = new Set();
 for (const entry of entries) {
-  if (ids.has(entry.id)) throw new Error(`duplicate firmware id: ${entry.id}`);
-  if (hashes.has(entry.sha256)) throw new Error(`duplicate firmware bytes: ${entry.id}`);
-  ids.add(entry.id);
-  hashes.add(entry.sha256);
+  if (!entry.id || !entry.sha256) throw new Error("catalog entry incomplete");
+}
+const seenId = new Set(), seenHash = new Set();
+for (const entry of entries) {
+  if (seenId.has(entry.id)) throw new Error(`duplicate firmware id: ${entry.id}`);
+  if (seenHash.has(entry.sha256)) throw new Error(`duplicate firmware bytes: ${entry.id}`);
+  seenId.add(entry.id);
+  seenHash.add(entry.sha256);
 }
 
 const selectedFiles = new Set(entries.map(entry => resolve(emulator, entry.package).toLowerCase()));

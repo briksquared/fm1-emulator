@@ -1,5 +1,5 @@
-// Toolbar above the panel canvas: explicit Fullscreen and Focus toggles so playing with
-// the mouse never accidentally exits those modes via the canvas or backdrop.
+// Toolbar above the panel canvas: Fullscreen toggle and a Focus opener (not a close control).
+// Focus closes only via the overlay ✕ or Escape; panel clicks stay play-only.
 (function () {
   "use strict";
 
@@ -42,7 +42,7 @@
     bar.setAttribute("aria-label", "Emulator display");
     bar.innerHTML = `<span class="epb-label">Panel controls</span>
       <button type="button" id="epb-fullscreen" class="epb-primary" aria-pressed="false">Fullscreen</button>
-      <button type="button" id="epb-focus" aria-pressed="false" title="Enlarge the panel for easier play (Escape to exit)">Focus</button>
+      <button type="button" id="epb-focus" aria-pressed="false" title="Open enlarged panel play (close with ✕ or Escape)">Focus</button>
       <button type="button" id="epb-voice" aria-pressed="false" title="Speak status-line changes">Voice</button>`;
     stage.insertBefore(bar, stage.firstChild);
 
@@ -65,8 +65,9 @@
 
     const syncFocus = () => {
       const on = window.FM1Focus.isOn();
+      focusBtn.disabled = on;
       focusBtn.setAttribute("aria-pressed", on ? "true" : "false");
-      focusBtn.textContent = on ? "Exit focus" : "Focus";
+      focusBtn.textContent = "Focus";
       bar.classList.toggle("focus-on", on);
     };
 
@@ -83,7 +84,10 @@
     };
 
     fsBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleFs(); });
-    focusBtn.addEventListener("click", (e) => { e.stopPropagation(); window.FM1Focus.toggle(); });
+    focusBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!window.FM1Focus.isOn()) window.FM1Focus.open();
+    });
     voiceBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       window.FM1Focus.toggleSpeak();

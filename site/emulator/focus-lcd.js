@@ -1,6 +1,6 @@
 // Focus Mode: enlarge the panel for easier play; optional spoken status via speechSynthesis
 // and an aria-live region (screen-reader style, inspired by FM-1 Screen Reader / ESTAMPIE).
-// Enter/exit only via the toolbar above the panel or Escape — not canvas or backdrop clicks.
+// Open from the toolbar above the panel; close via the Focus ✕ or Escape — never canvas clicks.
 (function () {
   "use strict";
   const SPEAK_KEY = "fm1.speak.v1";
@@ -41,20 +41,35 @@
         transform-origin:center center;z-index:10031;box-shadow:0 24px 80px rgba(0,0,0,.65);
         border-radius:8px;cursor:default}
       #focus-lcd-veil{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10029;display:none;pointer-events:none}
-      #focus-lcd-veil.on{display:block}`;
+      #focus-lcd-veil.on{display:block}
+      #focus-lcd-close{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));
+        z-index:10034;display:none;align-items:center;justify-content:center;width:40px;height:40px;padding:0;
+        font:700 18px/1 'Space Grotesk',sans-serif;background:var(--ui-pop,#0c0d0f);border:1px solid var(--ui-line,#2a2c31);
+        color:var(--ui-text,#e9edf2);border-radius:10px;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.5)}
+      #focus-lcd-close:hover{border-color:var(--amber);color:var(--ink,#fff)}
+      #focus-lcd-close.on{display:flex}
+      #focus-lcd-close:focus-visible{outline:2px solid var(--amber);outline-offset:2px}`;
     document.head.appendChild(css);
 
     const veil = document.createElement("div");
     veil.id = "focus-lcd-veil";
     document.body.appendChild(veil);
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.id = "focus-lcd-close";
+    closeBtn.setAttribute("aria-label", "Close Focus");
+    closeBtn.title = "Close Focus";
+    closeBtn.textContent = "✕";
+    document.body.appendChild(closeBtn);
 
     let focused = false;
     function setFocus(on) {
       focused = !!on;
       stage.classList.toggle("focus-lcd", focused);
       veil.classList.toggle("on", focused);
-      canvas.title = focused ? "Focus mode — use the toolbar or Escape to exit" : "FM-1 front panel";
-      announce(focused ? "Focus mode on. Use the toolbar or press Escape to exit." : "Focus mode off.");
+      closeBtn.classList.toggle("on", focused);
+      canvas.title = "FM-1 front panel";
+      announce(focused ? "Focus mode on. Close with ✕ or press Escape." : "Focus mode off.");
       window.dispatchEvent(new CustomEvent("fm1-focus-change", { detail: { on: focused } }));
     }
 
@@ -73,10 +88,16 @@
     }
     window.FM1Announce = announce;
 
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setFocus(false);
+    });
+
     window.FM1Focus = {
       isOn: () => focused,
       set: setFocus,
-      toggle: () => setFocus(!focused),
+      open: () => { if (!focused) setFocus(true); },
+      close: () => { if (focused) setFocus(false); },
       speakOn,
       toggleSpeak: () => {
         const on = !speakOn();

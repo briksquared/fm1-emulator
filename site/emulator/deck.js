@@ -29,6 +29,14 @@
   ];
   const BAY = IO.concat(EXTRA);
   const FM = () => window.FM1;
+  const bayPulseMs = 160;
+  const beatUntil = new Map();
+  const bayForced = new Map();
+  window.FM1BayLeds = {
+    setActive(id, on) { bayForced.set(id, !!on); },
+    pulse(id, ms) { if (id) beatUntil.set(id, performance.now() + (ms == null ? bayPulseMs : ms)); },
+    isActive(id) { return !!bayForced.get(id); },
+  };
   const svgNS = "http://www.w3.org/2000/svg";
   const el = (n, cls) => { const e = document.createElement(n); if (cls) e.className = cls; return e; };
   const portReady = (p) => p.scope || p.gen || p.panic || (document.getElementById(p.pop) && document.getElementById(p.btn));
@@ -58,7 +66,7 @@
     const wrap = el("div", "kbd");
     let oct = 0; try { oct = Math.max(-3, Math.min(3, +localStorage.getItem("fm1.kbd.oct") || 0)); } catch {}
     const held = new Map();
-    const on = (base, k, vel) => { if (held.has(base)) return; held.set(base, k); k.classList.add("dn"); try { FM().midi([0x90, base + oct * 12, vel || 100]); } catch {} };
+    const on = (base, k, vel) => { if (held.has(base)) return; held.set(base, k); k.classList.add("dn"); try { FM().midi([0x90, base + oct * 12, vel || 100]); } catch {} window.FM1BayLeds?.pulse?.("midi"); };
     const off = (base, k) => { if (!held.has(base)) return; const n = base + oct * 12; held.delete(base); k.classList.remove("dn"); try { FM().midi([0x80, n, 0]); } catch {} };
     const allOff = () => { for (const [b, k] of [...held]) off(b, k); };
     const velAt = (k, e) => { const r = k.getBoundingClientRect(); return Math.max(24, Math.min(127, Math.round(30 + (e.clientY - r.top) / r.height * 97))); };
@@ -94,7 +102,42 @@
     const whls = el("div", "whls"); whls.append(wheel("pb"), wheel("mod"));
     const main = el("div", "kbd-main"); main.append(whls, keys);
     wrap.append(ctr, main);
+    wrap._held = () => held.size > 0;
     return wrap;
+  }
+
+  function transportBeatFlash() {
+    try {
+      const bpm = window.FM1Transport?.getBpm?.() || 120;
+      const ms = 60000 / Math.max(40, bpm);
+      return (performance.now() % ms) < ms * 0.14;
+    } catch { return false; }
+  }
+
+  function moduleRunning(p, mod, kbd) {
+    if (p.gen) return !!window.FM1BayLeds?.isActive?.(p.id);
+    if (p.scope) { try { return !!(FM() && FM().running && FM().running()); } catch { return false; } }
+    if (p.id === "tape") return !!(window.FM1TapeStatus && window.FM1TapeStatus());
+    if (p.id === "rec") return !!(window.FM1Recorder?.recording || window.FM1Recorder?.playing?.());
+    if (p.id === "tuner") return !!(window.FM1Tuner?.active?.());
+    if (p.id === "midi") return !!(kbd && kbd._held && kbd._held());
+    if (p.id === "assist") {
+      try {
+        return !!(window.FM1Arp?.enabled?.() || window.FM1Chords?.get?.() !== "off" || window.FM1Scale?.enabled?.());
+      } catch { return false; }
+    }
+    if (p.id === "mon") return performance.now() - (window.FM1MidiMon?._last || 0) < 500;
+    if (p.id === "fx") return performance.now() - (window.FM1FxCc?._last || 0) < 500;
+    if (p.panic) return false;
+    return mod.classList.contains("open");
+  }
+
+  function moduleBeat(p, running) {
+    if (!running) return false;
+    if (performance.now() < (beatUntil.get(p.id) || 0)) return true;
+    if (p.gen) return false;
+    if (p.scope || p.id === "rec" || p.id === "assist") return transportBeatFlash();
+    return false;
   }
 
   // Simple circle jack — outer ring + dark hole (no fancy hardware chrome).
@@ -266,6 +309,11 @@
       .fm1-face .lab{display:flex;flex-direction:column;line-height:1.15;flex:1;min-width:0}
       .fm1-face .lab b{font:800 13px 'Space Grotesk',-apple-system,sans-serif;letter-spacing:.02em;color:var(--ui-text,#f2f4f7)}
       .fm1-face .lab small{font:600 10px 'Space Mono',ui-monospace,monospace;color:var(--pc)}
+      .fm1-leds{display:flex;align-items:center;gap:4px;flex:none;margin-left:auto;margin-right:2px}
+      .fm1-led{width:7px;height:7px;border-radius:50%;background:#2a2e34;border:1px solid #3a4048;box-shadow:inset 0 1px 2px rgba(0,0,0,.55);transition:background .12s,box-shadow .12s,opacity .12s}
+      .fm1-led-run.on{background:color-mix(in srgb,var(--pc,#6ec8ff) 72%,#1a1c20);border-color:color-mix(in srgb,var(--pc,#6ec8ff) 45%,#2a2e34);box-shadow:0 0 6px color-mix(in srgb,var(--pc,#6ec8ff) 40%,transparent)}
+      .fm1-led-beat{opacity:.35}
+      .fm1-led-beat.on{opacity:1;background:var(--amber,#e8c040);border-color:color-mix(in srgb,var(--amber,#e8c040) 50%,#3a4048);box-shadow:0 0 8px color-mix(in srgb,var(--amber,#e8c040) 55%,transparent)}
       .fm1-face .chev{color:var(--ui-dim,#8c93a0);font-size:12px;transition:transform .16s}
       .fm1-mod.open .fm1-face{border-bottom:1px solid var(--ui-line,#26292f)}
       .fm1-mod.open .fm1-face .chev{transform:rotate(180deg);color:var(--pc)}
@@ -493,9 +541,14 @@
       const face = el("div", "fm1-face");
       const dj = jack(p.color); dj.classList.add("djack");
       const lab = el("div", "lab"); lab.innerHTML = `<b>${p.label}</b><small>${p.sub}</small>`;
+      const leds = el("span", "fm1-leds");
+      const ledRun = el("span", "fm1-led fm1-led-run"); ledRun.title = "Module active";
+      const ledBeat = el("span", "fm1-led fm1-led-beat"); ledBeat.title = "Beat / activity";
+      leds.append(ledRun, ledBeat);
       const chev = el("span", "chev"); chev.textContent = "▾";
-      face.append(dj, lab, chev);
+      face.append(dj, lab, leds, chev);
       const body = el("div", "fm1-body");
+      let kbd = null;
       if (p.scope) {
         body.appendChild(buildScope());
         const scopeBtn = document.getElementById("scope-btn");
@@ -507,10 +560,17 @@
         body.appendChild(buildPanic());
       } else {
         const pop = document.getElementById(p.pop), btn = document.getElementById(p.btn);
-        if (p.keys) body.appendChild(keyboard());
+        if (p.keys) { kbd = keyboard(); body.appendChild(kbd); }
         if (pop) { pop.classList.add("fm1-inline", "open"); body.appendChild(pop); }
         if (btn) btn.style.display = "none";
       }
+      mod._bayProbe = () => {
+        const run = moduleRunning(p, mod, kbd);
+        const beat = moduleBeat(p, run);
+        ledRun.classList.toggle("on", run);
+        ledBeat.classList.toggle("on", beat);
+        mod.classList.toggle("fm1-mod-live", run);
+      };
       face.setAttribute("role", "button"); face.tabIndex = 0;
       const syncFace = () => { const o = mod.classList.contains("open"); face.setAttribute("aria-expanded", String(o)); face.title = `${o ? "Fold" : "Open"} ${p.label}`; };
       const flip = () => {
@@ -553,6 +613,12 @@
     }, 250);
 
     stage.insertAdjacentElement("afterend", bay);
+
+    const tickBayLeds = () => {
+      for (const mod of mods.children) mod._bayProbe?.();
+      requestAnimationFrame(tickBayLeds);
+    };
+    requestAnimationFrame(tickBayLeds);
 
     let rigZoom = 1, fitting = false, motionT = 0, motionRaf = 0;
 

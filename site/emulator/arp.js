@@ -75,6 +75,7 @@
     silence();                                    // release the previous step
     emit([0x90 | (info.ch & 0x0f), note, info.vel]);
     sounding = { note, ch: info.ch };
+    window.FM1BayLeds?.pulse?.("assist");
   }
 
   function startClock() { stopClock(); step = 0; timer = setInterval(tick, rateMs); }

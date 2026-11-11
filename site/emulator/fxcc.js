@@ -31,6 +31,9 @@
       : [0xb0 | ((ch - 1) & 0x0f), cc & 0x7f, scaled & 0x7f];
     const fm = window.FM1;
     if (fm && fm.midi) fm.midi(msg);
+    window.FM1FxCc = window.FM1FxCc || {};
+    window.FM1FxCc._last = performance.now();
+    window.FM1BayLeds?.pulse?.("fx");
   }
 
   function renderGrid(pop) {

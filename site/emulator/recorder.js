@@ -613,7 +613,7 @@
     document.addEventListener("pointerdown", (e) => { if (e.target !== btn && !btn.contains(e.target) && !pop.contains(e.target)) pop.classList.remove("open"); });
 
     window.FM1Recorder = {
-      writeSMF, start, stop, quantize: quantizeEvents, events: () => events,
+      writeSMF, start, stop, recording: () => recording, quantize: quantizeEvents, events: () => events,
       _startClicks: startClicks, _stopClicks: stopClicks,
       _inject: (evs) => { events = evs.map((e) => ({ t: e.t, b: e.b.slice() })); refreshMixer(); },
       _grids: GRIDS, _setOverdub: (v) => { overdub = !!v; }, _setLoop: (v) => { loopOn = !!v; },

@@ -68,7 +68,10 @@
         out[o++] = buf[a0 + 1] + (buf[a1 + 1] - buf[a0 + 1]) * frac;
         feedPos += rev ? -sp : sp;
       }
-      if (o > 0) FM().audio(out.subarray(0, o));
+      if (o > 0) {
+        FM().audio(out.subarray(0, o));
+        window.FM1BayLeds?.pulse?.("tape");
+      }
       if (done) { stopFeed(); onDone && onDone("done"); }
     }, 100);
   }
@@ -344,4 +347,6 @@
       if (e.target !== btn && !pop.contains(e.target)) closeTape();
     });
   });
+
+  window.FM1TapeStatus = () => !!(feedTimer || micStop);
 })();

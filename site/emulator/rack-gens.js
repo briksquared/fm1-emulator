@@ -104,13 +104,14 @@
 
   // Swing-aware clock (alternating step delay)
   function makeClock() {
-    let timer = 0, step = 0, onTick = null, baseMs = 125, swing = 0, alive = false;
+    let timer = 0, step = 0, onTick = null, baseMs = 125, swing = 0, alive = false, bayId = null;
     function schedule() {
       if (!alive) return;
       const odd = step % 2 === 1;
       const delay = baseMs * (odd ? 1 + swing : 1 - swing * 0.55);
       timer = setTimeout(() => {
         if (!alive) return;
+        if (bayId) window.FM1BayLeds?.pulse?.(bayId);
         if (onTick) onTick(step++);
         schedule();
       }, Math.max(18, delay));
@@ -120,11 +121,16 @@
       setSwing(v) { swing = clamp(v, 0, 0.6); },
       getMs: () => baseMs,
       step: () => step,
+      setBay(id) { bayId = id || null; },
       start(fn) {
         onTick = fn; step = 0; alive = true;
+        if (bayId) window.FM1BayLeds?.setActive?.(bayId, true);
         clearTimeout(timer); schedule();
       },
-      stop() { alive = false; clearTimeout(timer); timer = 0; onTick = null; },
+      stop() {
+        alive = false; clearTimeout(timer); timer = 0; onTick = null;
+        if (bayId) window.FM1BayLeds?.setActive?.(bayId, false);
+      },
       running: () => alive,
     };
   }
@@ -452,7 +458,7 @@
   }
 
   // ===================== GATE =====================
-  function buildGate(body) {
+  function buildGate(body, bayId) {
     const MAX = 32;
     const p = {
       followAssist: true, scale: "pent", rootPc: 0, oct: 1, div: "16", swing: 0.12, human: 0.22,
@@ -552,6 +558,7 @@
     }));
 
     const clock = makeClock();
+    if (bayId) clock.setBay(bayId);
     let lit = -1;
     const play = btn("▶ Gate", "play");
     const stop = btn("■", "stop");
@@ -585,7 +592,7 @@
   }
 
   // ===================== PIANIST =====================
-  function buildPianist(body) {
+  function buildPianist(body, bayId) {
     const STYLES = [
       { id: "comp", label: "Comp" }, { id: "alberti", label: "Alberti" }, { id: "waltz", label: "Waltz" },
       { id: "boom", label: "Boom" }, { id: "stride", label: "Stride" }, { id: "broken", label: "Broken" },
@@ -645,6 +652,7 @@
     ui.appendChild(userSlots("pianist", () => ({ ...p }), (d) => { Object.assign(p, d); sync(); status.textContent = "Loaded user slot"; }));
 
     let held = [], clock = makeClock(), progStep = 0, lastChord = [];
+    if (bayId) clock.setBay(bayId);
     function currentRootDegree(s) {
       const pr = PROGS.find((x) => x.id === p.prog) || PROGS[0];
       const bar = Math.floor(s / (4 * (p.barsPer || 1)));
@@ -725,7 +733,7 @@
   }
 
   // ===================== QUANT =====================
-  function buildQuant(body) {
+  function buildQuant(body, bayId) {
     const CONTOURS = [
       { id: "free", label: "Free" }, { id: "arch", label: "Arch" }, { id: "rise", label: "Rise" },
       { id: "fall", label: "Fall" }, { id: "wave", label: "Wave" }, { id: "pend", label: "Pendulum" },
@@ -777,6 +785,7 @@
     ui.appendChild(userSlots("quant", () => ({ ...p }), (d) => { Object.assign(p, d); sync(); status.textContent = "Loaded user slot"; }));
 
     let seed = p.seed, last = null, degIdx = 0, motifBuf = [], clock = makeClock();
+    if (bayId) clock.setBay(bayId);
     function rng() {
       seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
       let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
@@ -842,7 +851,7 @@
   }
 
   // ===================== EUCLID =====================
-  function buildEuclid(body) {
+  function buildEuclid(body, bayId) {
     const p = {
       followAssist: true, scale: "pent", rootPc: 0, oct: 1, div: "16", swing: 0, human: 0.18,
       vel: 108, gate: 0.48, ch: 0, groove: "straight", expr: 0, steps: 16, hits: 5, rot: 0,
@@ -908,6 +917,7 @@
     ui.appendChild(userSlots("euclid", () => ({ ...p }), (d) => { Object.assign(p, d); sync(); paint(); status.textContent = "Loaded user slot"; }));
 
     const clock = makeClock();
+    if (bayId) clock.setBay(bayId);
     const play = btn("▶ Euclid", "play");
     const stop = btn("■", "stop");
     transport.append(play, stop);
@@ -936,7 +946,7 @@
   }
 
   // ===================== BASS =====================
-  function buildBass(body) {
+  function buildBass(body, bayId) {
     const MODES = [
       { id: "walk", label: "Walk" }, { id: "acid", label: "Acid" }, { id: "dub", label: "Dub" },
       { id: "octaves", label: "Octaves" }, { id: "pedal", label: "Pedal" }, { id: "funk", label: "Funk" },
@@ -981,6 +991,7 @@
     ui.appendChild(userSlots("bass", () => ({ ...p }), (d) => { Object.assign(p, d); sync(); status.textContent = "Loaded user slot"; }));
 
     let last = null, step = 0, target = 0, clock = makeClock();
+    if (bayId) clock.setBay(bayId);
     function nextNote(s) {
       const { root, deg } = degrees(p);
       const base = clamp(root - 12, 24, 55);
@@ -1051,7 +1062,7 @@
   }
 
   // ===================== DRONE =====================
-  function buildDrone(body) {
+  function buildDrone(body, bayId) {
     const SHAPES = [
       { id: "power", label: "Power", ints: [0, 7, 12] },
       { id: "minor", label: "Minor", ints: [0, 3, 7, 12] },
@@ -1104,6 +1115,7 @@
     ui.appendChild(userSlots("drone", () => ({ ...p }), (d) => { Object.assign(p, d); sync(); status.textContent = "Loaded user slot"; }));
 
     let held = [], extras = [], clock = makeClock(), age = 0;
+    if (bayId) clock.setBay(bayId);
     function voicing() {
       const { root } = degrees(p);
       const shape = SHAPES.find((s) => s.id === p.shape) || SHAPES[0];
@@ -1160,7 +1172,7 @@
   }
 
   // ===================== MARKOV =====================
-  function buildMarkov(body) {
+  function buildMarkov(body, bayId) {
     const TABLES = {
       lazy: [[0, 0.42], [1, 0.24], [-1, 0.24], [2, 0.05], [-2, 0.05]],
       busy: [[0, 0.12], [1, 0.3], [-1, 0.3], [2, 0.16], [-2, 0.12]],
@@ -1210,6 +1222,7 @@
     ui.appendChild(userSlots("markov", () => ({ ...p }), (d) => { Object.assign(p, d); sync(); status.textContent = "Loaded user slot"; }));
 
     let last = null, degIdx = 0, hist = [], clock = makeClock();
+    if (bayId) clock.setBay(bayId);
     const play = btn("▶ Markov", "play");
     const stop = btn("■", "stop");
     transport.append(play, stop);
@@ -1251,7 +1264,7 @@
   }
 
   // ===================== POLYR =====================
-  function buildPolyr(body) {
+  function buildPolyr(body, bayId) {
     const p = {
       followAssist: true, scale: "pent", rootPc: 0, oct: 1, div: "16", swing: 0, human: 0.18,
       vel: 100, gate: 0.42, ch: 0, groove: "straight", expr: 0,
@@ -1298,6 +1311,7 @@
 
     function hit(i, n, lenN) { return n > 0 && Math.round(i * n / lenN) !== Math.round((i - 1) * n / lenN); }
     let lastA = null, lastB = null, lastC = null, step = 0, clock = makeClock();
+    if (bayId) clock.setBay(bayId);
     const play = btn("▶ Polyr", "play");
     const stop = btn("■", "stop");
     transport.append(play, stop);
@@ -1342,7 +1356,7 @@
   }
 
   // ===================== ARP (new) =====================
-  function buildArp(body) {
+  function buildArp(body, bayId) {
     const MODES = [
       { id: "up", label: "Up" }, { id: "down", label: "Down" }, { id: "updown", label: "Up/Dn" },
       { id: "downup", label: "Dn/Up" }, { id: "converge", label: "Converge" }, { id: "diverge", label: "Diverge" },
@@ -1420,6 +1434,7 @@
     }
 
     let last = null, idx = 0, clock = makeClock(), ordered = [];
+    if (bayId) clock.setBay(bayId);
     const play = btn("▶ Arp", "play");
     const stop = btn("■", "stop");
     transport.append(play, stop);
@@ -1447,7 +1462,7 @@
   }
 
   // ===================== PROG (new) =====================
-  function buildProg(body) {
+  function buildProg(body, bayId) {
     const PROGS = [
       { id: "pop", label: "I–V–vi–IV", seq: [0, 4, 5, 3] },
       { id: "jazz", label: "ii–V–I–I", seq: [1, 4, 0, 0] },
@@ -1500,6 +1515,7 @@
     ui.appendChild(userSlots("prog", () => ({ ...p }), (d) => { Object.assign(p, d); sync(); status.textContent = "Loaded user slot"; }));
 
     let held = [], clock = makeClock(), arpIdx = 0;
+    if (bayId) clock.setBay(bayId);
     function chordAt(bar) {
       const pr = PROGS.find((x) => x.id === p.prog) || PROGS[0];
       const roman = pr.seq[bar % pr.seq.length];
@@ -1557,7 +1573,7 @@
   }
 
   // ===================== RIFF =====================
-  function buildRiff(body) {
+  function buildRiff(body, bayId) {
     const p = {
       followAssist: true, scale: "pent", rootPc: 0, oct: 1, div: "8", swing: 0.1, human: 0.25,
       vel: 96, gate: 0.7, ch: 0, groove: "mpc", expr: 0, style: "melody", loop: true, gap: 0.2, transpose: 0,
@@ -1605,6 +1621,7 @@
     ui.append(transport, status);
 
     function fire() {
+      if (bayId) window.FM1BayLeds?.pulse?.(bayId);
       anim.hit("#ff8a1a", 0.7); anim.tickBeat();
       const ok = window.FM1Audition && window.FM1Audition.play(null, { bpm: bpmNow() });
       status.textContent = ok ? `Riff · ${p.style} · ${bpmNow()} BPM` : "Audition unavailable.";
@@ -1615,6 +1632,7 @@
     }
     stop.onclick = () => {
       clearTimeout(timer); timer = 0;
+      if (bayId) window.FM1BayLeds?.setActive?.(bayId, false);
       window.FM1Audition && window.FM1Audition.stop();
       allOff(p.ch); status.textContent = "Stopped";
     };
@@ -1622,6 +1640,7 @@
       if (!needStart(status)) return;
       stop.onclick();
       if (window.FM1Audition && p.style) window.FM1Audition.setStyle(p.style);
+      if (bayId) window.FM1BayLeds?.setActive?.(bayId, true);
       fire();
     };
   }
@@ -1687,7 +1706,7 @@
         polyr: buildPolyr, arp: buildArp, prog: buildProg,
       };
       const fn = map[kind];
-      if (fn) return fn(body);
+      if (fn) return fn(body, kind);
     },
   };
 })();

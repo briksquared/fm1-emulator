@@ -93,7 +93,7 @@
     const barEl = pop.querySelector("#tn-bar"), neeEl = pop.querySelector("#tn-nee");
     const a4El = pop.querySelector("#tn-a4");
 
-    let open = false, raf = 0, smoothHz = 0, a4 = 440;
+    let open = false, raf = 0, smoothHz = 0, a4 = 440, lastPitchAt = 0;
     try {
       const saved = +localStorage.getItem("fm1.tuner.a4");
       if (saved >= 415 && saved <= 466) { a4 = saved; a4El.value = String(a4); }
@@ -127,6 +127,8 @@
       hzEl.textContent = smoothHz.toFixed(1) + " Hz · A4=" + a4;
       neeEl.style.left = (50 + Math.max(-50, Math.min(50, note.cents)) ) + "%";
       barEl.classList.toggle("lit", Math.abs(note.cents) <= 5);
+      lastPitchAt = performance.now();
+      window.FM1BayLeds?.pulse?.("tuner");
       return { hz: smoothHz, note, a4 };
     }
     function loop() { if (!open) return; frame(); raf = requestAnimationFrame(loop); }
@@ -140,5 +142,6 @@
 
     window.FM1Tuner._frame = frame;
     window.FM1Tuner._open = openPop;
+    window.FM1Tuner.active = () => open && performance.now() - lastPitchAt < 450;
   });
 })();

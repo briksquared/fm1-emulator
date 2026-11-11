@@ -69,6 +69,8 @@
           if (!text) return;
           log.push({ text, n: ++counter, kind: kindOf(text), raw: rawHex(bytes) });
           if (log.length > MAX) log.shift();
+          window.FM1MidiMon._last = performance.now();
+          window.FM1BayLeds?.pulse?.("mon");
           if (onMsg) onMsg();
         } catch {}
       });

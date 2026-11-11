@@ -115,7 +115,10 @@
   }
 
   function moduleRunning(p, mod, kbd) {
-    if (p.gen) return !!window.FM1BayLeds?.isActive?.(p.id);
+    if (p.gen) {
+      const t = window.FM1BayTransport?.get(p.id);
+      return !!(window.FM1BayLeds?.isActive?.(p.id) || t?.isOn?.());
+    }
     if (p.scope) { try { return !!(FM() && FM().running && FM().running()); } catch { return false; } }
     if (p.id === "tape") return !!(window.FM1TapeStatus && window.FM1TapeStatus());
     if (p.id === "rec") return !!(window.FM1Recorder?.recording || window.FM1Recorder?.playing?.());
@@ -135,9 +138,9 @@
   function moduleBeat(p, running) {
     if (!running) return false;
     if (performance.now() < (beatUntil.get(p.id) || 0)) return true;
-    if (p.gen) return false;
-    if (p.scope || p.id === "rec" || p.id === "assist") return transportBeatFlash();
-    return false;
+    if (p.gen) return performance.now() < (beatUntil.get(p.id) || 0);
+    if (p.scope || p.id === "rec" || p.id === "assist") return transportBeatFlash() || performance.now() < (beatUntil.get(p.id) || 0);
+    return performance.now() < (beatUntil.get(p.id) || 0);
   }
 
   // Simple circle jack — outer ring + dark hole (no fancy hardware chrome).
@@ -304,22 +307,29 @@
       .fm1-mod::before,.fm1-mod::after{content:"";position:absolute;top:8px;width:5px;height:5px;border-radius:50%;
         background:radial-gradient(circle at 40% 35%,#6a6e76,#2a2d33);box-shadow:inset 0 0 1px #000}
       .fm1-mod::before{left:8px}.fm1-mod::after{right:8px}
-      .fm1-face{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer}
+      .fm1-mod-lamps{position:absolute;top:7px;right:9px;z-index:5;display:flex;align-items:center;gap:6px;pointer-events:none}
+      .fm1-mod-lamp{width:11px;height:11px;border-radius:50%;flex:none;
+        background:#1e2126;border:1px solid #3d424b;box-shadow:inset 0 2px 3px rgba(0,0,0,.65);opacity:.55;transition:opacity .15s,box-shadow .15s,background .15s,border-color .15s}
+      .fm1-mod-lamp-run.on{opacity:1;background:var(--pc,#6ec8ff);border-color:color-mix(in srgb,var(--pc,#6ec8ff) 65%,#fff);
+        box-shadow:0 0 10px color-mix(in srgb,var(--pc,#6ec8ff) 70%,transparent),0 0 3px color-mix(in srgb,var(--pc,#6ec8ff) 90%,transparent)}
+      .fm1-mod-lamp-beat.on{opacity:1;background:#f0c040;border-color:#ffe08a;
+        box-shadow:0 0 12px rgba(240,192,64,.75),0 0 4px rgba(255,224,138,.9)}
+      .fm1-mod.fm1-mod-live{border-color:color-mix(in srgb,var(--pc) 42%,#2c2f35);
+        box-shadow:0 10px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px color-mix(in srgb,var(--pc) 22%,transparent)}
+      .fm1-face{display:flex;align-items:center;gap:10px;padding:10px 14px 10px 14px;padding-right:52px;cursor:pointer}
       .fm1-face .pj{flex:none}
       .fm1-face .lab{display:flex;flex-direction:column;line-height:1.15;flex:1;min-width:0}
       .fm1-face .lab b{font:800 13px 'Space Grotesk',-apple-system,sans-serif;letter-spacing:.02em;color:var(--ui-text,#f2f4f7)}
       .fm1-face .lab small{font:600 10px 'Space Mono',ui-monospace,monospace;color:var(--pc)}
-      .fm1-leds{display:flex;align-items:center;gap:4px;flex:none;margin-left:auto;margin-right:2px}
-      .fm1-led{width:7px;height:7px;border-radius:50%;background:#2a2e34;border:1px solid #3a4048;box-shadow:inset 0 1px 2px rgba(0,0,0,.55);transition:background .12s,box-shadow .12s,opacity .12s}
-      .fm1-led-run.on{background:color-mix(in srgb,var(--pc,#6ec8ff) 72%,#1a1c20);border-color:color-mix(in srgb,var(--pc,#6ec8ff) 45%,#2a2e34);box-shadow:0 0 6px color-mix(in srgb,var(--pc,#6ec8ff) 40%,transparent)}
-      .fm1-led-beat{opacity:.35}
-      .fm1-led-beat.on{opacity:1;background:var(--amber,#e8c040);border-color:color-mix(in srgb,var(--amber,#e8c040) 50%,#3a4048);box-shadow:0 0 8px color-mix(in srgb,var(--amber,#e8c040) 55%,transparent)}
-      .fm1-face-play{flex:none;width:26px;height:26px;padding:0;margin:0;border-radius:7px;cursor:pointer;line-height:1;
-        border:1px solid color-mix(in srgb,var(--pc,#6ec8ff) 45%,#2c2f35);background:var(--ui-surface,#17181b);color:var(--pc,#9ad);
-        font:700 11px 'Space Grotesk',sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-      .fm1-face-play:hover{border-color:var(--amber);color:var(--ui-text,#f2f4f7)}
-      .fm1-face-play.on{background:var(--amber,#d8d8d8);border-color:transparent;color:var(--ui-on-accent,#180a02);
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 0 1px color-mix(in srgb,var(--amber) 35%,transparent)}
+      .fm1-face-play{flex:none;width:28px;height:28px;padding:0;margin-left:auto;margin-right:0;border-radius:8px;cursor:pointer;line-height:1;
+        border:1px solid #4a5058;background:#25282e;color:#f0f3f8;
+        font:800 12px 'Space Grotesk',sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 1px 2px rgba(0,0,0,.35)}
+      .fm1-face-play:hover:not(.playing){background:#32363e;border-color:#6a707a;color:#fff}
+      .fm1-face-play.playing{background:#2fd67a;border-color:#1fa85c;color:#07140e;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 0 2px rgba(47,214,122,.35),0 0 14px rgba(47,214,122,.45)}
+      .fm1-face-play.playing:hover{background:#3be886;color:#051008}
+      .fm1-face-play[aria-pressed="true"]::after{content:'';position:absolute;inset:-3px;border-radius:10px;border:1px solid rgba(47,214,122,.5);pointer-events:none}
+      .fm1-face-play{position:relative}
       .fm1-face .chev{color:var(--ui-dim,#8c93a0);font-size:12px;transition:transform .16s}
       .fm1-mod.open .fm1-face{border-bottom:1px solid var(--ui-line,#26292f)}
       .fm1-mod.open .fm1-face .chev{transform:rotate(180deg);color:var(--pc)}
@@ -547,18 +557,22 @@
       const face = el("div", "fm1-face");
       const dj = jack(p.color); dj.classList.add("djack");
       const lab = el("div", "lab"); lab.innerHTML = `<b>${p.label}</b><small>${p.sub}</small>`;
-      const leds = el("span", "fm1-leds");
-      const ledRun = el("span", "fm1-led fm1-led-run"); ledRun.title = "Module active";
-      const ledBeat = el("span", "fm1-led fm1-led-beat"); ledBeat.title = "Beat / activity";
-      leds.append(ledRun, ledBeat);
+      const lamps = el("div", "fm1-mod-lamps");
+      const ledRun = el("span", "fm1-mod-lamp fm1-mod-lamp-run");
+      ledRun.title = "On — module is running";
+      ledRun.setAttribute("aria-label", "Run indicator");
+      const ledBeat = el("span", "fm1-mod-lamp fm1-mod-lamp-beat");
+      ledBeat.title = "Beat";
+      lamps.append(ledRun, ledBeat);
       const facePlay = el("button", "fm1-face-play");
       facePlay.type = "button";
       facePlay.textContent = "▶";
       facePlay.title = "Play";
       facePlay.setAttribute("aria-label", `Play ${p.label}`);
+      facePlay.setAttribute("aria-pressed", "false");
       facePlay.hidden = !p.gen;
       const chev = el("span", "chev"); chev.textContent = "▾";
-      face.append(dj, lab, leds, facePlay, chev);
+      face.append(dj, lab, facePlay, chev);
       const body = el("div", "fm1-body");
       let kbd = null;
       if (p.scope) {
@@ -582,15 +596,17 @@
         ledRun.classList.toggle("on", run);
         ledBeat.classList.toggle("on", beat);
         mod.classList.toggle("fm1-mod-live", run);
+        mod.dataset.running = run ? "1" : "0";
         if (p.gen) {
           const t = window.FM1BayTransport?.get(p.id);
           facePlay.hidden = !t;
           if (t) {
-            const on = !!t.isOn?.();
-            facePlay.textContent = on ? "■" : "▶";
-            facePlay.classList.toggle("on", on);
-            facePlay.title = on ? "Stop" : "Play";
-            facePlay.setAttribute("aria-label", `${on ? "Stop" : "Play"} ${p.label}`);
+            const playing = !!t.isOn?.();
+            facePlay.textContent = playing ? "■" : "▶";
+            facePlay.classList.toggle("playing", playing);
+            facePlay.setAttribute("aria-pressed", playing ? "true" : "false");
+            facePlay.title = playing ? "Playing — click to stop" : "Stopped — click to play";
+            facePlay.setAttribute("aria-label", `${playing ? "Stop" : "Play"} ${p.label}`);
           }
         }
       };
@@ -616,7 +632,7 @@
         });
       };
       syncFace();
-      mod.append(face, body);
+      mod.append(lamps, face, body);
       face.onclick = (e) => { if (e.target === facePlay || facePlay.contains(e.target)) return; flip(); };
       face.onkeydown = (e) => {
         if (e.target === facePlay) return;

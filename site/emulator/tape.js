@@ -34,7 +34,7 @@
   }
 
   // ---- feeding the line-in: push interleaved stereo in realtime-paced chunks ----
-  let feedTimer = null, feedPos = 0, micStop = null, recNodes = null, recChunks = null, feedGen = 0;
+  let feedTimer = null, feedPos = 0, micStop = null, recNodes = null, recChunks = null, feedGen = 0, tapeOutRec = false;
   let feedSpeed = 1;                     // tape varispeed: playback rate multiplier (couples pitch + speed)
   let feedReverse = false;               // play the buffer backwards
   const CHUNK = Math.floor(RATE * 0.1); // 100 ms per tick
@@ -309,9 +309,9 @@
     };
     pop.querySelector("#tape-stop").onclick = () => { stopFeed(); if (!recording) spin(false); status("Stopped."); };
     recBtn.onclick = () => {
-      if (!recording) { if (startRec((m) => status(m))) { recording = true; recBtn.classList.add("on"); recBtn.textContent = "● Stop"; spin(true, true); status("● Recording the FM-1 output…"); } }
+      if (!recording) { if (startRec((m) => status(m))) { recording = true; tapeOutRec = true; recBtn.classList.add("on"); recBtn.textContent = "● Stop"; spin(true, true); status("● Recording the FM-1 output…"); } }
       else {
-        recording = false; recBtn.classList.remove("on"); recBtn.textContent = "● Rec"; if (!feedTimer && !micStop) spin(false);
+        recording = false; tapeOutRec = false; recBtn.classList.remove("on"); recBtn.textContent = "● Rec"; if (!feedTimer && !micStop) spin(false);
         const blob = stopRec();
         if (blob && blob.size > 44) {
           const url = URL.createObjectURL(blob); const name = `fm1-recording-${Date.now()}.wav`;
@@ -348,5 +348,5 @@
     });
   });
 
-  window.FM1TapeStatus = () => !!(feedTimer || micStop);
+  window.FM1TapeStatus = () => !!(feedTimer || micStop || tapeOutRec);
 })();

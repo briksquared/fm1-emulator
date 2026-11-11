@@ -29,7 +29,7 @@ Get the latest build for your system from the [**Releases**](https://github.com/
 | **Linux** | `*.AppImage` or `*.deb` |
 
 <p align="center">
-  <img src="docs/hero.jpg" alt="FM-1 Emulator — AURORA" width="760">
+  <img src="docs/hero.jpg?v=1.1.2-aurora" alt="FM-1 Emulator — AURORA" width="760">
 </p>
 
 ## First launch
@@ -64,29 +64,29 @@ Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 ## Colours
 
 <p align="center">
-  <img src="docs/screenshots/01-midnight.png" alt="Midnight" width="48%">
-  <img src="docs/screenshots/02-graphite.png" alt="Graphite" width="48%">
+  <img src="docs/screenshots/01-midnight.png?v=1.1.2" alt="Midnight — AURORA" width="48%">
+  <img src="docs/screenshots/02-graphite.png?v=1.1.2" alt="Graphite — JIANT FM" width="48%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/03-cobalt.png" alt="Cobalt" width="48%">
-  <img src="docs/screenshots/04-emerald.png" alt="Emerald" width="48%">
+  <img src="docs/screenshots/03-cobalt.png?v=1.1.2" alt="Cobalt — SIDOU" width="48%">
+  <img src="docs/screenshots/04-emerald.png?v=1.1.2" alt="Emerald — Melodee" width="48%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/05-crimson.png" alt="Crimson" width="48%">
-  <img src="docs/screenshots/06-vaporwave.png" alt="Vaporwave" width="48%">
+  <img src="docs/screenshots/05-crimson.png?v=1.1.2" alt="Crimson — Bigorna" width="48%">
+  <img src="docs/screenshots/06-vaporwave.png?v=1.1.2" alt="Vaporwave — Ravel" width="48%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/07-ice.png" alt="Ice" width="48%">
-  <img src="docs/screenshots/08-paper.png" alt="Paper" width="48%">
+  <img src="docs/screenshots/07-ice.png?v=1.1.2" alt="Ice — Cut-A-Dor" width="48%">
+  <img src="docs/screenshots/08-paper.png?v=1.1.2" alt="Paper — Bunker Evolved" width="48%">
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/09-cobalt-customize.png" alt="Customize" width="48%">
-  <img src="docs/screenshots/10-emerald-browser.png" alt="Browser" width="48%">
+  <img src="docs/screenshots/09-cobalt-customize.png?v=1.1.2" alt="Customize" width="48%">
+  <img src="docs/screenshots/10-emerald-browser.png?v=1.1.2" alt="Browser" width="48%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/11-ice-patch-bay.png" alt="Patch bay" width="48%">
-  <img src="docs/screenshots/12-vaporwave-keys.png" alt="Keys" width="48%">
+  <img src="docs/screenshots/11-ice-patch-bay.png?v=1.1.2" alt="Patch bay" width="48%">
+  <img src="docs/screenshots/12-vaporwave-keys.png?v=1.1.2" alt="Keys" width="48%">
 </p>
 
 ## Recovery & safety

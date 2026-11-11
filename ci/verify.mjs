@@ -73,8 +73,22 @@ for (const directory of [resolve(site, "fw"), resolve(site, "archive")]) {
   visit(directory);
 }
 assert.deepEqual(new Set(diskPackages), files, "no stale or unlisted .fwsc packages");
-for (const excluded of ["modfm1", "fm1-operator", "fm1-doom", "core-fm1", "fm1-neverhood", "ketch", "mpfm1", "vesper", "emb", "bb1", "bubba"])
+const windowsUsbBlock = json("ci/windows-usb-blocklist.json").packages || {};
+for (const excluded of ["modfm1", "fm1-operator", "fm1-doom", "core-fm1", "fm1-neverhood", "ketch", "mpfm1", "vesper", "emb", "bb1", "bubba", ...Object.keys(windowsUsbBlock)])
   assert.ok(!ids.has(excluded), `excluded unsafe/unverified package: ${excluded}`);
+assert.equal(
+  JSON.stringify(json("site/emulator/windows-usb-blocklist.json")),
+  JSON.stringify(json("ci/windows-usb-blocklist.json")),
+  "site and ci Windows USB blocklists stay in sync",
+);
+assert.ok(existsSync(resolve(emulator, "windows-usb-policy.js")), "Windows USB policy module is shipped");
+assert.match(text("site/emulator/install.js"), /windows-usb-policy\.js/, "install uses centralized Windows USB policy");
+assert.match(text("site/emulator/main.js"), /filterFirmwaresForPlatform/, "emulator catalog filters blocked firmware on Windows");
+assert.match(text("site/emulator/extras.js"), /!o\.hidden\s*&&\s*!o\.disabled/, "Random only picks enabled, platform-safe firmware options");
+assert.match(text("site/emulator/gallery.js"), /fws\.filter\(matches\)/, "gallery Random only picks from the filtered platform catalog");
+assert.match(text("main.js"), /staleDriver/, "desktop USB check detects stale driver without MIDI");
+assert.match(text("main.js"), /-Quick/, "USB repair supports quick stale-driver purge");
+assert.match(text("package.json"), /repair-fm1-usb\.ps1/, "Windows build bundles USB repair script");
 
 const host = text("main.js");
 const page = text("site/emulator/main.js");

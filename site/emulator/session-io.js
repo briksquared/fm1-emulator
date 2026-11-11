@@ -4,7 +4,7 @@
   "use strict";
 
   const KEYS = [
-    "fm1.midi", "fm1.midiout", "fm1.midich", "fm1.midilink",
+    "fm1.midi", "fm1.midiout", "fm1.midich", "fm1.midilink", "fm1.midi.hold",
     "fm1.hostpanel.v1", "fm1.fxcc.v1", "fm1.assist.v1", "fm1.speak.v1",
     "fm1.ab.v1", "fm1.skin", "fm1.keys.touchvel", "fm1.keys.hwproc",
   ];

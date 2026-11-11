@@ -55,13 +55,62 @@ function mFlasherPath() {
   return candidates.find((file) => file && fs.existsSync(file) && isPeExecutable(file)) || null;
 }
 
+function repairScriptPath() {
+  const candidates = [
+    path.join(process.resourcesPath, "repair-fm1-usb.ps1"),
+    path.join(__dirname, "tools", "repair-fm1-usb.ps1"),
+  ];
+  return candidates.find((file) => file && fs.existsSync(file)) || null;
+}
+
+/** Elevated Windows repair for FM-1 USB driver stuck in Error / FAILED_START. opts.quick skips unplug wizard. */
+function repairFm1Usb(opts = {}) {
+  if (process.platform !== "win32") {
+    return Promise.resolve({ ok: false, message: "USB repair is Windows-only." });
+  }
+  const script = repairScriptPath();
+  const elevate = path.join(process.resourcesPath, "elevate.exe");
+  if (!script) {
+    return Promise.resolve({ ok: false, message: "Repair script is missing from this install." });
+  }
+  if (!fs.existsSync(elevate)) {
+    return Promise.resolve({ ok: false, message: "Administrator helper is missing from this install." });
+  }
+  const ps = process.env.SystemRoot
+    ? path.join(process.env.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+    : "powershell.exe";
+  const args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script];
+  if (opts && opts.quick) args.push("-Quick");
+  return new Promise((resolve) => {
+    try {
+      const child = spawn(elevate, ["-wait", ps, ...args], { detached: true, stdio: "ignore", windowsHide: false });
+      child.once("error", (error) => {
+        desktopLog("usb-repair-spawn-error", { message: String(error && error.message || error) });
+        resolve({ ok: false, message: String(error && error.message || error) });
+      });
+      child.once("spawn", () => {
+        child.unref();
+        desktopLog("usb-repair-launched", {});
+        resolve({ ok: true, launched: true, message: "Approve Windows if it asks for Administrator." });
+      });
+    } catch (error) {
+      resolve({ ok: false, message: String(error && error.message || error) });
+    }
+  });
+}
+
 // USB ids from the FM-1 recovery notes: 4C4A:C755 running firmware,
 // 4D4A:4155 stock update loader, 4C4A:8057 the chip's ROM download mode ("WL82 UBOOT1.00").
-const USB_MODES = { "4C4A:C755": "running", "4D4A:4155": "update", "4C4A:8057": "download" };
+const USB_MODES = { "4C4A:C755": "running", "4D4A:4155": "update", "4C4A:8057": "download", "1209:0001": "running" };
 function usbCheck() {
   if (process.platform !== "win32") return Promise.resolve({ ok: false, unsupported: true, devices: [] });
-  const script = "Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match '^USB\\\\VID_(4C4A|4D4A)&PID_[0-9A-F]{4}' } | " +
-    "ForEach-Object { [pscustomobject]@{ id = ($_.InstanceId -replace '^USB\\\\VID_([0-9A-F]{4})&PID_([0-9A-F]{4}).*$', '$1:$2'); cls = [string]$_.Class; status = [string]$_.Status } } | ConvertTo-Json -Compress";
+  const script = "$ports=@(); Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match '^USB\\\\VID_(4C4A|4D4A|1209)&PID_[0-9A-F]{4}' } | ForEach-Object { " +
+    "$pc=$null; if($_.Status -ne 'OK'){ try{$pc=(Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName DEVPKEY_Device_ProblemCode).Data}catch{} }; " +
+    "$ports+=[pscustomobject]@{ id = ($_.InstanceId -replace '^USB\\\\VID_([0-9A-F]{4})&PID_([0-9A-F]{4}).*$', '$1:$2'); name = [string]$_.FriendlyName; cls = [string]$_.Class; status = [string]$_.Status; problem = $pc; mi = if($_.InstanceId -match '&MI_([0-9A-F]{2})'){$matches[1]}else{''} } }; " +
+    "$midiPnP=[bool](Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.InstanceId -match 'VID_1209&PID_000[12]' -or ($_.FriendlyName -match 'FM-1|Mutable|PATCHWERK|Felucca|MASIF' -and $_.Class -match 'Midi|SoftwareDevice|Media') }); " +
+    "$pyPorts=@(); $winMidi=$midiPnP; if(Get-Command python -ErrorAction SilentlyContinue){ try{ $raw=& python -c \"import rtmidi; print('||'.join(rtmidi.MidiIn().get_ports()))\" 2>$null; if($raw){ $pyPorts=@($raw -split '\\|\\|' | Where-Object { $_ -match 'FM-1|Mutable|PATCHWERK|MASIF|Felucca|M-VAVE|PATCH' }) } }catch{} }; if($pyPorts.Count){ $winMidi=$true }; " +
+    "$bad=@($ports | Where-Object { $_.status -and $_.status -ne 'OK' -or $_.problem -eq 10 }); $stale=[bool]($bad.Count -gt 0 -and -not $winMidi); " +
+    "[pscustomobject]@{ midiInterface=$midiPnP; winMidi=$winMidi; winMidiPorts=$pyPorts; staleDriver=$stale; devices=$ports } | ConvertTo-Json -Compress -Depth 4";
   return new Promise((resolve) => {
     let settled = false;
     const finish = (result) => {
@@ -76,7 +125,22 @@ function usbCheck() {
         clearTimeout(watchdog);
         if (error) { finish({ ok: false, message: "Windows did not answer the USB check.", devices: [] }); return; }
         let list = [];
-        try { const v = JSON.parse(String(stdout || "").trim() || "[]"); list = Array.isArray(v) ? v : (v ? [v] : []); } catch { list = []; }
+        let midiInterface = null;
+        let winMidi = null;
+        let winMidiPorts = [];
+        let staleDriver = null;
+        try {
+          const v = JSON.parse(String(stdout || "").trim() || "{}");
+          if (v && Array.isArray(v.devices)) {
+            list = v.devices;
+            midiInterface = v.midiInterface;
+            winMidi = v.winMidi;
+            winMidiPorts = Array.isArray(v.winMidiPorts) ? v.winMidiPorts : [];
+            staleDriver = v.staleDriver;
+          } else {
+            list = Array.isArray(v) ? v : (v ? [v] : []);
+          }
+        } catch { list = []; }
         const seen = new Set();
         const devices = [];
         for (const d of list) {
@@ -84,10 +148,18 @@ function usbCheck() {
           const id = String(d.id).toUpperCase();
           if (seen.has(id)) continue;
           seen.add(id);
-          devices.push({ id, mode: USB_MODES[id] || "other", cls: String(d.cls || "").slice(0, 32), status: String(d.status || "").slice(0, 16) });
+          devices.push({
+            id,
+            mode: USB_MODES[id] || "other",
+            name: String(d.name || "").slice(0, 48),
+            cls: String(d.cls || "").slice(0, 32),
+            status: String(d.status || "").slice(0, 16),
+            problem: typeof d.problem === "number" ? d.problem : null,
+            mi: String(d.mi || "").slice(0, 4),
+          });
           if (devices.length >= 16) break;
         }
-        finish({ ok: true, devices });
+        finish({ ok: true, devices, midiInterface, winMidi, winMidiPorts, staleDriver });
       });
   });
 }
@@ -201,7 +273,7 @@ function runSelfTest(win, mode) {
                pageScrolls: document.documentElement.scrollHeight>innerHeight+2, scrollH: document.documentElement.scrollHeight }; })()`
         : mode === "search"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&document.getElementById('fw-search-results')&&window.FM1?.fwText&&(document.getElementById('fw')?.options.length||0)>=278) break; await sleep(200); }
+             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&document.getElementById('fw-search-results')&&window.FM1?.fwText&&(document.getElementById('fw')?.options.length||0)>=277) break; await sleep(200); }
              const q=document.getElementById('fw-search'), results=document.getElementById('fw-search-results');
              if(!q||!results) return {fwCount:document.getElementById('fw')?.options.length,aurora:[],accent:[],version:[],cleared:true,missing:true};
              const run=async value=>{q.value=value;q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(80);return [...results.querySelectorAll('.fw-search-hit[data-id]')].map(b=>b.dataset.id);};
@@ -287,7 +359,7 @@ function runSelfTest(win, mode) {
       const res = await win.webContents.executeJavaScript(js, true);
       console.log("SELFTEST_RESULT " + JSON.stringify(res));
       const passed = mode === "search"
-        ? Number(res.fwCount) === 278 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
+        ? Number(res.fwCount) === 277 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
         : mode === "install"
         ? res.hasBox && res.hasFlash && res.hasResume && res.hasRecovery && res.hasRollback
           && res.hasCopy && res.hasTriage && res.hasDeviceLab && res.hasDesktopBridge
@@ -400,6 +472,7 @@ if (!app.requestSingleInstanceLock()) {
     });
   });
   ipcMain.handle("fm1:usb-check", async () => usbCheck());
+  ipcMain.handle("fm1:usb-repair", async (_ev, opts) => repairFm1Usb(opts));
   ipcMain.handle("fm1:check-updates", async () => {
     await updates.checkForUpdates({ interactive: true, log: desktopLog });
     return { ok: true };

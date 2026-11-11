@@ -1,13 +1,15 @@
 // "Install firmware": install a firmware on the real FM-1 over USB-MIDI (desktop app, Chrome or
 // Edge), using the community OTA module (foma/Felucca lineage, GPL-3.0), with recovery help for
 // an install that stops and for a unit whose screen stays black. Injects a box into the side bar.
-import { Updater, isCandidatePort, isKnownOtherGear } from "./fm1ota.js?v=13";
+import { Updater, isCandidatePort, isKnownOtherGear, isBluetoothMidiPort } from "./fm1ota.js?v=14";
 import { FlashJournal, FlashLog, explain, pendingRecovery, troubleshootingText, validatePackage, journalAgeMs, writeSafetyFlags, BADREQ_LIMIT } from "./flash-core.js?v=7";
 import { createPackageVault } from "./flash-vault.js?v=2";
+import { loadWindowsUsbPolicy, blockedOnWindows, blockReason } from "./windows-usb-policy.js?v=1";
 
 const params = new URLSearchParams(location.search);
 let cat = { firmwares: [] };
-try { cat = await (await fetch("firmwares.json?v=62")).json(); } catch (e) { console.warn("firmware catalog not loaded:", e); }
+try { cat = await (await fetch("firmwares.json?v=63")).json(); } catch (e) { console.warn("firmware catalog not loaded:", e); }
+await loadWindowsUsbPolicy();
 
 // prefer the right column (saves / MIDI), falling back to any sidebar on older single-column layouts
 const side = document.querySelector(".side.side-right") || document.querySelector(".side.bar") || document.querySelector(".side");
@@ -111,7 +113,7 @@ function build(side) {
   box.className = "box install-box future-install";
   box.innerHTML = `
     <div class="fi-head"><div class="fi-eye"><i></i> FM-1 FIRMWARE</div><h2>Install firmware</h2><p class="fi-pitch">Install a firmware on your FM-1 over USB, and get help if an install stops.</p></div>
-    <div class="fi-core"><div class="fi-scope"><span class="fi-orb" id="inst-orb"></span><span class="fi-connwrap"><b id="inst-state">NOT CHECKED</b><span id="inst-conn">Press Check to look for it</span></span><button type="button" id="inst-conn-more" aria-expanded="false" aria-controls="inst-conn-help" aria-label="More about this connection state" title="More about this" hidden>?</button><button type="button" id="inst-scan" aria-label="Check the FM-1 connection" style="margin-left:auto;align-self:center;background:var(--well);border:1px solid var(--line);color:var(--ink);border-radius:6px;font:9.5px 'Space Mono',monospace;letter-spacing:.08em;padding:2px 8px;cursor:pointer">CHECK</button></div>
+    <div class="fi-core"><div class="fi-scope"><span class="fi-orb" id="inst-orb"></span><span class="fi-connwrap"><b id="inst-state">NOT CHECKED</b><span id="inst-conn">Press Check to look for it</span></span><button type="button" id="inst-conn-more" aria-expanded="false" aria-controls="inst-conn-help" aria-label="More about this connection state" title="More about this" hidden>?</button><button type="button" id="inst-usb-fix" hidden aria-label="Repair FM-1 USB driver" style="margin-left:auto;align-self:center;background:#4a1a1a;border:1px solid #a04040;color:#ffc8c8;border-radius:6px;font:9.5px 'Space Mono',monospace;letter-spacing:.06em;padding:2px 8px;cursor:pointer">FIX USB</button><button type="button" id="inst-scan" aria-label="Check the FM-1 connection" style="margin-left:4px;align-self:center;background:var(--well);border:1px solid var(--line);color:var(--ink);border-radius:6px;font:9.5px 'Space Mono',monospace;letter-spacing:.08em;padding:2px 8px;cursor:pointer">CHECK</button></div>
     <p class="fi-connhelp" id="inst-conn-help" role="note" hidden></p>
     <div class="fi-field"><label>Firmware <select id="inst-fw" aria-label="Firmware to install"></select></label></div>
     <input type="file" id="inst-file" accept=".fwsc" hidden>
@@ -156,6 +158,7 @@ function build(side) {
           <p><b>What this app can do:</b> check the connection, install a checked FM-1 package over USB-MIDI, and finish an install that stopped while the FM-1 waits in update mode.</p>
           <p><b>What it cannot do:</b> read or back up the FM-1's flash, or reach the chip's download mode. In download mode Windows shows a USB disk called “WL82 UBOOT1.00”; that is not a MIDI device, so this app (and any browser MIDI page) cannot use it.</p>
           <p><b>Two flash chips:</b> early units report JEDEC id <code>0x856014</code> (Puya); 2026 units with the logo on the front report <code>0xB36014</code> (UC25HQ80). Same 1&nbsp;MiB size. Older firmware that only knows the Puya id can look “broken” on a UC25 unit (saves vanish after power-off, updates stall) — install a UC25-aware package (e.g. AURORA 0.9.1+) via download mode after a full backup. External recovery tools here accept both ids.</p>
+          <p><b>Windows USB driver stuck after a reflash?</b> If the computer sees the FM-1 on USB but <b>Check</b> finds no MIDI (often error 10 on USB audio after MASIF or a stale cache), press <b>Fix USB</b> next to Check once (Administrator). Then install <b>Mutable Dreams</b> or Felucca from the list — MASIF is not offered here on Windows because its USB stack does not enumerate MIDI. If the FM-1 screen shows <b>USB RESCUE</b>, connect USB, open this installer, and keep audio off in recovery while the update runs.</p>
           <p><b>Download mode or a full backup:</b> the desktop app can open a bundled <b>flash recovery tool</b> in its own window (Windows). This app does not control that window. Back up the whole flash first; if Windows offers to format a disk, press Cancel.</p>
           <p><button type="button" id="inst-device-lab">Open flash recovery tool</button></p>
           <p><b>No USB device at all, after the steps above:</b> some owners use a small RP2040 board wired to the FM-1’s USB data lines to force the chip’s download mode. That path is unofficial, needs wiring, and is at your own risk; it does not repair a damaged boot area.</p>
@@ -166,7 +169,10 @@ function build(side) {
   for (const b of box.querySelectorAll(".fi-subrow button,.fi-recov-grid button")) if (!b.title) b.title = b.textContent.trim();
 
   const sel = box.querySelector("#inst-fw");
-  for (const f of cat.firmwares) sel.add(new Option(`${f.name} ${f.version || ""}`.trim(), f.id));
+  for (const f of cat.firmwares) {
+    if (blockedOnWindows(f.id, f.product)) continue;
+    sel.add(new Option(`${f.name} ${f.version || ""}`.trim(), f.id));
+  }
   const cur = params.get("fw"); if (cur && cat.firmwares.some(f => f.id === cur)) sel.value = cur;
 
   // One-way follow: when the left bar / gallery / emulator picks a firmware to play, mirror it
@@ -253,7 +259,9 @@ function build(side) {
   const stateEl = box.querySelector("#inst-state");
   const connEl = box.querySelector("#inst-conn");
   const scanBtn = box.querySelector("#inst-scan");
+  const usbFixBtn = box.querySelector("#inst-usb-fix");
   let midiAccess = null, scanning = false, connTimer = null, lastSeen = null, lastUsb = null;
+  let lastDriverBad = false;
   let confirmedName = null, confirmedId = null;   // the FM-1 a SCAN confirmed; the indicator holds while it stays plugged in
   // state: "ok" (green, connected), "update" (blue, in update/download loader), "warn" (amber,
   // not connected / problem), "checking" (neutral). label is the one-word verdict; detail explains.
@@ -331,7 +339,8 @@ function build(side) {
     const live = [...midiAccess.inputs.values()].filter((i) => i.state === "connected");
     const names = live.map((i) => i.name);
     if (confirmedName && !names.includes(confirmedName)) { confirmedName = confirmedId = null; }  // it was unplugged
-    const named = live.find((i) => isCandidatePort(i.name));
+    const named = live.find((i) => isCandidatePort(i.name) && !isBluetoothMidiPort(i.name))
+      || live.find((i) => isCandidatePort(i.name));
     const plausible = live.find((i) => !isKnownOtherGear(i.name) && !isCandidatePort(i.name));
     if (confirmedName) setConn("CONNECTED", `${confirmedId || confirmedName} · ready`, "ok");
     else if (named) setConn("CONNECTED", `${named.name} · ready`, "ok", `Seen “${named.name}”. Press Check for the firmware identity string.`);
@@ -339,26 +348,93 @@ function build(side) {
     else if (live.length === 0) setConn("NOT FOUND", "No USB-MIDI device", "warn", "Use a USB data cable (charge-only cables carry no data) straight into the computer, and switch the FM-1 on. Screen black? Open Recovery and help, then Screen black or not found?");
     else setConn("NOT FOUND", "Only other MIDI gear", "warn", `Seen: ${names.join(", ")}. Connect the FM-1 with a USB data cable.`);
   }
+  async function windowsUsbDriverHint() {
+    lastDriverBad = false;
+    if (usbFixBtn) usbFixBtn.hidden = !window.FM1Desktop?.repairFm1Usb;
+    if (!window.FM1Desktop?.usbCheck) return "";
+    try {
+      const u = await window.FM1Desktop.usbCheck();
+      lastUsb = u;
+      if (!u?.ok || !u.devices?.length) return "";
+      const bad = u.devices.filter((d) => d.status && d.status !== "OK");
+      const err10 = bad.find((d) => d.problem === 10) || bad[0];
+      const hasWinMidi = u.winMidi === true || u.midiInterface === true || (u.winMidiPorts && u.winMidiPorts.length > 0);
+      const noMidi = !hasWinMidi;
+      if (!bad.length && !noMidi && !u.staleDriver) return "";
+      lastDriverBad = noMidi && (bad.length > 0 || u.staleDriver === true);
+      if (usbFixBtn) usbFixBtn.hidden = !window.FM1Desktop?.repairFm1Usb || !lastDriverBad;
+      const masif = /masif/i.test(err10?.name || "") || u.devices.some((d) => /masif/i.test(d.name || ""));
+      if (masif && noMidi) {
+        return " MASIF on Windows: USB audio fails (error 10), so Web MIDI never sees the FM-1. This app does not offer MASIF on Windows. Press Fix USB, then install Mutable Dreams or Felucca from the list. To keep MASIF, use its web installer on macOS. USB RESCUE on the unit? Connect USB here and install with audio off.";
+      }
+      if ((err10 && err10.problem === 10) && noMidi) {
+        return " Windows error 10 on “" + (err10.name || "FM-1 USB") + "” — USB audio failed, so MIDI may be missing. Press Fix USB (Administrator), then Check again. If you just replaced MASIF firmware, Windows may still cache the old driver until Fix USB runs.";
+      }
+      if (u.staleDriver && noMidi) {
+        return " Windows sees the FM-1 on USB but no MIDI port — often a stale driver after reflash. Press Fix USB once (Administrator), then Check.";
+      }
+      const who = bad.map((d) => d.name || d.id).join(", ");
+      return ` Windows sees ${who} on USB but its driver is “${(bad[0] && bad[0].status) || "Error"}”, so no MIDI port appears. Press Fix USB (Administrator), then Check again.`;
+    } catch { return ""; }
+  }
+  async function runUsbRepair() {
+    if (!window.FM1Desktop?.repairFm1Usb || scanning || busy) return;
+    setConn("REPAIRING…", "Fixing USB driver…", "checking", "Approve Administrator if Windows asks.");
+    status("Repairing FM-1 USB driver…");
+    const r = await window.FM1Desktop.repairFm1Usb({ quick: false });
+    if (!r?.ok) { status(r?.message || "USB repair could not start."); setConn("REPAIR FAILED", r?.message || "Could not start repair", "warn"); return; }
+    status("USB repair ran. Unplug the FM-1 for 5 seconds, replug, then press Check.");
+    await new Promise((res) => setTimeout(res, 4000));
+    await refreshConn();
+  }
+  if (usbFixBtn) usbFixBtn.onclick = () => runUsbRepair();
   async function refreshConn() {
     if (scanning || busy) return;              // never scan while a flash is in progress
     scanning = true;
     setConn("CHECKING…", "Reading USB-MIDI…", "checking");
     try {
       await ensureAccess();
+      try { window.FM1MidiRelease?.(); } catch {}
       const r = await new Updater(midiAccess).detect();
       // remember a confirmed FM-1 so the live indicator can HOLD "CONNECTED" while it stays plugged in
       if (r.found && !r.inUpdateMode) { confirmedName = r.name; confirmedId = r.id; } else { confirmedName = confirmedId = null; }
       lastSeen = r;
+      let drv = r.found ? "" : await windowsUsbDriverHint();
+      if (!r.found && lastDriverBad && window.FM1Desktop?.repairFm1Usb) {
+        let auto = false;
+        try { auto = sessionStorage.getItem("fm1.usbfix") !== "1"; } catch { auto = true; }
+        if (auto) {
+          try { sessionStorage.setItem("fm1.usbfix", "1"); } catch {}
+          setConn("REPAIRING…", "USB driver error — fixing…", "checking");
+          const rep = await window.FM1Desktop.repairFm1Usb({ quick: true });
+          if (rep?.ok) {
+            await new Promise((res) => setTimeout(res, 5000));
+            const r2 = await new Updater(midiAccess).detect();
+            lastSeen = r2;
+            if (r2.found) {
+              confirmedName = r2.name; confirmedId = r2.id;
+              setConn("CONNECTED", `${r2.id} · ready`, "ok", `On “${r2.name}”. Ready to install.`);
+              return;
+            }
+            drv = await windowsUsbDriverHint();
+            Object.assign(r, r2);
+          }
+        }
+      }
       if (r.found && r.inUpdateMode) setConn("UPDATE MODE", "Keep it on · press Finish", "update", `${r.id} is waiting in update mode. Do not switch it off; press Finish interrupted install with the same firmware.`);
       else if (r.found) setConn("CONNECTED", `${r.id} · ready`, "ok", `On “${r.name}”. Ready to install.`);
-      else if (r.code === "nomidi") setConn("NOT FOUND", "No USB-MIDI device", "warn", "Use a USB data cable (charge-only cables carry no data) straight into the computer, and switch the FM-1 on. Screen black? Open Recovery and help, then Screen black or not found?");
-      else if (r.code === "noport") setConn("NOT FOUND", "FM-1 not among MIDI devices", "warn", `Seen: ${r.ports.join(", ")}. Use a USB data cable straight into the computer, or try another port.`);
-      else if (r.code === "busy") setConn("PORT BUSY", "Another app is using it", "warn", "Close DAWs and MIDI tools (and other copies of this app), then press Check again.");
-      else setConn("NO ANSWER", "Nothing answered as an FM-1", "warn", `Ports checked: ${r.ports.join(", ") || "none"}. Open Recovery and help, then Screen black or not found?`);
+      else if (r.code === "nomidi") setConn("NOT FOUND", drv ? "USB driver error" : "No USB-MIDI device", "warn", drv || "Use a USB data cable (charge-only cables carry no data) straight into the computer, and switch the FM-1 on. Screen black? Open Recovery and help, then Screen black or not found?");
+      else if (r.code === "noport") setConn("NOT FOUND", drv ? "USB driver error" : "FM-1 not among MIDI devices", "warn", (drv || `Seen: ${r.ports.join(", ")}. Use a USB data cable straight into the computer, or try another port.`));
+      else if (r.code === "busy") setConn("PORT BUSY", "Another app is using it", "warn", "Set MIDI in and MIDI out to Off (under Play from), close DAWs and other MIDI tools, then press Check again. Use USB for flash — not Bluetooth.");
+      else setConn("NO ANSWER", "Nothing answered as an FM-1", "warn", `${drv} Ports checked: ${r.ports.join(", ") || "none"}. Open Recovery and help, then Screen black or not found?`.trim());
     } catch (e) {
       const code = (e && e.code) || "error";
       setConn(code === "midiperm" ? "ACCESS DENIED" : "CHECK FAILED", code === "midiperm" ? "MIDI access was not allowed" : "The check did not finish", "warn", (e && e.message) || String(e));
-    } finally { scanning = false; }
+    } finally {
+      scanning = false;
+      try { updatePresence(); } catch {}
+      if (window.FM1?.running?.()) try { window.FM1MidiRefresh?.(); } catch {}
+    }
   }
   scanBtn.onclick = () => { refreshConn(); };
 
@@ -557,6 +633,10 @@ function build(side) {
       status("Checking the package…");
       flog.add("check", { mode: mode === "deploy" ? "install" : mode });
       const pkg = await validatePackage(src.bytes, src.expected);
+      if (blockedOnWindows(src.fwId, pkg.product)) {
+        const why = blockReason(src.fwId, pkg.product) || "USB-MIDI does not enumerate on Windows.";
+        throw Object.assign(new Error(`This package is blocked on Windows: ${why} Pick Mutable Dreams, Felucca, or stock from the list. If the FM-1 already runs a blocked build, reflash after Fix USB.`), { code: "windowsusb" });
+      }
       if (mode === "resume" && pending?.journal?.sha256 && pending.journal.sha256 !== pkg.sha256) {
         throw Object.assign(new Error(""), { code: "sourcemismatch" });
       }
@@ -568,6 +648,7 @@ function build(side) {
 
       status("Looking for the FM-1…");
       const access = await ensureAccess();   // shared with the Scan/connection system; coded errors
+      try { window.FM1MidiRelease?.(); } catch {}
       const up = new Updater(access, (m) => status(m));
       const seen = await up.detect();
       if (!seen.found) throw Object.assign(new Error((seen.diag || []).join("; ")), { code: seen.code });
@@ -717,7 +798,7 @@ function build(side) {
     triageOut.textContent = "Checking…";
     let seen = null, usb = null;
     try {
-      try { await ensureAccess(); seen = await new Updater(midiAccess).detect(); }
+      try { await ensureAccess(); try { window.FM1MidiRelease?.(); } catch {} seen = await new Updater(midiAccess).detect(); }
       catch (e) { seen = { found: false, code: (e && e.code) || "error" }; }
       lastSeen = seen;
       if (window.FM1Desktop?.usbCheck) { try { usb = await window.FM1Desktop.usbCheck(); } catch { usb = { ok: false, devices: [] }; } }
@@ -752,16 +833,6 @@ function build(side) {
     }
   }
 
-  // Desktop app (MIDI auto-granted): read the device list once on open and keep the indicator live via
-  // statechange — LIST ONLY, no port opened, so it never glitches the device. Also poll: WinRT MIDI
-  // sometimes skips statechange when a unit appears. Handshake stays on Check only. Web waits for Check
-  // so we don't prompt for MIDI permission on load.
-  if (window.FM1Desktop) {
-    ensureAccess()
-      .then(() => { updatePresence(); setInterval(() => { if (!scanning && !busy) updatePresence(); }, 1500); })
-      .catch((e) => {
-        const code = (e && e.code) || "error";
-        setConn(code === "midiperm" ? "ACCESS DENIED" : "MIDI FAILED", code === "midiperm" ? "MIDI access was not allowed" : "Could not open USB-MIDI", "warn", (e && e.message) || String(e));
-      });
-  }
+  // Do not open MIDI on startup: claiming Bluetooth (or a saved port) blocks USB Check on Windows.
+  // Press Check when the FM-1 is on USB — that is the only path that opens SysEx and probes the device.
 }

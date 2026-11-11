@@ -944,22 +944,6 @@
     "licenseReviewed": "2026-11-09"
   },
   {
-    "id": "masif-fm1",
-    "name": "masif-fm1",
-    "version": "0.1",
-    "released": "2026-10-25T04:13:48.0000000Z",
-    "kind": "other",
-    "author": "thecemeterygates",
-    "license": "GPL-3.0",
-    "about": "MASIF: a 4-track sample tracker and rack sampler for the M-VAVE FM-1 (free firmware, GPL-3.0)",
-    "package": "../archive/masif-fm1/masif-0.1.fwsc",
-    "repo": "https://github.com/thecemeterygates/masif-fm1",
-    "catalogId": null,
-    "sha256": "64c8d8dd1a48189ad370e8e149107f69c44311659bac6bf88116634b61bd46ab",
-    "product": "FM-1_961",
-    "licenseReviewed": "2026-11-09"
-  },
-  {
     "id": "picovave",
     "name": "picovave",
     "version": "12822759",

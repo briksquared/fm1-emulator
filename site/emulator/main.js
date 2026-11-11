@@ -13,6 +13,7 @@ import {
   mayEnsurePlaying, autostartFromParams,
 } from "./session-play.js?v=1";
 import { mergeCatalog, isSafeRemembered } from "./catalog-updates.js?v=5";
+import { loadWindowsUsbPolicy, filterFirmwaresForPlatform, blockedOnWindows } from "./windows-usb-policy.js?v=1";
 import { wireRadar } from "./radar.js?v=2";
 import {
   remapChannel, isActivityMessage, isFm1PortName, splitSysex,
@@ -42,7 +43,7 @@ const params = new URLSearchParams(location.search);
 const stored = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } };
 
-const bundledCatalog = await (await fetch("firmwares.json?v=62")).json();
+const bundledCatalog = await (await fetch("firmwares.json?v=63")).json();
 const source = globalThis.FM1Source;
 // Open-license radar finds only (firmwares.json is never rewritten). Prefer the current key;
 // still read the older open-source key so 1.1.0 remembers survive an update.
@@ -54,6 +55,8 @@ try {
   radarRemembered = (Array.isArray(raw) ? raw : []).filter(isSafeRemembered);
 } catch { /* discard malformed local data */ }
 const catalog = mergeCatalog(bundledCatalog, radarRemembered);
+await loadWindowsUsbPolicy();
+catalog.firmwares = filterFirmwaresForPlatform(catalog.firmwares);
 window.FM1Catalog = catalog;
 window.FM1CatalogSite = source.origin;   // (extras.js links to the catalog site)
 const byId = new Map(catalog.firmwares.map((f) => [f.id, f]));
@@ -66,6 +69,9 @@ for (const f of catalog.firmwares) { const id = source.idOf(f); if (id && !byId.
 // firmware this browser starts with on the full page.
 const EMBED = document.documentElement.hasAttribute("data-embed");
 let fw = byId.get(params.get("fw")) || byId.get(stored(DEV.key + "fw")) || byId.get(catalog.default) || catalog.firmwares[0];
+if (fw && blockedOnWindows(fw.id, fw.product)) {
+  fw = byId.get(catalog.default) || catalog.firmwares.find((f) => !blockedOnWindows(f.id, f.product)) || catalog.firmwares[0];
+}
 const defaultMhz = () => (window.FM1Desktop ? 240 : 100);
 let mhz = Number(params.get("mhz") || stored("fm1.mhz") || defaultMhz());
 // the audio buffer: "interactive" (small: keys answer quickly) unless this device needed a larger
@@ -750,6 +756,7 @@ const midiSel = document.getElementById("midi");
 const midiOutSel = document.getElementById("midiout");
 const midiChSel = document.getElementById("midich");
 const midiLinkEl = document.getElementById("midilink");
+const midiHoldEl = document.getElementById("midihold");
 const midiAct = document.getElementById("midiact");
 const midiOutAct = document.getElementById("midioutact");
 let midi = null, midiAsked = null, midiActOff = 0, midiOutActOff = 0;
@@ -758,15 +765,56 @@ let midiHwDepth = 0; // >0 while handling a hardware MIDI message (blocks out ec
 let midiCh = Number(stored("fm1.midich") || 0);
 let midiDropWarned = false;
 let midiPortsSeen = null; // Set of FM-1-ish names after first connect (for appear/disappear toasts)
+let midiSessionIn = false, midiSessionOut = false; // explicit picks this run when Keep MIDI connected is off
+function midiPlayAttach() {
+  try { return !!(running && node); } catch { return false; }
+}
+function releaseAllMidiClaims() {
+  if (!midi) return;
+  releaseHardware();
+  for (const input of midi.inputs.values()) {
+    if (!attached.has(input.id || input.name)) continue;
+    try { input.onmidimessage = null; } catch {}
+  }
+  // Never close() every system MIDI port — on Windows that can drop USB FM-1 until replug.
+  attached = new Set();
+  midiOutPort = null;
+}
 for (let c = 1; c <= 16; c++) midiChSel.add(new Option(String(c), c));
 midiChSel.value = midiCh;
 const midiWant = () => stored("fm1.midi") || "";
 const midiOutWant = () => stored("fm1.midiout") || "";
+const midiHoldOn = () => (midiHoldEl ? midiHoldEl.checked : stored("fm1.midi.hold") === "1");
+const effectiveMidiWant = () => {
+  const saved = stored("fm1.midi");
+  const fromUi = midiSel.value;
+  if (midiHoldOn()) return saved !== null && saved !== "" ? saved : fromUi;
+  if (!midiSessionIn) return "";
+  return fromUi;
+};
+const effectiveMidiOutWant = () => {
+  const saved = stored("fm1.midiout");
+  const fromUi = midiOutSel.value;
+  if (midiHoldOn()) return saved !== null && saved !== "" ? saved : fromUi;
+  if (!midiSessionOut) return "";
+  return fromUi;
+};
 const midiLinkOn = () => (midiLinkEl ? midiLinkEl.checked : true);
 if (midiLinkEl) {
   const savedLink = stored("fm1.midilink");
   midiLinkEl.checked = savedLink === null ? true : savedLink === "1";
   midiLinkEl.addEventListener("change", () => store("fm1.midilink", midiLinkEl.checked ? "1" : "0"));
+}
+if (midiHoldEl) {
+  midiHoldEl.checked = stored("fm1.midi.hold") === "1";
+  midiHoldEl.addEventListener("change", () => {
+    store("fm1.midi.hold", midiHoldEl.checked ? "1" : "0");
+    if (!midiHoldEl.checked) {
+      midiSessionIn = midiSessionOut = false;
+      releaseAllMidiClaims();
+      if (midi) midiConnect();
+    } else if (midiWant() || midiOutWant()) midiOpen();
+  });
 }
 if (!navigator.requestMIDIAccess) {
   midiSel.disabled = midiOutSel.disabled = midiChSel.disabled = true;
@@ -904,10 +952,8 @@ hwMessage = function hwMessage(e) {
 let attached = new Set();
 function midiConnect() {
   if (!midi) return;
-  // the saved choice wins: when the chosen device is unplugged its entry leaves the list (and the
-  // list falls back to "off"); it used to stay off when the device came back
-  const saved = stored("fm1.midi");
-  let want = saved !== null && saved !== "" ? saved : midiSel.value;
+  // Saved choice wins only when Keep MIDI connected is on; otherwise only this session's explicit pick.
+  let want = effectiveMidiWant();
   const inputs = [...midi.inputs.values()].filter((i) => i.state !== "disconnected");
   const names = inputs.map((i) => i.name);
   for (const o of [...midiSel.options]) if (o.value !== "" && o.value !== "*" && !names.includes(o.value)) o.remove();
@@ -920,18 +966,18 @@ function midiConnect() {
   // Never reassign handlers while Check/install is listening — that raced the SysEx
   // handshake and made a live FM-1 look "not found" / unreadable over USB.
   const holdHandlers = !!globalThis.FM1MidiUpdaterBusy;
+  const playAttach = midiPlayAttach();
   for (const input of midi.inputs.values()) {
     const on = input.state !== "disconnected" && (want === "*" || want === input.name);
-    if (!holdHandlers) input.onmidimessage = on ? hwMessage : null;
-    if (on) now.add(input.id || input.name);
+    if (!holdHandlers) input.onmidimessage = (on && playAttach) ? hwMessage : null;
+    if (on && playAttach) now.add(input.id || input.name);
   }
   // an input that was playing is gone: let go of what it held
   if ([...attached].some((id) => !now.has(id))) releaseHardware();
   attached = now;
 
   // MIDI out: Keys / player / assist / panic / clock → paired FM-1 (USB or BLE). Never echo hardware in.
-  const savedOut = stored("fm1.midiout");
-  let wantOut = savedOut !== null && savedOut !== "" ? savedOut : midiOutSel.value;
+  let wantOut = effectiveMidiOutWant();
   const outputs = [...midi.outputs.values()].filter((o) => o.state !== "disconnected");
   const outNames = outputs.map((o) => o.name);
   for (const o of [...midiOutSel.options]) if (o.value !== "" && !outNames.includes(o.value)) o.remove();
@@ -940,11 +986,11 @@ function midiConnect() {
   if (midiLinkOn() && want && want !== "*" && outNames.includes(want)) wantOut = want;
   if ([...midiOutSel.options].some((o) => o.value === wantOut)) midiOutSel.value = wantOut;
   else midiOutSel.value = "";
-  midiOutPort = outputs.find((o) => o.name === midiOutSel.value) || null;
+  midiOutPort = playAttach ? (outputs.find((o) => o.name === midiOutSel.value) || null) : null;
 
   // Quiet appear/disappear notice only after the user has chosen a port (never on first auto-enum).
   const fmNow = new Set([...names, ...outNames].filter(isFm1PortName));
-  if (midiPortsSeen && (midiWant() || midiOutWant())) {
+  if (midiPortsSeen && (want || wantOut)) {
     for (const n of fmNow) {
       if (!midiPortsSeen.has(n)) status.textContent = `${n} connected — available under MIDI in / out.`;
     }
@@ -975,29 +1021,32 @@ async function midiOpen() {
 // Shared with Install firmware so Check / flash use the same SysEx-capable access.
 window.FM1MidiAccess = () => midi;
 window.FM1MidiOpen = midiOpen;
+window.FM1MidiRelease = releaseAllMidiClaims;
+window.FM1MidiRefresh = () => { try { midiConnect(); } catch {} };
 {
-  const want = midiWant();
+  const want = midiHoldOn() ? midiWant() : "";
   if (want && want !== "*") midiSel.add(new Option(want, want));
   midiSel.value = want;
-  const wantOut = midiOutWant();
+  const wantOut = midiHoldOn() ? midiOutWant() : "";
   if (wantOut) midiOutSel.add(new Option(wantOut, wantOut));
   midiOutSel.value = wantOut;
 }
-// On load, reconnect only a port the user already chose. Never open MIDI / grab devices unprompted.
-if (navigator.requestMIDIAccess && (midiWant() || midiOutWant())) midiOpen();
+// On load, restore port lists only when Keep MIDI connected is on — never open MIDI on launch.
 midiSel.addEventListener("change", () => {
   store("fm1.midi", midiSel.value);
+  midiSessionIn = !!midiSel.value;
   applyMidiLink(midiSel.value);
-  if (midiSel.value || midiOutSel.value) midiOpen(); else midiConnect();
+  if (midiSel.value || midiOutSel.value) midiOpen(); else { releaseAllMidiClaims(); midiConnect(); }
 });
 midiOutSel.addEventListener("change", () => {
   store("fm1.midiout", midiOutSel.value);
+  midiSessionOut = !!midiOutSel.value;
   // Manual out choice that disagrees with in turns Link off so we don't snap it back.
   if (midiLinkEl && midiLinkOn() && midiSel.value && midiSel.value !== "*" && midiOutSel.value !== midiSel.value) {
     midiLinkEl.checked = false;
     store("fm1.midilink", "0");
   }
-  if (midiOutSel.value || midiSel.value) midiOpen(); else { midiOutPort = null; midiConnect(); }
+  if (midiOutSel.value || midiSel.value) midiOpen(); else { releaseAllMidiClaims(); midiOutPort = null; midiConnect(); }
 });
 midiChSel.addEventListener("change", () => {
   midiCh = Number(midiChSel.value);
@@ -1029,6 +1078,7 @@ const midiIdEl = document.getElementById("midi-identity");
 let identityBytes = null;
 async function midiIdentify() {
   await midiOpen();
+  releaseAllMidiClaims();
   if (!midi) {
     if (midiIdEl) { midiIdEl.hidden = false; midiIdEl.textContent = "MIDI access was not given."; }
     return null;
@@ -1053,6 +1103,7 @@ async function midiIdentify() {
   }
   if (midiIdEl) { midiIdEl.hidden = false; midiIdEl.textContent = text; }
   status.textContent = text;
+  window.FM1MidiRefresh?.();
   return identityBytes;
 }
 if (midiIdBtn) midiIdBtn.addEventListener("click", () => { midiIdentify(); });
@@ -1493,6 +1544,7 @@ function jitOn() {
 }
 function stopAudioGraph() {
   window.FM1Desktop?.setPowerActive?.(false);
+  try { midiConnect(); } catch {}
   if (engine) engine.onmessage = null;
   worker?.terminate();
   worker = null;
@@ -1647,7 +1699,7 @@ async function ensurePlaying(bootOpts, fromUser = false) {
       if (!running) clearSession(startBtn);
       return false;
     }
-    if (midiSel.value) midiOpen();
+    if (effectiveMidiWant() || effectiveMidiOutWant()) midiOpen();
     await ac.resume();
     window.FM1Desktop?.setPowerActive?.(true);
     markSessionLive(startBtn);

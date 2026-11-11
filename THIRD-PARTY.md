@@ -6,7 +6,7 @@ The FM-1 Emulator bundles work by many people. Thank you to all of them.
 
 - **fm1-emu** by Joakim Eriksson — the Rust/WebAssembly pi32v2 emulation engine and base player page this project forks. License: MIT. https://github.com/joakimeriksson/fm1-emu
 
-## Bundled firmware (278)
+## Bundled firmware (277)
 
 Every package below has an explicit open-source license and an available source repository. Packages are redistributed unchanged. Exact package paths, full SHA-256 hashes, FM-1 product identities, versions, and source URLs are recorded in [FIRMWARE-SOURCES.json](FIRMWARE-SOURCES.json). License texts are in [LICENSES](LICENSES/).
 
@@ -223,7 +223,6 @@ The 187 Firmware Hub packages use the license and checksum published in the live
 | UTA BOX Teto | 2026-10-25 | Kashiwayo-593 | GPL-3.0 | [source](https://github.com/Kashiwayo-593/uta-box) |
 | Monohull | 0.2.0 | Mark White | GPL-3.0 | [source](https://github.com/markterm/monohull/tree/v0.2.0) |
 | Function Acid | 2026-10-25 | Electro-Dig | GPL-3.0 | [source](https://github.com/Electro-Dig/function-acid-fw) |
-| masif-fm1 | 0.1 | thecemeterygates | GPL-3.0 | [source](https://github.com/thecemeterygates/masif-fm1) |
 | picovave | 12822759 | acidsound | GPL-3.0 | [source](https://github.com/acidsound/picovave) |
 | GHOULBOX | 2.4 | Jason Persinger | GPL-3.0 | [source](https://github.com/jasonpersinger/ghoulbox-fm1-dungeon-synth/tree/ghoulbox-v2.4) |
 | zp12 | 2.5 | zvenson | GPL-3.0 | [source](https://github.com/zvenson/zp12) |

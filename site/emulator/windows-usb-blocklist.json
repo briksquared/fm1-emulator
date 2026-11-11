@@ -1,0 +1,10 @@
+{
+  "note": "Firmware excluded from the Windows desktop app catalog and installer: USB composite fails (no MIDI) or upstream documents macOS-only USB audio. products are package identity strings (FM-1_961).",
+  "packages": {
+    "masif-fm1": {
+      "reason": "MASIF documents USB audio tested on macOS only; on Windows usbaudio fails with error 10 and USB-MIDI often never appears.",
+      "products": ["FM-1_961"],
+      "os": { "windows": false, "macos": true, "linux": true }
+    }
+  }
+}

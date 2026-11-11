@@ -40,7 +40,10 @@
         { "target": "portable", "arch": ["x64"] }
       ],
       "icon": "icon.ico",
-      "extraResources": [{ "from": "vendor/M-Flasher", "to": "M-Flasher" }]
+      "extraResources": [
+        { "from": "vendor/M-Flasher", "to": "M-Flasher" },
+        { "from": "tools/repair-fm1-usb.ps1", "to": "repair-fm1-usb.ps1" }
+      ]
     },
     "nsis": {
       "oneClick": false,

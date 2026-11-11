@@ -308,6 +308,7 @@ export const HELP = {
   vaultmissing: ["This device no longer has a copy of that firmware package, so Finish / Roll back cannot run safely.", "Re-select the same .fwsc (or the same list entry), then try again. Prefer a full flash restore from Advanced recovery if you have a backup."],
   norollback: ["There is no previous in-app install to roll back to on this computer.", "Restore from a full flash backup (Advanced recovery) if you made one, or install a known-good catalog firmware once the unit answers again."],
   unsavedjournal: ["This browser blocked saving the install journal, so a crash may not offer Finish interrupted install.", "Cancel unless you can keep this window open until the FM-1 restarts, or use the desktop app."],
+  windowsusb: ["This firmware package is blocked on Windows: its USB stack prevents FM-1 MIDI from appearing.", "Pick Mutable Dreams, Felucca, or stock from the list. Press Fix USB if you already flashed a blocked build and Check finds no MIDI. MASIF stays macOS-only for USB."],
 };
 export function explain(error) {
   const code = (error && error.code) || "error";

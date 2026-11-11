@@ -73,7 +73,8 @@
       body: `
         <ol>
           <li>Connect a controller (USB) or pair an FM-1 in Windows Bluetooth settings.</li>
-          <li>Under <b>Play from</b>, pick <b>MIDI in</b> and/or <b>MIDI out</b>. Desktop auto-picks an FM-1-named port the first time.</li>
+          <li>Under <b>Play from</b>, pick <b>MIDI in</b> and/or <b>MIDI out</b> when you want to play. They stay <b>off</b> until you choose.</li>
+          <li><b>Keep MIDI connected</b> is <b>off</b> by default — turn it on only if you want the app to remember and reopen those ports after restart. Leave it off for <b>Install → Check</b>.</li>
           <li>Allow MIDI / SysEx when asked (desktop grants it for this app).</li>
           <li>Press <b>Start</b> before expecting notes to sound.</li>
         </ol>
@@ -83,7 +84,7 @@
           <li><b>A/B</b> — both / emu only / hardware only</li>
           <li><b>Identify FM-1</b> — same SysEx handshake as Install → Check</li>
         </ul>
-        <p class="ht-note">Hardware MIDI in is not echoed to out (no feedback loop). Flashing needs <b>USB</b>; Bluetooth MIDI is for play only. Safari has no Web MIDI.</p>
+        <p class="ht-note">Hardware MIDI in is not echoed to out (no feedback loop). Flashing needs <b>USB</b>; Bluetooth MIDI is for play only. If Check says <b>PORT BUSY</b>, set MIDI in/out to off, uncheck <b>Keep MIDI connected</b>, close other MIDI apps, and try again. Safari has no Web MIDI.</p>
         <p>Stock M-VAVE firmware listens on channel <b>2</b> here; Felucca parts often use 1–4. Some firmwares ignore plain note-on (see firmware info tags).</p>`,
     },
     {
@@ -124,6 +125,7 @@
           <li><b>No sound</b> — press Start; raise MASTER; try a larger audio buffer; close DevTools (they slow the emu a lot)</li>
           <li><b>Dropouts</b> — lower clock or raise buffer; notice chip offers a fix</li>
           <li><b>MIDI quiet</b> — Start first; correct channel; Identify / Check on desktop with SysEx allowed</li>
+          <li><b>Flash can't find FM-1</b> — MIDI in/out off, <b>Keep MIDI connected</b> off, no Bluetooth for flash; then Check</li>
           <li><b>Firmware won't boot</b> — try another package; open a known-good <code>.fwsc</code>; report with Copy diagnostics</li>
           <li><b>Settings gone</b> — profile / browser data was cleared; re-import a backup if you have one</li>
         </ul>

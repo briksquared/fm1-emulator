@@ -137,6 +137,7 @@
         <label id="midiin" title="USB or Bluetooth MIDI into the emulator. Pair the FM-1 in Windows Bluetooth settings first; it should appear as “FM-1” / “FM-1 MIDI”.">MIDI in <span class="sel"><span id="midiact" aria-hidden="true"></span><select id="midi" aria-label="MIDI input"><option value="">off</option><option value="*">all inputs</option></select></span></label>
         <label id="midioutl" title="Send Keys / player / assist / panic / clock MIDI out to a real FM-1 over USB or Bluetooth. Hardware MIDI in is not echoed (avoids a feedback loop).">MIDI out <span class="sel"><span id="midioutact" aria-hidden="true"></span><select id="midiout" aria-label="MIDI output"><option value="">off</option></select></span></label>
         <label id="midilinkl" title="When on, choosing a MIDI in port also selects the matching MIDI out (same name), if it exists."><input type="checkbox" id="midilink" checked> Link in ↔ out</label>
+        <label id="midiholdl" title="When on, your last MIDI in/out ports reconnect whenever you press Start or replug the device. Leave off while flashing firmware so Install → Check can use USB-MIDI."><input type="checkbox" id="midihold"> Keep MIDI connected</label>
         <label id="midichl" title="Played notes and controllers go to this channel (M-VAVE's firmware listens on 2, Felucca's parts on 1–4)">Channel
           <select id="midich" aria-label="MIDI channel"><option value="0">as sent</option></select></label>
         <label id="midiabl" title="both = emu audio + MIDI out; emu = soft only; hw = mute emu audio and drive MIDI out">A/B
@@ -144,14 +145,14 @@
         <button type="button" id="midi-identify" title="Ask the paired FM-1 for its identity over SysEx. MIDI and mic stay off until you turn them on.">Identify</button>
         <p id="midi-identity" class="dim midi-note" hidden></p>
         <p id="midi-fx-warn" class="dim midi-note" hidden></p>
-        <p id="midi-ble-hint" class="dim midi-hint" title="MIDI stays off until you pick a port. Mic stays off until Tape → Mic → Feed and you confirm. Flashing needs USB. Use Focus in the header for a larger play surface.">Ports off until you pick them · mic opt-in</p>
+        <p id="midi-ble-hint" class="dim midi-hint" title="MIDI stays off until you pick a port. Keep MIDI connected is off by default so flashing is not blocked. Mic stays off until Tape → Mic → Feed and you confirm.">Pick ports to play · keep off for USB flash</p>
       </section>
     </aside>
   </div>
 
   <section id="firmwares" class="library" aria-labelledby="h-fw">
     <h2 id="h-fw">Firmwares</h2>
-    <p>278 unique, boot-checked packages with explicit open-source licenses from
+    <p>277 unique, boot-checked packages with explicit open-source licenses from
       <a data-catalog-link="">the FM-1 community catalog ↗</a> plus independently verified GitHub releases.
       The desktop app keeps the bundled set offline; radar additions download only when selected.
       Closed or unlicensed firmwares are not redistributed here.</p>
@@ -271,15 +272,20 @@
           <li>Allow MIDI access when the browser asks. It only asks once you pick a port.</li>
         </ol>
         <p><b>Your real FM-1</b> works the same way: plug it in over USB, or pair it over Bluetooth, and pick it here
-          (the desktop app picks a connected FM-1 by itself the first time, for both in and out when available).
+          (MIDI in and MIDI out stay <b>Off</b> until you choose a port; flashing needs <b>USB</b>, not Bluetooth).
           Notes, controllers, pitch bend and MIDI clock / start / stop all take the same path into the emulated
           firmware that the on-screen Keys panel uses — what you play is what the emulator hears, and the Keys piano
           lights follow every note that reaches it. Press <b>Start</b> first; MIDI that arrives earlier is shown but
           not played until the emulator is running. Physical knob moves on a real unit only arrive if that firmware
           sends them as MIDI, and they do not turn the on-screen knobs (those drive the panel directly). Firmware
           flashing still needs USB — Bluetooth MIDI is for play only.</p>
-        <p>The dots next to the lists light up amber while messages arrive or leave. The page remembers the ports and
-          reconnects them next time; devices plugged in or paired later appear in the lists.</p>
+        <p>The dots next to the lists light up amber while messages arrive or leave. <b>Keep MIDI connected</b> (under
+          Play from) is <b>off</b> by default: nothing grabs your FM-1 until you pick a port for this session. Turn it on
+          when you want the app to remember and reconnect in/out across restarts and hot-plugs. Devices plugged in or
+          paired later still appear in the lists.</p>
+        <p class="note">A few community firmwares talk to USB/BLE aggressively once something opens their port. If
+          <b>Install → Check</b> says <b>PORT BUSY</b> or <b>NO ANSWER</b>, set MIDI in and out to <b>off</b>, leave
+          <b>Keep MIDI connected</b> off, quit other MIDI apps, then Check again (USB, not Bluetooth).</p>
         <p><b>Channel</b> “as sent” passes every message on unchanged. A number from 1 to 16 moves every note and
           controller to that channel, so a keyboard fixed on one channel can play a firmware that listens on another.</p>
         <h3>Which channel each firmware wants</h3>
@@ -450,8 +456,8 @@
 <script src="rack-gens.js?v=6"></script>
 <script src="deck.js?v=118"></script>
 <script src="loader.js?v=2"></script>
-<script type="module" src="main.js?v=113"></script>
-<script type="module" src="install.js?v=95"></script>
+<script type="module" src="main.js?v=117"></script>
+<script type="module" src="install.js?v=101"></script>
 <script type="module" src="layout.js?v=3"></script>
 </body>
 </html>

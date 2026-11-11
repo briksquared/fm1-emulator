@@ -120,13 +120,17 @@
 
   function addQuickActions(fwSel) {
     const search = document.getElementById("fw-search"); if (!search) return;
+    let lastRandomId = fwSel.value;
     const row = document.createElement("div"); row.className = "fw-quick";
     row.innerHTML = `<button type="button" id="fw-random">Random</button><button type="button" id="fw-share">Share</button>`;
     search.parentNode.insertBefore(row, search.nextSibling);
     row.querySelector("#fw-random").onclick = () => {
-      const opts = [...fwSel.options].filter((o) => !o.hidden);
-      const o = opts[Math.floor(Math.random() * opts.length)];
-      if (o) { fwSel.value = o.value; fwSel.dispatchEvent(new Event("change", { bubbles: true })); }
+      // The catalog is already filtered by platform policy; also honor the live
+      // disabled state so a blocked entry can never be picked by Random.
+      const opts = [...fwSel.options].filter((o) => !o.hidden && !o.disabled);
+      const pool = opts.length > 1 ? opts.filter((o) => o.value !== lastRandomId) : opts;
+      const o = pool[Math.floor(Math.random() * pool.length)];
+      if (o) { lastRandomId = o.value; fwSel.value = o.value; fwSel.dispatchEvent(new Event("change", { bubbles: true })); }
     };
     const share = row.querySelector("#fw-share");
     share.onclick = async () => {

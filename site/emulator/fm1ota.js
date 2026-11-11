@@ -34,7 +34,9 @@ const within = (promise, ms) => {
 const IS_OTA = (id) => /^ota-/i.test(id.model)
 // Names emitted by known FM-1 firmware USB MIDI descriptors — tried first as a fast path.
 // Match common USB/BLE product strings: "FM-1", "FM1", "Mutable Dreams FM-1", M-VAVE, SMK-37, etc.
-export const isCandidatePort = (name) => /fm[\s_-]?1|mutable\s*dreams|m[\s-]?vave|smk[\s-]?37|felucca|ota|composite|sinco|usb-midi|hortator/i.test(name || '')
+export const isCandidatePort = (name) => /fm[\s_-]?1|mutable\s*dreams|masif|patchwerk|melodee|m[\s-]?vave|smk[\s-]?37|felucca|ota|composite|sinco|usb-midi|hortator/i.test(name || '')
+/** Bluetooth / WinRT BLE MIDI — probe after wired USB so Check does not grab a stale pair. */
+export const isBluetoothMidiPort = (name) => /bluetooth|\bble\b|bt midi|wireless midi|\(bluetooth\)|umidi|midi ble/i.test(String(name || ""))
 // Community firmwares advertise arbitrary USB product names (e.g. "Matryoshka"), and WebMIDI
 // exposes no VID/PID to match on — so any port that is not obviously someone else's gear is also
 // worth probing. The identity handshake is the real gate: only an FM-1 answers it, and no package
@@ -270,8 +272,10 @@ export class Updater {
     // Prefer specific names ("Mutable Dreams FM-1") over bare "FM-1" ghost SoftwareDevices.
     const bySpecificity = (a, b) => String(b.name || '').length - String(a.name || '').length
     const ordered = [
-      ...live.filter((i) => isCandidatePort(i.name)).sort(bySpecificity),
-      ...live.filter((i) => !isCandidatePort(i.name) && !isKnownOtherGear(i.name)).sort(bySpecificity),
+      ...live.filter((i) => isCandidatePort(i.name) && !isBluetoothMidiPort(i.name)).sort(bySpecificity),
+      ...live.filter((i) => !isCandidatePort(i.name) && !isKnownOtherGear(i.name) && !isBluetoothMidiPort(i.name)).sort(bySpecificity),
+      ...live.filter((i) => isCandidatePort(i.name) && isBluetoothMidiPort(i.name)).sort(bySpecificity),
+      ...live.filter((i) => !isCandidatePort(i.name) && !isKnownOtherGear(i.name) && isBluetoothMidiPort(i.name)).sort(bySpecificity),
     ]
     // Windows can name a device's in/out asymmetrically ("MIDIIN2 (X)" / "MIDIOUT2 (X)"), so when
     // the names don't match exactly, fall back to the output whose normalized device name is the

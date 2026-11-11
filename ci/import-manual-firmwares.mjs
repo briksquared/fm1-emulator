@@ -31,6 +31,7 @@ const excluded = new Map(Object.entries({
   "fm1-neverhood": "source repository is unavailable, so its stale MIT label cannot be reverified",
   ketch: "source repository is unavailable, so corresponding source cannot be supplied",
   mpfm1: "code is MIT, but the published package contains separately restricted Nintendo media",
+  "masif-fm1": "USB audio is documented macOS-only; on Windows the composite driver fails and USB-MIDI never appears",
 }));
 
 function sha256(bytes) {

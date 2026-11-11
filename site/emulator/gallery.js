@@ -248,7 +248,12 @@
     function close() { ov.hidden = true; document.body.style.overflow = ""; }
     btn.onclick = (e) => { e.preventDefault(); open(); };
     ov.querySelector("#gal-x").onclick = close;
-    ov.querySelector("#gal-rand").onclick = () => { const list = fws.filter(matches); if (list.length) load(list[Math.floor(Math.random() * list.length)].id); };
+    let lastRandomId = "";
+    ov.querySelector("#gal-rand").onclick = () => {
+      const list = fws.filter(matches);
+      const pool = list.length > 1 ? list.filter((f) => f.id !== lastRandomId) : list;
+      if (pool.length) { const picked = pool[Math.floor(Math.random() * pool.length)]; lastRandomId = picked.id; load(picked.id); }
+    };
     ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     q.addEventListener("input", render);
     q.addEventListener("keydown", (e) => { if (e.key === "Enter") { const first = fws.filter(matches)[0]; if (first) load(first.id); } });

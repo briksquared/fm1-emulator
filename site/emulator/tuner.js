@@ -142,6 +142,8 @@
 
     window.FM1Tuner._frame = frame;
     window.FM1Tuner._open = openPop;
+    window.FM1Tuner._close = closePop;
+    window.FM1Tuner.listening = () => open;
     window.FM1Tuner.active = () => open && performance.now() - lastPitchAt < 450;
   });
 })();

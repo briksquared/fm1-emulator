@@ -186,6 +186,8 @@
 
     window.FM1MidiMon._log = () => log.slice();
     window.FM1MidiMon._open = openPop;
+    window.FM1MidiMon._close = closePop;
+    window.FM1MidiMon.listening = () => open;
     window.FM1MidiMon._visible = visible;
   });
 

@@ -16,8 +16,7 @@ choose a firmware, press **Start**, and play with your keyboard, mouse, or a MID
 
 ## What's new in 1.1.3
 
-Fullscreen and Focus in the deck header (next to Flash). Focus enlarges the **LCD screen** to fit your display — close with **✕** or **Escape**.
-Did not like the way it opened.
+Playback hardening, fullscreen and Focus on the LCD, and patch-bay cards with run/beat LEDs plus **ON/OFF** on every module face.
 ## 1.1.2
 
 Patch bay · generative modules · cable motion · desktop MIDI link · colour themes.

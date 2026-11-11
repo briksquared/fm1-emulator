@@ -32,6 +32,7 @@
   const bayPulseMs = 160;
   const beatUntil = new Map();
   const bayForced = new Map();
+  const bayFaceOn = new Map();
   window.FM1BayLeds = {
     setActive(id, on) { bayForced.set(id, !!on); },
     pulse(id, ms) { if (id) beatUntil.set(id, performance.now() + (ms == null ? bayPulseMs : ms)); },
@@ -103,6 +104,7 @@
     const main = el("div", "kbd-main"); main.append(whls, keys);
     wrap.append(ctr, main);
     wrap._held = () => held.size > 0;
+    wrap._releaseAll = allOff;
     return wrap;
   }
 
@@ -119,9 +121,13 @@
       const t = window.FM1BayTransport?.get(p.id);
       return !!(window.FM1BayLeds?.isActive?.(p.id) || t?.isOn?.());
     }
-    if (p.scope) { try { return !!(FM() && FM().running && FM().running()); } catch { return false; } }
+    if (p.scope) {
+      if (bayFaceOn.has(p.id) && !bayFaceOn.get(p.id)) return false;
+      try { return !!(FM() && FM().running && FM().running()); } catch { return false; }
+    }
+    if (p.id === "midi" && bayFaceOn.has(p.id) && !bayFaceOn.get(p.id)) return false;
     if (p.id === "tape") return !!(window.FM1TapeStatus && window.FM1TapeStatus());
-    if (p.id === "rec") return !!(window.FM1Recorder?.recording || window.FM1Recorder?.playing?.());
+    if (p.id === "rec") return !!(window.FM1Recorder?.recording?.() || window.FM1Recorder?.playing?.());
     if (p.id === "tuner") return !!(window.FM1Tuner?.active?.());
     if (p.id === "midi") return !!(kbd && kbd._held && kbd._held());
     if (p.id === "assist") {
@@ -143,11 +149,151 @@
     return performance.now() < (beatUntil.get(p.id) || 0);
   }
 
+  function bayFacePower(p, mod, getKbd) {
+    if (p.gen) {
+      const t = () => window.FM1BayTransport?.get(p.id);
+      return {
+        on() { t()?.play?.(); },
+        off() { t()?.stop?.(); },
+        isOn() { return !!t()?.isOn?.(); },
+      };
+    }
+    if (p.id === "rec") {
+      return {
+        on() { document.getElementById("rec-go")?.click(); },
+        off() { document.getElementById("rec-stop")?.click(); },
+        isOn() { return !!window.FM1Recorder?.recording?.(); },
+      };
+    }
+    if (p.id === "tape") {
+      return {
+        on() { document.getElementById("tape-play")?.click(); },
+        off() { document.getElementById("tape-stop")?.click(); },
+        isOn() { return !!(window.FM1TapeStatus && window.FM1TapeStatus()); },
+      };
+    }
+    if (p.scope) {
+      return {
+        on() { bayFaceOn.set(p.id, true); try { window.FM1Scope?.ensureAnalyser?.(); } catch {} },
+        off() { bayFaceOn.set(p.id, false); },
+        isOn() {
+          if (bayFaceOn.has(p.id) && !bayFaceOn.get(p.id)) return false;
+          try { return !!(FM() && FM().running && FM().running()); } catch { return false; }
+        },
+      };
+    }
+    if (p.id === "tuner") {
+      return {
+        on() { window.FM1Tuner?._open?.(); },
+        off() { window.FM1Tuner?._close?.(); },
+        isOn() { return !!(window.FM1Tuner?.listening?.()); },
+      };
+    }
+    if (p.id === "mon") {
+      return {
+        on() { window.FM1MidiMon?._open?.(); },
+        off() { window.FM1MidiMon?._close?.(); },
+        isOn() { return !!(window.FM1MidiMon?.listening?.()); },
+      };
+    }
+    if (p.id === "assist") {
+      return {
+        on() { try { window.FM1Arp?.enable?.(); } catch {} window.FM1Assist?.open?.(); },
+        off() {
+          try { window.FM1Arp?.disable?.(); window.FM1Chords?.off?.(); window.FM1Scale?.off?.(); } catch {}
+          window.FM1Assist?.close?.();
+        },
+        isOn() {
+          try {
+            return !!(window.FM1Arp?.enabled?.() || window.FM1Chords?.get?.() !== "off" || window.FM1Scale?.enabled?.());
+          } catch { return false; }
+        },
+      };
+    }
+    if (p.id === "fx") {
+      return {
+        on() { document.getElementById("fxcc-pop")?.classList.add("open"); },
+        off() { document.getElementById("fxcc-pop")?.classList.remove("open"); },
+        isOn() { return !!document.getElementById("fxcc-pop")?.classList.contains("open"); },
+      };
+    }
+    if (p.id === "midi") {
+      return {
+        on() { bayFaceOn.set(p.id, true); },
+        off() { bayFaceOn.set(p.id, false); getKbd()?._releaseAll?.(); },
+        isOn() { return bayFaceOn.has(p.id) ? !!bayFaceOn.get(p.id) : true; },
+      };
+    }
+    if (p.panic) {
+      return {
+        on() { window.FM1BayLeds?.setActive?.(p.id, true); },
+        off() {
+          try { (window.FM1Panic?.panicUI || window.FM1Panic?.panic)?.(); } catch {}
+          window.FM1BayLeds?.setActive?.(p.id, false);
+        },
+        isOn() { return !!window.FM1BayLeds?.isActive?.(p.id); },
+      };
+    }
+  }
+
+  function syncFacePowerBtns(faceOn, faceOff, on) {
+    faceOn.classList.toggle("state-on", on);
+    faceOff.classList.toggle("state-off", !on);
+    faceOn.setAttribute("aria-pressed", on ? "true" : "false");
+    faceOff.setAttribute("aria-pressed", on ? "false" : "true");
+  }
+
   // Simple circle jack — outer ring + dark hole (no fancy hardware chrome).
   function jack(color) {
     const j = el("span", "pj"); j.style.setProperty("--jc", color);
     j.innerHTML = `<span class="pj-hole"></span>`;
     return j;
+  }
+
+  function buildFaceScopeMini(modEl) {
+    const wrap = el("div", "fm1-face-scope");
+    const cv = el("canvas");
+    cv.width = 148;
+    cv.height = 28;
+    wrap.append(cv);
+    const ctx = cv.getContext("2d");
+    let af = 0;
+    const strokeOf = () => getComputedStyle(modEl).getPropertyValue("--pc").trim() || "#b8b8b8";
+    const draw = () => {
+      af = requestAnimationFrame(draw);
+      const w = cv.width;
+      const h = cv.height;
+      ctx.fillStyle = "#0a0b0d";
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = "#25282e";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+      let running = false;
+      try { running = !!(FM() && FM().running && FM().running()); } catch {}
+      if (!running) return;
+      const S = window.FM1Scope;
+      if (!S?.sample) return;
+      try { S.ensureAnalyser?.(); } catch {}
+      const s = S.sample();
+      if (!s?.bufL) return;
+      const b = s.bufL;
+      const step = Math.max(1, (b.length / w) | 0);
+      ctx.strokeStyle = strokeOf();
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      for (let x = 0, i = 0; x < w; x++, i += step) {
+        const y = (1 - (b[i] * 0.46 + 0.5)) * (h - 4) + 2;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    };
+    draw();
+    wrap._stop = () => { if (af) cancelAnimationFrame(af); af = 0; };
+    return wrap;
   }
 
   // a live oscilloscope that taps the FM-1's audio output (window.FM1.outNode).
@@ -307,35 +453,51 @@
       .fm1-mod::before,.fm1-mod::after{content:"";position:absolute;top:8px;width:5px;height:5px;border-radius:50%;
         background:radial-gradient(circle at 40% 35%,#6a6e76,#2a2d33);box-shadow:inset 0 0 1px #000}
       .fm1-mod::before{left:8px}.fm1-mod::after{right:8px}
-      .fm1-mod-lamps{position:absolute;top:7px;right:9px;z-index:5;display:flex;align-items:center;gap:6px;pointer-events:none}
-      .fm1-mod-lamp{width:11px;height:11px;border-radius:50%;flex:none;
-        background:#1e2126;border:1px solid #3d424b;box-shadow:inset 0 2px 3px rgba(0,0,0,.65);opacity:.55;transition:opacity .15s,box-shadow .15s,background .15s,border-color .15s}
-      .fm1-mod-lamp-run.on{opacity:1;background:var(--pc,#6ec8ff);border-color:color-mix(in srgb,var(--pc,#6ec8ff) 65%,#fff);
-        box-shadow:0 0 10px color-mix(in srgb,var(--pc,#6ec8ff) 70%,transparent),0 0 3px color-mix(in srgb,var(--pc,#6ec8ff) 90%,transparent)}
-      .fm1-mod-lamp-beat.on{opacity:1;background:#f0c040;border-color:#ffe08a;
-        box-shadow:0 0 12px rgba(240,192,64,.75),0 0 4px rgba(255,224,138,.9)}
       .fm1-mod.fm1-mod-live{border-color:color-mix(in srgb,var(--pc) 42%,#2c2f35);
         box-shadow:0 10px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px color-mix(in srgb,var(--pc) 22%,transparent)}
-      .fm1-face{display:flex;align-items:center;gap:10px;padding:10px 14px 10px 14px;padding-right:52px;cursor:pointer}
-      .fm1-face .pj{flex:none}
-      .fm1-face .lab{display:flex;flex-direction:column;line-height:1.15;flex:1;min-width:0}
-      .fm1-face .lab b{font:800 13px 'Space Grotesk',-apple-system,sans-serif;letter-spacing:.02em;color:var(--ui-text,#f2f4f7)}
-      .fm1-face .lab small{font:600 10px 'Space Mono',ui-monospace,monospace;color:var(--pc)}
-      .fm1-face-play{flex:none;width:28px;height:28px;padding:0;margin-left:auto;margin-right:0;border-radius:8px;cursor:pointer;line-height:1;
-        border:1px solid #4a5058;background:#25282e;color:#f0f3f8;
-        font:800 12px 'Space Grotesk',sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 1px 2px rgba(0,0,0,.35)}
-      .fm1-face-play:hover:not(.playing){background:#32363e;border-color:#6a707a;color:#fff}
-      .fm1-face-play.playing{background:#2fd67a;border-color:#1fa85c;color:#07140e;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 0 2px rgba(47,214,122,.35),0 0 14px rgba(47,214,122,.45)}
-      .fm1-face-play.playing:hover{background:#3be886;color:#051008}
-      .fm1-face-play[aria-pressed="true"]::after{content:'';position:absolute;inset:-3px;border-radius:10px;border:1px solid rgba(47,214,122,.5);pointer-events:none}
-      .fm1-face-play{position:relative}
-      .fm1-face .chev{color:var(--ui-dim,#8c93a0);font-size:12px;transition:transform .16s}
+      .fm1-face{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:9px 12px 10px;cursor:default}
+      .fm1-face-lamps{display:flex;justify-content:center;align-items:center;gap:10px}
+      .fm1-lamp{width:11px;height:11px;border-radius:50%;flex:none;
+        background:#1e2126;border:1px solid #3d424b;box-shadow:inset 0 2px 3px rgba(0,0,0,.65);opacity:.45;
+        transition:opacity .12s,box-shadow .12s,background .12s,border-color .12s,transform .12s}
+      .fm1-lamp-run.on{opacity:1;background:#a855f7;border-color:#c084fc;
+        box-shadow:0 0 10px rgba(168,85,247,.75),0 0 3px rgba(192,132,252,.9),inset 0 1px 0 rgba(255,255,255,.25)}
+      .fm1-lamp-beat.on{opacity:1;background:#fff;border-color:#f8f8f8;
+        box-shadow:0 0 12px rgba(255,255,255,.85),0 0 4px rgba(255,255,255,.95);
+        animation:fm1-beat-flash .14s ease-out}
+      @keyframes fm1-beat-flash{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+      .fm1-face-slot{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;min-height:28px;width:100%}
+      .fm1-face-ctl{display:flex;justify-content:center;align-items:center;gap:6px}
+      .fm1-face-btn.on,.fm1-face-btn.off{min-width:44px}
+      .fm1-face-btn{flex:none;min-width:40px;height:26px;padding:0 12px;border-radius:7px;cursor:pointer;line-height:1;
+        border:1px solid color-mix(in srgb,var(--pc,#6ec8ff) 55%,#1a1c20);
+        background:var(--pc,#6ec8ff);color:var(--ui-on-accent,#111);
+        font:800 14px 'Space Grotesk',-apple-system,sans-serif;letter-spacing:.02em;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(0,0,0,.35)}
+      .fm1-face-btn:hover:not(.state-on):not(.state-off):not(:disabled){filter:brightness(1.08)}
+      .fm1-face-btn:disabled{opacity:.38;cursor:not-allowed;filter:none}
+      .fm1-face-btn.on.state-on{background:#fff;color:#0f1115;border-color:#e4e7ec;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 0 0 1px rgba(255,255,255,.4),0 0 14px color-mix(in srgb,var(--pc) 35%,transparent)}
+      .fm1-face-btn.off.state-off{background:#181b21;color:#9aa3b0;border-color:#434a56;
+        box-shadow:inset 0 2px 6px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.25)}
+      .fm1-face-btn.rec.on.state-on{color:#d42b2b;border-color:#ffc4c4}
+      .fm1-face-scope{width:100%;max-width:148px;border-radius:6px;overflow:hidden;border:1px solid #2a2d33;background:#0a0b0d}
+      .fm1-face-scope canvas{display:block;width:100%;height:28px}
+      .fm1-face-id{display:flex;align-items:center;gap:8px;cursor:pointer;padding-top:2px}
+      .fm1-face-id .pj{flex:none}
+      .fm1-face-id .lab{display:flex;flex-direction:column;line-height:1.15;flex:1;min-width:0;text-align:left}
+      .fm1-face-id .lab b{font:800 13px 'Space Grotesk',-apple-system,sans-serif;letter-spacing:.02em;color:var(--ui-text,#f2f4f7)}
+      .fm1-face-id .lab small{font:600 10px 'Space Mono',ui-monospace,monospace;color:var(--pc)}
+      .fm1-face-id .chev{flex:none;margin-left:auto;display:flex;align-items:center;justify-content:center;
+        width:28px;height:28px;color:var(--ui-dim,#8c93a0);font-size:22px;font-weight:700;line-height:1;
+        padding:0;border-radius:6px;transition:transform .16s,color .16s,background .12s}
+      .fm1-face-id:hover .chev{color:var(--ui-text,#e8ecf2);background:color-mix(in srgb,var(--pc) 12%,#1e2126)}
       .fm1-mod.open .fm1-face{border-bottom:1px solid var(--ui-line,#26292f)}
-      .fm1-mod.open .fm1-face .chev{transform:rotate(180deg);color:var(--pc)}
-      .fm1-mod.open{flex:0 1 auto;min-width:min(300px,96%);max-width:min(320px,100%);width:max-content;
+      .fm1-mod.open .fm1-face-id .chev{transform:rotate(180deg);color:var(--pc)}
+      .fm1-mod.open{flex:0 1 auto;min-width:min(480px,98%);max-width:min(560px,100%);width:max-content;
         overflow:visible;z-index:6;border-color:color-mix(in srgb,var(--pc) 55%,#2c2f35)}
-      .fm1-body{display:none;flex-direction:column;align-items:stretch;gap:8px;padding:10px;min-width:0;width:100%;box-sizing:border-box}
+      .fm1-body{display:none;flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px 16px;min-width:0;width:100%;box-sizing:border-box}
+      .fm1-mod.open .scope-cv{height:210px}
       .fm1-mod.open .fm1-body{display:flex}
       .scope-wrap{width:100%;max-width:100%;box-sizing:border-box;background:#070809;border:1px solid var(--ui-line,#2a2a2a);border-radius:8px;padding:7px}
       .scope-cv{width:100%;height:150px;display:block}
@@ -403,7 +565,7 @@
       .fm1-deck-ctls button:hover{filter:brightness(1.1)}
       .fm1-deck-ctls button.on{background:linear-gradient(180deg,var(--amber-hi,#f2f2f2),var(--amber,#d8d8d8));border-color:transparent;color:var(--ui-on-accent,#180a02);
         box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 3px rgba(0,0,0,.4)}
-      @media (max-width:620px){ .fm1-mods{gap:12px} .fm1-mod{min-width:132px} .fm1-mod.open{min-width:min(260px,96%);max-width:100%} .fm1-size input[type=range]{width:84px} }`;
+      @media (max-width:620px){ .fm1-mods{gap:12px} .fm1-mod{min-width:132px} .fm1-mod.open{min-width:min(340px,98%);max-width:100%} .fm1-size input[type=range]{width:84px} }`;
     document.head.appendChild(css);
 
     // Absolute Size zoom (50–300%). null = Auto-fit. Persisted as fm1_rig_zoom.
@@ -555,24 +717,39 @@
       if (!portReady(p)) return null;
       const mod = el("div", "fm1-mod"); mod.style.setProperty("--pc", p.color); mod.dataset.id = p.id;
       const face = el("div", "fm1-face");
+      const lamps = el("div", "fm1-face-lamps");
+      const ledRun = el("span", "fm1-lamp fm1-lamp-run");
+      ledRun.title = "Run — module active";
+      ledRun.setAttribute("aria-label", "Run indicator");
+      const ledBeat = el("span", "fm1-lamp fm1-lamp-beat");
+      ledBeat.title = "Beat pulse";
+      ledBeat.setAttribute("aria-label", "Beat indicator");
+      lamps.append(ledRun, ledBeat);
+      const slot = el("div", "fm1-face-slot");
+      const ctl = el("div", "fm1-face-ctl");
+      const faceOn = el("button", "fm1-face-btn on");
+      faceOn.type = "button";
+      faceOn.textContent = "ON";
+      faceOn.title = "Turn on";
+      faceOn.setAttribute("aria-label", `On ${p.label}`);
+      const faceOff = el("button", "fm1-face-btn off");
+      faceOff.type = "button";
+      faceOff.textContent = "OFF";
+      faceOff.title = "Turn off";
+      faceOff.setAttribute("aria-label", `Off ${p.label}`);
+      ctl.append(faceOn, faceOff);
+      slot.append(ctl);
+      let faceScope = null;
+      if (p.scope) {
+        faceScope = buildFaceScopeMini(mod);
+        slot.append(faceScope);
+      }
+      const idRow = el("div", "fm1-face-id");
       const dj = jack(p.color); dj.classList.add("djack");
       const lab = el("div", "lab"); lab.innerHTML = `<b>${p.label}</b><small>${p.sub}</small>`;
-      const lamps = el("div", "fm1-mod-lamps");
-      const ledRun = el("span", "fm1-mod-lamp fm1-mod-lamp-run");
-      ledRun.title = "On — module is running";
-      ledRun.setAttribute("aria-label", "Run indicator");
-      const ledBeat = el("span", "fm1-mod-lamp fm1-mod-lamp-beat");
-      ledBeat.title = "Beat";
-      lamps.append(ledRun, ledBeat);
-      const facePlay = el("button", "fm1-face-play");
-      facePlay.type = "button";
-      facePlay.textContent = "▶";
-      facePlay.title = "Play";
-      facePlay.setAttribute("aria-label", `Play ${p.label}`);
-      facePlay.setAttribute("aria-pressed", "false");
-      facePlay.hidden = !p.gen;
-      const chev = el("span", "chev"); chev.textContent = "▾";
-      face.append(dj, lab, facePlay, chev);
+      const chev = el("span", "chev"); chev.textContent = "▼"; chev.setAttribute("aria-hidden", "true");
+      idRow.append(dj, lab, chev);
+      face.append(lamps, slot, idRow);
       const body = el("div", "fm1-body");
       let kbd = null;
       if (p.scope) {
@@ -590,36 +767,49 @@
         if (pop) { pop.classList.add("fm1-inline", "open"); body.appendChild(pop); }
         if (btn) btn.style.display = "none";
       }
+      const facePower = bayFacePower(p, mod, () => kbd);
+      mod._facePower = facePower;
       mod._bayProbe = () => {
         const run = moduleRunning(p, mod, kbd);
         const beat = moduleBeat(p, run);
         ledRun.classList.toggle("on", run);
-        ledBeat.classList.toggle("on", beat);
+        if (beat) {
+          ledBeat.classList.remove("on");
+          void ledBeat.offsetWidth;
+          ledBeat.classList.add("on");
+        } else ledBeat.classList.remove("on");
         mod.classList.toggle("fm1-mod-live", run);
         mod.dataset.running = run ? "1" : "0";
-        if (p.gen) {
-          const t = window.FM1BayTransport?.get(p.id);
-          facePlay.hidden = !t;
-          if (t) {
-            const playing = !!t.isOn?.();
-            facePlay.textContent = playing ? "■" : "▶";
-            facePlay.classList.toggle("playing", playing);
-            facePlay.setAttribute("aria-pressed", playing ? "true" : "false");
-            facePlay.title = playing ? "Playing — click to stop" : "Stopped — click to play";
-            facePlay.setAttribute("aria-label", `${playing ? "Stop" : "Play"} ${p.label}`);
+        if (facePower) {
+          let on = false;
+          try { on = !!facePower.isOn(); } catch {}
+          if (p.gen && !window.FM1BayTransport?.get(p.id)) {
+            faceOn.disabled = true;
+            faceOff.disabled = true;
+          } else {
+            faceOn.disabled = false;
+            faceOff.disabled = false;
           }
+          syncFacePowerBtns(faceOn, faceOff, on);
         }
       };
-      facePlay.onclick = (e) => {
+      faceOn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const t = window.FM1BayTransport?.get(p.id);
-        if (!t) return;
-        if (t.isOn?.()) t.stop?.();
-        else t.play?.();
+        mod._facePower?.on?.();
       };
-      face.setAttribute("role", "button"); face.tabIndex = 0;
-      const syncFace = () => { const o = mod.classList.contains("open"); face.setAttribute("aria-expanded", String(o)); face.title = `${o ? "Fold" : "Open"} ${p.label}`; };
+      faceOff.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        mod._facePower?.off?.();
+      };
+      idRow.setAttribute("role", "button");
+      idRow.tabIndex = 0;
+      const syncFace = () => {
+        const o = mod.classList.contains("open");
+        idRow.setAttribute("aria-expanded", String(o));
+        idRow.title = `${o ? "Fold" : "Open"} ${p.label}`;
+      };
       const flip = () => {
         mod.classList.toggle("open");
         syncFace();
@@ -632,11 +822,10 @@
         });
       };
       syncFace();
-      mod.append(lamps, face, body);
-      face.onclick = (e) => { if (e.target === facePlay || facePlay.contains(e.target)) return; flip(); };
-      face.onkeydown = (e) => {
-        if (e.target === facePlay) return;
-        if ((e.key === "Enter" || e.key === " ") && e.target === face) { e.preventDefault(); e.stopPropagation(); flip(); }
+      mod.append(face, body);
+      idRow.onclick = (e) => { e.preventDefault(); flip(); };
+      idRow.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
       };
       mods.appendChild(mod);
 

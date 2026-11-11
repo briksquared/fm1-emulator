@@ -167,6 +167,16 @@
   function el(n, cls) { const e = document.createElement(n); if (cls) e.className = cls; return e; }
   function btn(label, cls) { const b = el("button", cls || ""); b.type = "button"; b.textContent = label; return b; }
 
+  function registerBayTransport(bayId, playBtn, stopBtn, isOn) {
+    if (!bayId || !playBtn) return;
+    const reg = window.FM1BayTransport || (window.FM1BayTransport = new Map());
+    reg.set(bayId, {
+      play: () => { try { playBtn.click(); } catch {} },
+      stop: () => { try { stopBtn && stopBtn.click(); } catch {} },
+      isOn: isOn || (() => false),
+    });
+  }
+
   function section(title) {
     const s = el("div", "rgen-sec");
     const h = el("div", "rgen-sec-h"); h.textContent = title;
@@ -589,6 +599,7 @@
       });
       status.textContent = `Gate · ${p.length} steps · ${bpmNow()} BPM · ${p.groove}`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== PIANIST =====================
@@ -730,6 +741,7 @@
       });
       status.textContent = `Pianist · ${p.style} · ${p.prog} · ${bpmNow()} BPM`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== QUANT =====================
@@ -848,6 +860,7 @@
       });
       status.textContent = `Quantum · ${p.contour} · dens ${Math.round(p.dens * 100)}% · ${bpmNow()} BPM`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== EUCLID =====================
@@ -943,6 +956,7 @@
       });
       status.textContent = `Euclid ${p.hits}/${p.steps} · ${bpmNow()} BPM`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== BASS =====================
@@ -1059,6 +1073,7 @@
       });
       status.textContent = `Bass · ${p.mode} · ${bpmNow()} BPM`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== DRONE =====================
@@ -1169,6 +1184,7 @@
       });
       status.textContent = `Drone · ${p.shape} · held`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== MARKOV =====================
@@ -1261,6 +1277,7 @@
       });
       status.textContent = `Markov · ${p.table} · ${bpmNow()} BPM`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== POLYR =====================
@@ -1353,6 +1370,7 @@
       });
       status.textContent = `Polyr ${p.aHits}:${p.bHits}${p.cHits ? ":" + p.cHits : ""} / ${p.len} · ${bpmNow()} BPM`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== ARP (new) =====================
@@ -1459,6 +1477,7 @@
       });
       status.textContent = `Arp · ${p.mode} · ${p.octaves}oct · ${bpmNow()} BPM`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== PROG (new) =====================
@@ -1570,6 +1589,7 @@
       p.div = saved;
       status.textContent = `Prog · ${p.prog} · ${bpmNow()} BPM`;
     };
+    registerBayTransport(bayId, play, stop, () => clock.running());
   }
 
   // ===================== RIFF =====================
@@ -1643,6 +1663,7 @@
       if (bayId) window.FM1BayLeds?.setActive?.(bayId, true);
       fire();
     };
+    registerBayTransport(bayId, play, stop, () => !!timer);
   }
 
   // ---- CSS ----

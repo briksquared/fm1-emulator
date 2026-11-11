@@ -314,6 +314,12 @@
       .fm1-led-run.on{background:color-mix(in srgb,var(--pc,#6ec8ff) 72%,#1a1c20);border-color:color-mix(in srgb,var(--pc,#6ec8ff) 45%,#2a2e34);box-shadow:0 0 6px color-mix(in srgb,var(--pc,#6ec8ff) 40%,transparent)}
       .fm1-led-beat{opacity:.35}
       .fm1-led-beat.on{opacity:1;background:var(--amber,#e8c040);border-color:color-mix(in srgb,var(--amber,#e8c040) 50%,#3a4048);box-shadow:0 0 8px color-mix(in srgb,var(--amber,#e8c040) 55%,transparent)}
+      .fm1-face-play{flex:none;width:26px;height:26px;padding:0;margin:0;border-radius:7px;cursor:pointer;line-height:1;
+        border:1px solid color-mix(in srgb,var(--pc,#6ec8ff) 45%,#2c2f35);background:var(--ui-surface,#17181b);color:var(--pc,#9ad);
+        font:700 11px 'Space Grotesk',sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+      .fm1-face-play:hover{border-color:var(--amber);color:var(--ui-text,#f2f4f7)}
+      .fm1-face-play.on{background:var(--amber,#d8d8d8);border-color:transparent;color:var(--ui-on-accent,#180a02);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 0 1px color-mix(in srgb,var(--amber) 35%,transparent)}
       .fm1-face .chev{color:var(--ui-dim,#8c93a0);font-size:12px;transition:transform .16s}
       .fm1-mod.open .fm1-face{border-bottom:1px solid var(--ui-line,#26292f)}
       .fm1-mod.open .fm1-face .chev{transform:rotate(180deg);color:var(--pc)}
@@ -545,8 +551,14 @@
       const ledRun = el("span", "fm1-led fm1-led-run"); ledRun.title = "Module active";
       const ledBeat = el("span", "fm1-led fm1-led-beat"); ledBeat.title = "Beat / activity";
       leds.append(ledRun, ledBeat);
+      const facePlay = el("button", "fm1-face-play");
+      facePlay.type = "button";
+      facePlay.textContent = "▶";
+      facePlay.title = "Play";
+      facePlay.setAttribute("aria-label", `Play ${p.label}`);
+      facePlay.hidden = !p.gen;
       const chev = el("span", "chev"); chev.textContent = "▾";
-      face.append(dj, lab, leds, chev);
+      face.append(dj, lab, leds, facePlay, chev);
       const body = el("div", "fm1-body");
       let kbd = null;
       if (p.scope) {
@@ -570,6 +582,25 @@
         ledRun.classList.toggle("on", run);
         ledBeat.classList.toggle("on", beat);
         mod.classList.toggle("fm1-mod-live", run);
+        if (p.gen) {
+          const t = window.FM1BayTransport?.get(p.id);
+          facePlay.hidden = !t;
+          if (t) {
+            const on = !!t.isOn?.();
+            facePlay.textContent = on ? "■" : "▶";
+            facePlay.classList.toggle("on", on);
+            facePlay.title = on ? "Stop" : "Play";
+            facePlay.setAttribute("aria-label", `${on ? "Stop" : "Play"} ${p.label}`);
+          }
+        }
+      };
+      facePlay.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const t = window.FM1BayTransport?.get(p.id);
+        if (!t) return;
+        if (t.isOn?.()) t.stop?.();
+        else t.play?.();
       };
       face.setAttribute("role", "button"); face.tabIndex = 0;
       const syncFace = () => { const o = mod.classList.contains("open"); face.setAttribute("aria-expanded", String(o)); face.title = `${o ? "Fold" : "Open"} ${p.label}`; };
@@ -586,8 +617,11 @@
       };
       syncFace();
       mod.append(face, body);
-      face.onclick = flip;
-      face.onkeydown = (e) => { if ((e.key === "Enter" || e.key === " ") && e.target === face) { e.preventDefault(); e.stopPropagation(); flip(); } };
+      face.onclick = (e) => { if (e.target === facePlay || facePlay.contains(e.target)) return; flip(); };
+      face.onkeydown = (e) => {
+        if (e.target === facePlay) return;
+        if ((e.key === "Enter" || e.key === " ") && e.target === face) { e.preventDefault(); e.stopPropagation(); flip(); }
+      };
       mods.appendChild(mod);
 
       const seed = (p.id.charCodeAt(0) * 17 + links.length * 13) & 31;

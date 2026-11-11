@@ -2,7 +2,7 @@
 
 ## 1.1.3 — 2026-11-11
 
-- Focus and fullscreen toolbar.
+- Focus and fullscreen buttons on the header next to Flash.
 
 ## 1.1.2 — 2026-11-10
 

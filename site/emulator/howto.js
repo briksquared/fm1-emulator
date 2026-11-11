@@ -31,7 +31,7 @@
           <li>Click keys/buttons; drag across keys for a glissando</li>
           <li>Touch: multi-finger chords; hold a key while turning a knob</li>
           <li>Phone: rotate sideways for a bigger synth</li>
-          <li>Use <b>Focus</b> above the panel to enlarge the synth; close with <b>✕</b> or <b>Escape</b> (panel clicks keep playing)</li>
+          <li>Use <b>Focus</b> in the header (next to Flash) to enlarge the synth; close with <b>✕</b> or <b>Escape</b> (panel clicks keep playing)</li>
         </ul>
         <p class="ht-note">The real FM-1 has no touchscreen — menus are knobs and buttons. SELECT moves pages; FX / EDIT / … choose modes.</p>`,
     },

@@ -35,7 +35,9 @@ const tests = {
   "sustained dropouts warn": () =>
     assert.ok(run([...steady(GRACE_SECONDS + 1), ...steady(BAD_SECONDS, { newDry: 6 })]) >= 1),
   "a device at its limit warns on load": () =>
-    assert.ok(run([...steady(GRACE_SECONDS + 1), ...steady(BAD_SECONDS, { load: 0.99 })]) >= 1),
+    assert.ok(run([...steady(GRACE_SECONDS + 1), ...steady(BAD_SECONDS, { load: 1.05 })]) >= 1),
+  "load just under 100% does not warn": () =>
+    assert.equal(run([...steady(GRACE_SECONDS + 1), ...steady(BAD_SECONDS + 2, { load: 0.99 })]), 0),
   "the worker engine ignores small clock drift": () =>
     assert.equal(run(steady(30, { drift: 0.05 })), 0),
   "the in-thread engine still warns on drift": () =>

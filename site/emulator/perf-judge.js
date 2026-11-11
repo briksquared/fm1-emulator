@@ -7,9 +7,10 @@
 //
 // The worker engine: the audio thread keeps time and plays silence when the emulator is late, so
 // the clock stays steady either way; the real measure is the quanta that ran dry.
-export const GRACE_SECONDS = 5;     // booting, compiling, the queue refilling
-export const DRY_PER_SECOND = 3;    // dry quanta in a second that count as a dropout
-export const BAD_SECONDS = 3;       // bad seconds in a row before the notice
+export const GRACE_SECONDS = 7;     // booting, compiling, the queue refilling
+export const DRY_PER_SECOND = 4;    // dry quanta in a second that count as a dropout (worker)
+export const BAD_SECONDS = 4;       // bad seconds in a row before the notice
+export const LOAD_OVER = 1.0;       // emulated load above 100% before it counts as overload
 
 export function judgeSecond(st, s) {
   const newDry = s.dry != null && st.dryAt != null ? s.dry - st.dryAt : 0;
@@ -17,7 +18,7 @@ export function judgeSecond(st, s) {
   const stalled = s.state !== "running" || s.hidden || s.gap > 1600 || Math.abs(s.drift) > 0.5;
   if (++st.secs <= GRACE_SECONDS || s.halted) return { warn: false, late: false };
   if (stalled) { st.bad = 0; return { warn: false, late: false, stalled: true }; }
-  const over = s.load > 0.95;
+  const over = s.load > LOAD_OVER;
   const late = s.worker ? newDry >= DRY_PER_SECOND : s.drift > 0.02;
   st.bad = over || late ? st.bad + 1 : 0;
   return { warn: st.bad >= BAD_SECONDS, over, late };

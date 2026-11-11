@@ -183,6 +183,9 @@ assert.match(radarTests.stdout, /PASS: \d+ radar tests/, "radar unit tests repor
 const flashTests = spawnSync(process.execPath, [resolve(root, "ci/test-flash.mjs")], { encoding: "utf8" });
 assert.equal(flashTests.status, 0, `flash unit tests failed:\n${flashTests.stdout}\n${flashTests.stderr}`);
 assert.match(flashTests.stdout, /PASS: \d+ flash tests/, "flash unit tests report a pass count");
+const perfTests = spawnSync(process.execPath, [resolve(root, "ci/perf-tests.mjs")], { encoding: "utf8" });
+assert.equal(perfTests.status, 0, `perf judge unit tests failed:\n${perfTests.stdout}\n${perfTests.stderr}`);
+assert.match(perfTests.stdout, /perf tests: \d+ passed/, "perf judge unit tests report a pass count");
 
 const readme = text("README.md");
 assert.match(readme, new RegExp(`\\b${entries.length}\\b`), "README firmware count");

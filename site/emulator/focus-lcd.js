@@ -191,9 +191,11 @@
     const status = document.getElementById("status");
     if (status) {
       let last = "";
+      const speechKey = (t) => t.replace(/\s·\s[\d.]+ s$/, "");
       const obs = new MutationObserver(() => {
         const t = (status.textContent || "").trim();
-        if (t && t !== last) { last = t; if (speakOn()) announce(t); }
+        const key = speechKey(t);
+        if (t && key !== last) { last = key; if (speakOn()) announce(t); }
       });
       obs.observe(status, { childList: true, characterData: true, subtree: true });
     }

@@ -6,7 +6,7 @@
 import { fetchPackage } from "./fwsc.js";
 import { SaveStore, packageHash, changedSectors, packSectors, exportSave, importSave } from "./persistence.js";
 import "./catalog-source.js";
-import { judgeSecond, recovered } from "./perf-judge.js?v=2";
+import { judgeSecond, recovered } from "./perf-judge.js?v=3";
 import { mergeCatalog, isSafeRemembered } from "./catalog-updates.js?v=5";
 import { wireRadar } from "./radar.js?v=2";
 import {
@@ -64,7 +64,8 @@ let fw = byId.get(params.get("fw")) || byId.get(stored(DEV.key + "fw")) || byId.
 let mhz = Number(params.get("mhz") || stored("fm1.mhz") || 100);
 // the audio buffer: "interactive" (small: keys answer quickly) unless this device needed a larger
 // one ("playback", offered when the sound drops out with time to spare; ?latency= overrides)
-let latency = params.get("latency") || stored("fm1.latency") || "interactive";
+const defaultLatency = () => (window.FM1Desktop ? "balanced" : "interactive");
+let latency = params.get("latency") || stored("fm1.latency") || defaultLatency();
 
 const canvas = document.getElementById("panel");
 const ctx = canvas.getContext("2d");
@@ -1077,6 +1078,12 @@ const perf = {
     this.stamp = null; this.jit = null; this.lastSecond = 0; this.dryAt = null; this.shown = false; this.good = 0;
     // a dismissed warning stays dismissed for this firmware, clock and buffer, across reboots
     if (this.dismissedFor !== this.key()) this.dismissed = false;
+    const mk = this.key();
+    if (this.mitigateKey !== mk) {
+      this.mitigateKey = mk;
+      this.autoClockTried = false;
+      this.autoBufferTried = false;
+    }
     issue.clear("perf");
   },
   add(m) {
@@ -1119,7 +1126,27 @@ const perf = {
     });
     if (Array.isArray(window.FM1PerfTrace)) window.FM1PerfTrace.push({ secs: this.secs, dry: worker && stream ? stream.underruns : null, drift, gap: Math.round(gap), state: ac?.state, load: this.load(), ...j });   // (opt-in, for tests)
     if (j.late) this.drops++;
-    if (j.warn && !this.shown && !this.dismissed) this.warn(j.over);
+    if (j.warn && !this.shown && !this.dismissed) {
+      if (j.over && !this.autoClockTried) {
+        const pick = this.lowerClock(this.load());
+        if (pick) {
+          this.autoClockTried = true;
+          status.textContent = `Audio tight at ${mhz} MHz — switching to ${pick} MHz…`;
+          setClock(pick);
+          return;
+        }
+      }
+      if (j.late && !j.over && !this.autoBufferTried) {
+        const next = latency === "interactive" ? "playback" : (latency === "balanced" || latency === "playback" ? "0.3" : null);
+        if (next) {
+          this.autoBufferTried = true;
+          status.textContent = next === "playback" ? "Steadying audio (larger buffer)…" : "Using the largest audio buffer…";
+          setLatency(next);
+          return;
+        }
+      }
+      this.warn(j.over);
+    }
     // the notice stays while the dropouts go on, and clears after 20 good seconds in a row (it can
     // come back if they start again)
     if (this.shown && recovered(this, j)) { this.shown = false; issue.clear("perf"); }

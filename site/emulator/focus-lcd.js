@@ -33,11 +33,29 @@
     live.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;";
     document.body.appendChild(live);
 
+    const MARGIN_X = 28;
+    const MARGIN_TOP = 52;
+    const MARGIN_BOTTOM = 28;
+    const MAX_SCALE = 2.15;
+    const MIN_SCALE = 1.1;
+    let layout = null;
+
+    const focusScale = () => {
+      if (!layout) return 1.35;
+      const vw = window.innerWidth - MARGIN_X * 2;
+      const vh = window.innerHeight - MARGIN_TOP - MARGIN_BOTTOM;
+      const s = Math.min(vw / layout.w, vh / layout.h, MAX_SCALE);
+      return Math.max(MIN_SCALE, s);
+    };
+    const applyFocusScale = () => {
+      document.documentElement.style.setProperty("--focus-lcd-scale", focusScale().toFixed(3));
+    };
+
     const css = document.createElement("style");
     css.textContent = `
       .panel-stack.focus-lcd, .stage.focus-lcd{z-index:10030;position:relative}
       .panel-stack.focus-lcd canvas, .stage.focus-lcd canvas{
-        position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(2.4);
+        position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(var(--focus-lcd-scale, 1.35));
         transform-origin:center center;z-index:10031;box-shadow:0 24px 80px rgba(0,0,0,.65);
         border-radius:8px;cursor:default}
       #focus-lcd-veil{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10029;display:none;pointer-events:none}
@@ -65,6 +83,14 @@
     let focused = false;
     function setFocus(on) {
       focused = !!on;
+      if (focused) {
+        const r = canvas.getBoundingClientRect();
+        layout = { w: r.width, h: r.height };
+        applyFocusScale();
+      } else {
+        layout = null;
+        document.documentElement.style.removeProperty("--focus-lcd-scale");
+      }
       stage.classList.toggle("focus-lcd", focused);
       veil.classList.toggle("on", focused);
       closeBtn.classList.toggle("on", focused);
@@ -110,6 +136,7 @@
     addEventListener("keydown", (e) => {
       if (e.key === "Escape" && focused) { e.preventDefault(); setFocus(false); }
     });
+    addEventListener("resize", () => { if (focused) applyFocusScale(); });
 
     // Speak major status-line changes when voice is on.
     const status = document.getElementById("status");

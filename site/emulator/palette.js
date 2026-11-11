@@ -139,7 +139,7 @@
         { label: "Firmware info (this firmware)", group: "open", rank: 1, run: () => (window.FM1Info && window.FM1Info.open && window.FM1Info.open(curId)) },
         { label: "How to use the app", group: "open", rank: 1, run: () => (window.FM1Howto && window.FM1Howto.open && window.FM1Howto.open()) },
         { label: "Keyboard shortcuts & help", group: "open", rank: 1, run: () => (window.FM1Help && window.FM1Help.open && window.FM1Help.open()) },
-        { label: (window.FM1Focus && window.FM1Focus.isOn && window.FM1Focus.isOn()) ? "Focus mode — on (close with ✕ or Escape)" : "Focus mode — enlarge panel for play",
+        { label: (window.FM1Focus && window.FM1Focus.isOn && window.FM1Focus.isOn()) ? "Focus mode — on (close with ✕ or Escape)" : "Focus mode — enlarge LCD screen",
           group: "tool", rank: 1, run: () => { if (window.FM1Focus && !window.FM1Focus.isOn()) window.FM1Focus.open(); } },
         // show / hide the bars and panels (layout.js)
         ...((window.FM1Layout && window.FM1Layout.commands && window.FM1Layout.commands()) || []),

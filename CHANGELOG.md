@@ -3,7 +3,7 @@
 ## 1.1.3 — 2026-11-11
 
 - Focus and fullscreen buttons on the header next to Flash.
-- Focus scale fits the viewport instead of a fixed zoom.
+- Focus enlarges the LCD screen well to fit the viewport, not the whole panel.
 - Release CI uploads all platform builds in one step; MIDI bridge tests run in verify.
 
 ## 1.1.2 — 2026-11-10

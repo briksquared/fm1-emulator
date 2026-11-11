@@ -18,6 +18,8 @@ assert.doesNotMatch(focus, /toggle:\s*\(\)\s*=>/, "focus API does not expose tog
 assert.match(focus, /--focus-lcd-scale/, "focus scale is computed, not fixed");
 assert.doesNotMatch(focus, /scale\(2\.4\)/, "focus does not use a hard-coded 2.4 scale");
 assert.match(focus, /getBoundingClientRect/, "focus scale uses measured canvas layout");
+assert.match(focus, /0\.275[\s\S]*0\.659/, "focus targets the LCD screen well, not the full panel");
+assert.match(focus, /clipPath|clip-path/i, "focus clips to the screen region");
 
 const bar = text("site/emulator/play-bar.js");
 assert.match(bar, /fm1-flash-btn/, "play-bar waits for Flash button");
@@ -38,5 +40,5 @@ assert.doesNotMatch(html, /above the panel/i, "copy does not say focus is above 
 const extras = text("site/emulator/extras.js");
 assert.doesNotMatch(extras, /#fs-btn/, "legacy deck-head fullscreen button removed");
 
-let n = 20;
+let n = 22;
 console.log(`PASS: ${n} play-bar tests`);

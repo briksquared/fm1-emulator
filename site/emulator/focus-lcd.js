@@ -5,10 +5,10 @@
   "use strict";
   const SPEAK_KEY = "fm1.speak.v1";
   const SCREEN = { x0: 0.275, y0: 0.029, x1: 0.678, y1: 0.659 };
-  const MARGIN_X = 24;
-  const MARGIN_TOP = 48;
-  const MARGIN_BOTTOM = 24;
-  const MAX_SCALE = 3.25;
+  const MARGIN_X = 14;
+  const MARGIN_TOP = 36;
+  const MARGIN_BOTTOM = 16;
+  const MAX_SCALE = 3.6;
   const MIN_SCALE = 1.05;
 
   function speakOn() {

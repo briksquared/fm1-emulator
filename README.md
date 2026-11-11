@@ -14,9 +14,13 @@ choose a firmware, press **Start**, and play with your keyboard, mouse, or a MID
 
 ---
 
-## What's new in 1.1.2
+## What's new in 1.1.3
 
-Patch bay · generative modules · cable motion · desktop MIDI link · Focus Mode · colour themes.
+Fullscreen and Focus in the deck header (next to Flash). Focus enlarges the **LCD screen** to fit your display — close with **✕** or **Escape**.
+
+## 1.1.2
+
+Patch bay · generative modules · cable motion · desktop MIDI link · colour themes.
 
 ## Download
 
@@ -56,7 +60,7 @@ Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 - **Play** — computer keyboard, mouse, or USB MIDI
 - **Patch bay** — generative modules with presets, grooves, and moving cables
 - **Desktop MIDI** — Bluetooth or USB link to a paired FM-1
-- **Focus Mode** — enlarge the panel for mouse play (open from header; close with ✕ or Escape); session export/import for UI prefs
+- **Focus Mode** — enlarge the LCD screen to fit the window (header, next to Flash; close with ✕ or Escape); session export/import for UI prefs
 - **Themes** — Midnight, Graphite, Cobalt, Emerald, Crimson, Vaporwave, Ice, Paper
 - **Customize** — panel colours, decals, stickers
 - **Firmware recovery (Windows)** — backup, restore, reinstall

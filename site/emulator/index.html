@@ -142,7 +142,7 @@
         <button type="button" id="midi-identify" title="Ask the paired FM-1 for its identity over SysEx. MIDI and mic stay off until you turn them on.">Identify</button>
         <p id="midi-identity" class="dim midi-note" hidden></p>
         <p id="midi-fx-warn" class="dim midi-note" hidden></p>
-        <p id="midi-ble-hint" class="dim midi-hint" title="MIDI stays off until you pick a port. Mic stays off until Tape → Mic → Feed and you confirm. Flashing needs USB. Double-click the LCD for Focus Mode.">Ports off until you pick them · mic opt-in</p>
+        <p id="midi-ble-hint" class="dim midi-hint" title="MIDI stays off until you pick a port. Mic stays off until Tape → Mic → Feed and you confirm. Flashing needs USB. Use Focus above the panel for a larger play surface.">Ports off until you pick them · mic opt-in</p>
       </section>
     </aside>
   </div>
@@ -329,7 +329,7 @@
             device to paste into a bug report.</li>
           <li><b>Safari</b> has no Web MIDI, so no MIDI in or out there.</li>
           <li><b>Bluetooth MIDI</b> needs a paired FM-1 in the OS (Windows Bluetooth settings). The desktop app enables WinRT MIDI so BLE ports show up; flashing still requires USB.</li>
-          <li><b>MIDI out / host</b> tees Keys, player, assist, panic and clock to the chosen port (A/B can mute out or emu audio). Banks can send bank or voice SysEx. <b>Panel host</b> maps hardware panel MIDI into the emulated panel (screen draw-back onto the unit is not implemented). <b>FX CC</b> drives stock Effect Chn maps (V15/V16). Double-click the LCD for Focus Mode; Session exports UI prefs.</li>
+          <li><b>MIDI out / host</b> tees Keys, player, assist, panic and clock to the chosen port (A/B can mute out or emu audio). Banks can send bank or voice SysEx. <b>Panel host</b> maps hardware panel MIDI into the emulated panel (screen draw-back onto the unit is not implemented). <b>FX CC</b> drives stock Effect Chn maps (V15/V16). Use <b>Focus</b> above the panel for enlarged play; Session exports UI prefs.</li>
           <li><b>M-VAVE's MIDI channel 2</b> is what the emulator shows; it has not been checked on a real FM-1.</li>
           <li><b>ChoralRoot, Hortator, SLOOP ALG and X0X</b> give no note from a plain MIDI note-on.</li>
           <li><b>M-VAVE's patches:</b> the factory bank of a real unit is not in the update package, so the emulator
@@ -429,7 +429,8 @@
 <script src="audition.js?v=2"></script>
 <script src="palette.js?v=14"></script>
 <script src="panic.js?v=2"></script>
-<script src="focus-lcd.js?v=1"></script>
+<script src="focus-lcd.js?v=2"></script>
+<script src="play-bar.js?v=1"></script>
 <script src="host-panel.js?v=1"></script>
 <script src="fxcc.js?v=1"></script>
 <script src="session-io.js?v=1"></script>

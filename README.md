@@ -56,7 +56,7 @@ Full per-platform detail: **[Installation & first run](docs/Installation.md)**.
 - **Play** — computer keyboard, mouse, or USB MIDI
 - **Patch bay** — generative modules with presets, grooves, and moving cables
 - **Desktop MIDI** — Bluetooth or USB link to a paired FM-1
-- **Focus Mode** — enlarge the LCD; session export/import for UI prefs
+- **Focus Mode** — enlarge the panel for mouse play (toolbar above the canvas; Escape to exit); session export/import for UI prefs
 - **Themes** — Midnight, Graphite, Cobalt, Emerald, Crimson, Vaporwave, Ice, Paper
 - **Customize** — panel colours, decals, stickers
 - **Firmware recovery (Windows)** — backup, restore, reinstall

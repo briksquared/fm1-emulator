@@ -164,6 +164,14 @@ assert.match(text("site/emulator/midimon.js"), /mon-pause/, "MIDI monitor can pa
 assert.match(text("site/emulator/style.css"), /flex-wrap:\s*nowrap/, "key legend stays on one row");
 assert.ok(entries.some(entry => entry.id === "aurora" && entry.version === "0.9.1" && entry.product === "FM-1_4747"), "AURORA 0.9.1 is bundled and identified");
 
+assert.ok(existsSync(resolve(emulator, "play-bar.js")), "play-bar toolbar is shipped");
+assert.match(text("site/emulator/focus-lcd.js"), /pointer-events:none/, "focus veil does not steal clicks");
+assert.match(text("site/emulator/index.html"), /play-bar\.js/, "play-bar is loaded");
+
+const playBarTests = spawnSync(process.execPath, [resolve(root, "ci/play-bar-tests.mjs")], { encoding: "utf8" });
+assert.equal(playBarTests.status, 0, `play-bar unit tests failed:\n${playBarTests.stdout}\n${playBarTests.stderr}`);
+assert.match(playBarTests.stdout, /PASS: \d+ play-bar tests/, "play-bar unit tests report a pass count");
+
 const radarTests = spawnSync(process.execPath, [resolve(root, "ci/test-radar.mjs")], { encoding: "utf8" });
 assert.equal(radarTests.status, 0, `radar unit tests failed:\n${radarTests.stdout}\n${radarTests.stderr}`);
 assert.match(radarTests.stdout, /PASS: \d+ radar tests/, "radar unit tests report a pass count");

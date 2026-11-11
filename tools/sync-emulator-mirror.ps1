@@ -20,7 +20,7 @@ if (-not (Test-Path $privEmu)) { throw "private emulator missing: $privEmu" }
 $emuFiles = @(
   "app-icon.png", "assist.js", "arp.js", "audition.js", "banks.js", "banks.json", "catalog-source.js", "catalog-updates.js",
   "chords.js", "customize.js", "deck.js", "engine.js", "extras.js", "favorites.js",
-  "flash-core.js", "flash-vault.js", "fm1ota.js", "fm1pkg.js", "focus-lcd.js", "fxcc.js", "fwinfo.js", "fwsc.js",
+  "flash-core.js", "flash-vault.js", "fm1ota.js", "fm1pkg.js", "focus-lcd.js", "play-bar.js", "fxcc.js", "fwinfo.js", "fwsc.js",
   "gallery.js", "help.js", "howto.js", "host-panel.js", "index.html", "install.js", "issues.js", "jit.js", "keys.js",
   "layout.js", "loader.js", "main.js", "middrop.js", "midi-bridge.js", "midimon.js", "midiplayer.js",
   "notes.js", "og.png", "overlay.js", "package-resources.js", "palette.js", "panic.js", "perf-judge.js",

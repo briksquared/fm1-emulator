@@ -33,7 +33,6 @@
     addSearch(fwSel);
     addQuickActions(fwSel);
     relocateMidi(fwSel);
-    addFullscreen();
     addFullscreenControls(fwSel);
     addResources();
     wireMoreMenu();
@@ -161,20 +160,6 @@
     if (hint) nowBox.appendChild(hint);
   }
 
-  // a fullscreen toggle for the panel
-  function addFullscreen() {
-    const dh = document.querySelector(".deck-head"); if (!dh) return;
-    const b = document.createElement("button");
-    b.id = "fs-btn"; b.type = "button"; b.textContent = "Fullscreen";
-    b.onclick = () => {
-      // fullscreen the whole machine column so the plugged-in devices (MIDI, Tape) come with it
-      const st = document.querySelector(".player .deck") || document.querySelector(".stage"); if (!st) return;
-      if (document.fullscreenElement) document.exitFullscreen();
-      else st.requestFullscreen && st.requestFullscreen();
-    };
-    dh.appendChild(b);
-  }
-
   function injectStyles() {
     if (document.getElementById("fm1-extra-css")) return;
     const el = document.createElement("style");
@@ -204,9 +189,6 @@
       #res-pop h4{margin:9px 0 3px;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
       #res-pop a{display:block;color:var(--text);text-decoration:none;font-size:12.5px;padding:3px 0}
       #res-pop a:hover{color:var(--amber-ink, var(--amber))}
-      #fs-btn{background:var(--amber);border:0;color:var(--ui-on-accent,#180a02);border-radius:7px;font-weight:700;
-        padding:5px 10px;font:inherit;font-size:11.5px;cursor:pointer}
-      #fs-btn:hover{background:var(--amber-hi)}
       .fw-quick{display:flex;gap:6px;margin-bottom:6px}
       .fw-quick button{flex:1;background:var(--well);border:1px solid var(--line);color:var(--text);
         border-radius:7px;padding:5px;font:inherit;font-size:11.5px;cursor:pointer}

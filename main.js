@@ -273,13 +273,13 @@ function runSelfTest(win, mode) {
                pageScrolls: document.documentElement.scrollHeight>innerHeight+2, scrollH: document.documentElement.scrollHeight }; })()`
         : mode === "search"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&document.getElementById('fw-search-results')&&window.FM1?.fwText&&(document.getElementById('fw')?.options.length||0)>=277) break; await sleep(200); }
+             for(let i=0;i<80;i++){ if(document.getElementById('fw-search')&&document.getElementById('fw-search-results')&&window.FM1?.fwText&&(document.getElementById('fw')?.options.length||0)>250) break; await sleep(200); }
              const q=document.getElementById('fw-search'), results=document.getElementById('fw-search-results');
-             if(!q||!results) return {fwCount:document.getElementById('fw')?.options.length,aurora:[],accent:[],version:[],cleared:true,missing:true};
+             if(!q||!results) return {fwCount:document.getElementById('fw')?.options.length,catalogCount:window.FM1Catalog?.firmwares?.length,aurora:[],accent:[],version:[],cleared:true,missing:true};
              const run=async value=>{q.value=value;q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(80);return [...results.querySelectorAll('.fw-search-hit[data-id]')].map(b=>b.dataset.id);};
              const aurora=await run('twochannels aurora'), accent=await run('coqui'), version=await run('0.9.1 FM-1_4747');
              q.value='';q.dispatchEvent(new Event('input',{bubbles:true}));await sleep(40);
-             return {fwCount:document.getElementById('fw')?.options.length,aurora,accent,version,cleared:results.hidden}; })()`
+             return {fwCount:document.getElementById('fw')?.options.length,catalogCount:window.FM1Catalog?.firmwares?.length,aurora,accent,version,cleared:results.hidden}; })()`
         : mode === "install"
         ? `(async()=>{ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
              for(let i=0;i<80;i++){ if(document.getElementById('inst-flash')&&document.getElementById('inst-recovery')) break; await sleep(200); }
@@ -359,7 +359,7 @@ function runSelfTest(win, mode) {
       const res = await win.webContents.executeJavaScript(js, true);
       console.log("SELFTEST_RESULT " + JSON.stringify(res));
       const passed = mode === "search"
-        ? Number(res.fwCount) === 277 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
+        ? Number(res.fwCount) === Number(res.catalogCount) && Number(res.fwCount) > 250 && res.aurora.length === 1 && res.aurora[0] === "aurora" && res.accent.includes("coqui") && res.version.includes("aurora") && res.cleared
         : mode === "install"
         ? res.hasBox && res.hasFlash && res.hasResume && res.hasRecovery && res.hasRollback
           && res.hasCopy && res.hasTriage && res.hasDeviceLab && res.hasDesktopBridge

@@ -55,6 +55,43 @@ A full backup can always be restored even if an in-app Roll back is unavailable.
 5. If Windows shows a disk **WL82 UBOOT1.00** → download mode; this app cannot MIDI-flash it — use M-Flasher; never format that disk.
 6. If nothing is detected after the in-app steps → stop cycling power; see Advanced recovery.
 
+## Windows USB not found after changing firmware
+
+The FM-1 firmware controls which USB interfaces the computer sees. USB audio and USB-MIDI are
+separate interfaces: a firmware can still run on the synth while its USB audio driver fails and
+Windows consequently exposes no MIDI port. The app cannot discover or flash a unit through a MIDI
+port that Windows has not created.
+
+This is a known risk with **MASIF** on Windows. Its author documents bidirectional USB audio as
+tested on macOS; the current public app records that the Windows composite audio interface can fail
+with Device Manager **Code 10**, leaving USB-MIDI unavailable too. This does not mean the FM-1 needs
+Linux. Use MASIF's web installer on macOS if you need MASIF's USB audio features. On Windows, the
+app excludes MASIF from the firmware picker and installer; choose Mutable Dreams, Felucca, or your
+own stock `.fwsc` instead. MASIF remains available in the software emulator.
+
+If the FM-1 already runs MASIF and Check reports no USB-MIDI:
+
+1. Keep the unit powered. Try a known data-capable cable connected directly to the computer,
+   without a hub; try another port. A charge-only cable cannot enumerate MIDI.
+2. In the app's Windows installer panel, use **Fix USB** if it is offered. It requests
+   administrator permission to rescan Windows Plug-and-Play devices and remove stale FM-1 device
+   instances. Then reconnect the FM-1 and press **Check** again. Review the administrator prompt
+   before accepting it.
+3. If Windows still shows Code 10 or no MIDI port, use the app's **Advanced recovery** steps to
+   restore a known working firmware such as Felucca or stock, then reconnect and Check again. Back
+   up the flash first when possible. Do not format a disk named `WL82 UBOOT1.00`; that is the
+   FM-1's ROM download mode.
+4. If Check still cannot see a port, use the in-app **Copy troubleshooting info** action and
+   consult the recovery guide. Stop repeating firmware writes when Windows has no MIDI endpoint:
+   the installer has no path to the device in that state.
+
+Other causes can look similar: a charge-only cable, an occupied MIDI port, a stale Windows device
+instance, or the FM-1 being in ROM download mode instead of normal firmware. Use **Check what is
+connected** to distinguish those states. Linux is not a general fix for this Windows driver
+failure; it is a separate host operating system and does not change the firmware's USB descriptors.
+
+MASIF source and its platform note: [thecemeterygates/masif-fm1](https://github.com/thecemeterygates/masif-fm1).
+
 ### Entering download mode (external tools)
 
 - With m-bootloader: hold **REC** (SMK-37: **SEQ REC**) while switching on.

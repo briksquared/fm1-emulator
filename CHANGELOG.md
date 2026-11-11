@@ -2,6 +2,7 @@
 
 ## 1.1.3 — 2026-11-11
 
+- Windows USB recovery guidance and MASIF compatibility filtering.
 - Focus and fullscreen buttons on the header next to Flash.
 - Focus enlarges the LCD screen well to fit the viewport, not the whole panel.
 - Release CI uploads all platform builds in one step; MIDI bridge tests run in verify.

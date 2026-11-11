@@ -16,7 +16,7 @@ choose a firmware, press **Start**, and play with your keyboard, mouse, or a MID
 
 ## What's new in 1.1.3
 
-Playback hardening, fullscreen and Focus on the LCD, and patch-bay cards with run/beat LEDs plus **ON/OFF** on every module face.
+USB recovery guidance and safer Windows firmware selection, plus playback hardening, Focus, and patch-bay controls.
 ## 1.1.2
 
 Patch bay · generative modules · cable motion · desktop MIDI link · colour themes.

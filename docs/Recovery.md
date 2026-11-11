@@ -60,6 +60,21 @@ A full backup can always be restored even if an in-app Roll back is unavailable.
 - With m-bootloader: hold **REC** (SMK-37: **SEQ REC**) while switching on.
 - Felucca / SLOOP / Snoop37: hold **OCT−** and **OCT+** ~10s while running / starting.
 
+## Two production flash chips
+
+FM-1 units ship with one of two 1 MiB SPI NOR parts (same capacity, different JEDEC id):
+
+| Batch | JEDEC flash ID | Part (typical) | How to spot |
+| --- | --- | --- | --- |
+| Early production | `0x856014` | Puya P25Q80H | Most 2025 / early units |
+| 2026 “logo on the front” | `0xB36014` | UC25HQ80 | Front logo; autumn 2026+ |
+
+Chip key is still `0x980F` on both. Many older firmwares only recognise `0x856014`, so on a
+`0xB36014` unit they may keep saves in RAM only (gone after power-off) and refuse or stall
+updates — the hardware is fine; put a firmware that knows the newer chip (for example **AURORA
+0.9.1+**) through download mode after a full backup. Recovery tools used with this project
+(Unbricker / Transporter / rescue scripts) accept **both** IDs.
+
 ## M-Flasher notes (Windows)
 
 M-Flasher (Julius Vitkauskas, MIT) needs administrator rights and a USB data cable. The desktop

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.3 — 2026-11-11
+
+- Focus and fullscreen toolbar.
+
 ## 1.1.2 — 2026-11-10
 
 - Documented both production flash chips (0x856014 / 0xB36014) in recovery help.

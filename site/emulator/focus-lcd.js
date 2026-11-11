@@ -1,6 +1,6 @@
 // Focus Mode: enlarge the panel for easier play; optional spoken status via speechSynthesis
 // and an aria-live region (screen-reader style, inspired by FM-1 Screen Reader / ESTAMPIE).
-// Open from the toolbar above the panel; close via the Focus ✕ or Escape — never canvas clicks.
+// Open from Focus in the deck header; close via the Focus ✕ or Escape — never canvas clicks.
 (function () {
   "use strict";
   const SPEAK_KEY = "fm1.speak.v1";

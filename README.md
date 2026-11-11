@@ -10,8 +10,6 @@ choose a firmware, press **Start**, and play with your keyboard, mouse, or a MID
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-informational)
 
-<img src="docs/screenshot.jpg" alt="FM-1 Emulator" width="760">
-
 </div>
 
 ---
@@ -29,6 +27,10 @@ Get the latest build for your system from the [**Releases**](https://github.com/
 | **Windows** | `FM-1-Emulator-Setup-*.exe` (installer) or `*-portable.exe` (no install) |
 | **macOS** | `*-arm64.dmg` (Apple Silicon) · `*-x64.dmg` (Intel) |
 | **Linux** | `*.AppImage` or `*.deb` |
+
+<p align="center">
+  <img src="docs/hero.jpg" alt="FM-1 Emulator — AURORA" width="760">
+</p>
 
 ## First launch
 

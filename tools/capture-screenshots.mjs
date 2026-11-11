@@ -18,7 +18,24 @@ const require = createRequire(resolve(
 ));
 const puppeteer = require("puppeteer-core");
 
-const THEMES = ["Midnight", "Graphite", "Cobalt", "Emerald", "Crimson", "Vaporwave", "Ice", "Paper"];
+// One distinct firmware per colour / feature / hero so the LCD is not the same Felucca home every time.
+const THEME_SHOTS = [
+  { theme: "Midnight", fw: "aurora", file: "01-midnight.png" },
+  { theme: "Graphite", fw: "jiant", file: "02-graphite.png" },
+  { theme: "Cobalt", fw: "sidou", file: "03-cobalt.png" },
+  { theme: "Emerald", fw: "melodee", file: "04-emerald.png" },
+  { theme: "Crimson", fw: "bigorna", file: "05-crimson.png" },
+  { theme: "Vaporwave", fw: "ravel", file: "06-vaporwave.png" },
+  { theme: "Ice", fw: "cutador", file: "07-ice.png" },
+  { theme: "Paper", fw: "bunker", file: "08-paper.png" },
+];
+const FEATURE_SHOTS = {
+  customize: { theme: "Cobalt", fw: "karma" },
+  browser: { theme: "Emerald", fw: "mono2k" },
+  patchBay: { theme: "Ice", fw: "chipbox" },
+  keys: { theme: "Vaporwave", fw: "beetleblue" },
+};
+const HERO = { theme: "Midnight", fw: "aurora" };
 
 mkdirSync(outDir, { recursive: true });
 for (const f of readdirSync(outDir)) {
@@ -37,7 +54,7 @@ page.setDefaultTimeout(60000);
 async function goto(qs = "") {
   await page.goto(base + (qs ? `?${qs}` : ""), { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.getElementById("fw") || document.querySelector(".side"), { timeout: 30000 }).catch(() => {});
-  await sleep(700);
+  await sleep(500);
 }
 
 async function setTheme(name) {
@@ -51,7 +68,7 @@ async function setTheme(name) {
     TH.save(ui);
     TH.apply(ui);
   }, name);
-  await sleep(450);
+  await sleep(350);
 }
 
 async function shot(name) {
@@ -60,23 +77,110 @@ async function shot(name) {
   console.log("ok", name);
 }
 
-async function startFw(id) {
-  await goto(`fw=${encodeURIComponent(id)}`);
-  await page.waitForFunction(() => (document.getElementById("fw")?.options?.length || 0) > 1, { timeout: 45000 }).catch(() => {});
-  await page.evaluate((fw) => {
-    const sel = document.getElementById("fw");
-    if (sel) {
-      const opt = [...sel.options].find((o) => o.value === fw || (o.textContent || "").toLowerCase().includes(fw.toLowerCase()));
-      if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("change", { bubbles: true })); }
+async function dismissOverlays() {
+  await page.keyboard.press("Escape");
+  await sleep(150);
+  await page.keyboard.press("Escape");
+  await sleep(150);
+  await page.evaluate(() => {
+    for (const sel of [
+      "[data-close]", ".modal-close", ".drawer-close", ".panel-close",
+      "button[aria-label*=close i]", "button[title*=close i]",
+    ]) {
+      document.querySelectorAll(sel).forEach((el) => { try { el.click(); } catch {} });
     }
-  }, id);
-  await sleep(400);
-  const started = await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button")].find((b) => /^Start$/i.test(b.textContent.trim()));
-    if (btn) { btn.click(); return true; }
+    for (const lab of [/^Close$/i, /^×$/, /^✕$/]) {
+      [...document.querySelectorAll("button,a,[role=button]")].forEach((b) => {
+        const t = (b.textContent || "").trim();
+        if (lab.test(t) && b.offsetParent) { try { b.click(); } catch {} }
+      });
+    }
+    document.querySelectorAll(".modal,.drawer,.overlay,[aria-modal=true]").forEach((el) => {
+      el.classList.remove("open", "show", "active", "visible");
+      if (el.style) el.style.display = "none";
+    });
+  });
+  await sleep(250);
+}
+
+async function isRunning() {
+  return page.evaluate(() => {
+    try {
+      if (window.FM1?.running?.()) return true;
+    } catch {}
+    const start = document.getElementById("start");
+    // After a successful boot the Start control is hidden.
+    if (start && start.hidden) return true;
+    const st = (document.getElementById("status")?.textContent || "").toLowerCase();
+    if (st && !/click start|preparing|ready: click/.test(st) && /mhz|real time|load/.test(st)) return true;
     return false;
   });
-  if (started) await sleep(4200);
+}
+
+async function pokeMachine() {
+  // Real key events (not evaluate-clicks) so the audio path and LCD update.
+  await page.keyboard.down("KeyA");
+  await sleep(140);
+  await page.keyboard.up("KeyA");
+  await page.keyboard.down("KeyS");
+  await sleep(140);
+  await page.keyboard.up("KeyS");
+  await page.keyboard.down("KeyD");
+  await sleep(200);
+  await page.keyboard.up("KeyD");
+  await sleep(500);
+}
+
+async function startFw(id) {
+  // Fresh document each boot so the prior AudioContext / worker cannot stick.
+  await page.goto("about:blank");
+  await goto(`fw=${encodeURIComponent(id)}`);
+  await page.waitForFunction(() => (document.getElementById("fw")?.options?.length || 0) > 1, { timeout: 45000 }).catch(() => {});
+  await page.waitForSelector("#start", { timeout: 30000 });
+  await page.waitForFunction(() => {
+    const b = document.getElementById("start");
+    return b && b.dataset.ready === "true" && !b.disabled;
+  }, { timeout: 30000 }).catch(() => {});
+
+  const picked = await page.evaluate((fw) => {
+    const sel = document.getElementById("fw");
+    if (!sel) return null;
+    const needle = fw.toLowerCase();
+    const opt = [...sel.options].find((o) => o.value.toLowerCase() === needle)
+      || [...sel.options].find((o) => o.value.toLowerCase().includes(needle))
+      || [...sel.options].find((o) => (o.textContent || "").toLowerCase().includes(needle));
+    if (!opt) return null;
+    sel.value = opt.value;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    return { value: opt.value, label: (opt.textContent || "").trim() };
+  }, id);
+  if (!picked) {
+    console.warn("warn: firmware not found in selector:", id);
+    return;
+  }
+  await sleep(400);
+
+  // Must be a real CDP click — evaluate()-click does not unlock AudioContext, so the LCD stays blank.
+  try {
+    await page.click("#start", { delay: 40 });
+  } catch (err) {
+    console.warn("warn: #start click failed for", id, err.message);
+    return;
+  }
+
+  const deadline = Date.now() + 20000;
+  while (Date.now() < deadline) {
+    if (await isRunning()) break;
+    await sleep(350);
+  }
+  if (!(await isRunning())) {
+    console.warn("warn: firmware never reported running:", id, "picked=", picked);
+    return;
+  }
+  await pokeMachine();
+  await sleep(1100);
+  const label = await page.evaluate(() => (document.getElementById("status")?.textContent || "").trim().slice(0, 80));
+  console.log("running", id, "→", picked.value, "|", label);
 }
 
 async function openDeckMod(label) {
@@ -88,54 +192,24 @@ async function openDeckMod(label) {
   await sleep(600);
 }
 
-async function dismissOverlays() {
-  await page.keyboard.press("Escape");
-  await sleep(200);
-  await page.keyboard.press("Escape");
-  await sleep(200);
-  await page.evaluate(() => {
-    for (const sel of [
-      "[data-close]", ".modal-close", ".drawer-close", ".panel-close",
-      "button[aria-label*=close i]", "button[title*=close i]",
-    ]) {
-      document.querySelectorAll(sel).forEach((el) => {
-        try { el.click(); } catch {}
-      });
-    }
-    // Close Customize / Browser / Keys drawers by their explicit close controls
-    for (const lab of [/^Close$/i, /^×$/, /^✕$/]) {
-      [...document.querySelectorAll("button,a,[role=button]")].forEach((b) => {
-        const t = (b.textContent || "").trim();
-        if (lab.test(t) && b.offsetParent) {
-          try { b.click(); } catch {}
-        }
-      });
-    }
-    document.querySelectorAll(".modal,.drawer,.overlay,[aria-modal=true]").forEach((el) => {
-      el.classList.remove("open", "show", "active", "visible");
-      if (el.style) el.style.display = "none";
-    });
-  });
-  await sleep(400);
+async function bootThemeShot({ theme, fw, file }) {
+  await startFw(fw);
+  await dismissOverlays();
+  await setTheme(theme);
+  await pokeMachine();
+  await sleep(500);
+  await shot(file);
 }
 
 try {
-  await startFw("felucca");
-  await dismissOverlays();
-
-  // One clean shot per interface colour — machine only, no menus
-  let n = 1;
-  for (const theme of THEMES) {
-    await dismissOverlays();
-    await setTheme(theme);
-    await sleep(350);
-    const file = `${String(n).padStart(2, "0")}-${theme.toLowerCase()}.png`;
-    await shot(file);
-    n++;
+  for (const spec of THEME_SHOTS) {
+    await bootThemeShot(spec);
   }
 
-  // Feature shots (still cycling colours)
-  await setTheme("Cobalt");
+  // Feature: Customize (karma on Cobalt)
+  await startFw(FEATURE_SHOTS.customize.fw);
+  await dismissOverlays();
+  await setTheme(FEATURE_SHOTS.customize.theme);
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll("button,a,[role=button]")].find((b) => /Customize/i.test(b.textContent || ""));
     btn?.click();
@@ -144,7 +218,10 @@ try {
   await shot("09-cobalt-customize.png");
   await dismissOverlays();
 
-  await setTheme("Emerald");
+  // Feature: Browser (mono2k on Emerald)
+  await startFw(FEATURE_SHOTS.browser.fw);
+  await dismissOverlays();
+  await setTheme(FEATURE_SHOTS.browser.theme);
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll("button,a,[role=button]")].find((b) => /Browse|Browser|Firmwares/i.test(b.textContent || ""));
     btn?.click();
@@ -162,29 +239,39 @@ try {
   await shot("10-emerald-browser.png");
   await dismissOverlays();
 
-  await setTheme("Ice");
+  // Feature: Patch bay (chipbox on Ice)
+  await startFw(FEATURE_SHOTS.patchBay.fw);
+  await dismissOverlays();
+  await setTheme(FEATURE_SHOTS.patchBay.theme);
   await openDeckMod("GATE");
   await sleep(500);
   await shot("11-ice-patch-bay.png");
 
-  await setTheme("Vaporwave");
+  // Feature: Keys (beetle on Vaporwave)
+  await startFw(FEATURE_SHOTS.keys.fw);
+  await dismissOverlays();
+  await setTheme(FEATURE_SHOTS.keys.theme);
   await page.evaluate(() => {
-    const btn = [...document.querySelectorAll("button,summary,a")].find((b) => /^Keys$/i.test((b.textContent || "").trim()) || /\bKeys\b/i.test(b.textContent || ""));
+    const btn = [...document.querySelectorAll("button,summary,a")].find((b) =>
+      /^Keys$/i.test((b.textContent || "").trim()) || /\bKeys\b/i.test(b.textContent || ""));
     btn?.click();
   });
   await sleep(700);
   await shot("12-vaporwave-keys.png");
   await dismissOverlays();
 
-  // Hero for README top: clean running machine, Midnight, no menus
-  await startFw("felucca");
+  // Hero under Downloads: AURORA on Midnight — rename file so GitHub CDN cannot keep the old Felucca/menu JPG.
+  await startFw(HERO.fw);
   await dismissOverlays();
-  await setTheme("Midnight");
-  await sleep(900);
-  const hero = resolve(root, "docs/screenshot.jpg");
-  await page.screenshot({ path: hero, type: "jpeg", quality: 90 });
-  console.log("ok screenshot.jpg");
+  await setTheme(HERO.theme);
+  await pokeMachine();
+  await sleep(1000);
+  const heroJpg = resolve(root, "docs/hero.jpg");
+  const heroLegacy = resolve(root, "docs/screenshot.jpg");
+  await page.screenshot({ path: heroJpg, type: "jpeg", quality: 92 });
+  copyFileSync(heroJpg, heroLegacy);
   copyFileSync(resolve(outDir, "01-midnight.png"), resolve(outDir, "hero-midnight.png"));
+  console.log("ok hero.jpg (+ screenshot.jpg mirror)");
 } finally {
   await browser.close();
 }
